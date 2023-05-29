@@ -1,0 +1,25 @@
+receivers:
+  dronetracereceiver:
+    interval: 1m
+    token: <DRONE_TOKEN>
+    host: <DRONE_HOST>
+
+processors:
+
+exporters:
+  logging:
+    verbosity: detailed
+  otlp:
+    endpoint: localhost:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [dronetracereceiver]
+      processors: []
+      exporters: [otlp, logging]
+  telemetry:
+    logs:
+      level: debug

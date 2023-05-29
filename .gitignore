@@ -1,0 +1,13 @@
+/collector
+config.yaml
+
+# Editor junk
+*.sublime-workspace
+*.swp
+.idea/
+.fleet/
+*.iml
+*.tmp
+.DS_Store
+.vscode/
+.vs/
