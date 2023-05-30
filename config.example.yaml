@@ -1,6 +1,5 @@
 receivers:
   dronetracereceiver:
-    interval: 1m
     token: <DRONE_TOKEN>
     host: <DRONE_HOST>
 
@@ -17,6 +16,14 @@ exporters:
 service:
   pipelines:
     traces:
+      receivers: [dronetracereceiver]
+      processors: []
+      exporters: [otlp, logging]
+    logs:
+      receivers: [dronetracereceiver]
+      processors: []
+      exporters: [otlp, logging]
+    metrics:
       receivers: [dronetracereceiver]
       processors: []
       exporters: [otlp, logging]

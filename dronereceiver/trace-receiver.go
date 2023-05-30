@@ -1,4 +1,4 @@
-package dronetracereceiver
+package dronereceiver
 
 import (
 	"context"
