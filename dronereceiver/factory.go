@@ -9,11 +9,14 @@ import (
 )
 
 const (
-	typeStr = "dronetracereceiver"
+	typeStr = "dronereceiver"
 )
 
 func createDefaultConfig() component.Config {
-	return &Config{}
+	return &Config{
+		Endpoint: "/drone/webhook",
+		Port:     3333,
+	}
 }
 
 func NewFactory() receiver.Factory {
@@ -31,9 +34,7 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 		return nil, err
 	}
 
-	if err = r.Unwrap().registerTraceConsumer(consumer); err != nil {
-		return nil, err
-	}
+	r.Unwrap().enableTraces(consumer)
 	return r, nil
 
 }
@@ -44,9 +45,7 @@ func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, cfg c
 		return nil, err
 	}
 
-	if err = r.Unwrap().registerMetricsConsumer(consumer); err != nil {
-		return nil, err
-	}
+	r.Unwrap().enableMetrics(consumer)
 	return r, nil
 
 }
@@ -57,9 +56,7 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 		return nil, err
 	}
 
-	if err = r.Unwrap().registerLogsConsumer(consumer); err != nil {
-		return nil, err
-	}
+	r.Unwrap().enableLogs(consumer)
 	return r, nil
 
 }

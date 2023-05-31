@@ -2,6 +2,8 @@ receivers:
   dronetracereceiver:
     token: <DRONE_TOKEN>
     host: <DRONE_HOST>
+    endpoint: /drone/webhook
+    port: 3333
 
 processors:
 
@@ -16,15 +18,15 @@ exporters:
 service:
   pipelines:
     traces:
-      receivers: [dronetracereceiver]
+      receivers: [dronereceiver]
       processors: []
       exporters: [otlp, logging]
     logs:
-      receivers: [dronetracereceiver]
+      receivers: [dronereceiver]
       processors: []
       exporters: [otlp, logging]
     metrics:
-      receivers: [dronetracereceiver]
+      receivers: [dronereceiver]
       processors: []
       exporters: [otlp, logging]
   telemetry:

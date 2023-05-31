@@ -6,8 +6,10 @@ import (
 
 // Config defines configuration for dronereceiver receiver.
 type Config struct {
-	Token string `mapstructure:"token"`
-	Host  string `mapstructure:"host"`
+	Token    string `mapstructure:"token"`
+	Host     string `mapstructure:"host"`
+	Endpoint string `mapstructure:"endpoint"`
+	Port     int    `mapstructure:"port"`
 }
 
 // Validate checks if the receiver configuration is valid
