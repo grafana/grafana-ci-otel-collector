@@ -33,7 +33,7 @@ type droneWebhookHandler struct {
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
-
+	// TODO: this is just a stub for now
 	d.logger.Info("Got request")
 
 	traces := ptrace.NewTraces()

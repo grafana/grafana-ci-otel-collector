@@ -43,12 +43,14 @@ Then you can start the collector with:
 make run
 ```
 
-## Drone traces receiver
+## Drone
 
-## Drone logs receiver
+### Generating traces
 
-TBD
+The receiver listens for Drone webhooks and generates trace data based on the information in the webhook payload.
 
-## Drone metrics receiver
+Until a more complete data generator is available, you can simulate a webhook call you can manually send a request to the receiver:
 
-TBD
+```bash
+curl -X POST -H "Content-Type: application/json" -d @./dronereceiver/testdata/build-completed.json http://localhost:3333/drone/webhook
+```
