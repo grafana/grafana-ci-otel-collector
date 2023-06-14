@@ -2,18 +2,6 @@
 
 ## Development
 
-Install the OpenTelemetry Collector Builder by following the instructios in [the official documentation](https://opentelemetry.io/docs/collector/custom-collector/#step-1---install-the-builder)
-
-The project is currently using the `v0.78.2` version of the builder. You can download the binary relevant to your platform from https://github.com/open-telemetry/opentelemetry-collector/releases/tag/cmd%2Fbuilder%2Fv0.78.2
-
-Once downloaded move it into your path and make it executable. on MacOS:
-
-```bash
-sudo mv <PATH_TO_DOWNLOADED_FILE> /usr/local/bin/ocb
-
-sudo chmod 777 /usr/local/bin/ocb
-```
-
 ### Configuring the collector
 
 The collector is configured using the `config.yaml` file.
