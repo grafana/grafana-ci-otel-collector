@@ -1,7 +1,9 @@
 receivers:
   dronetracereceiver:
-    token: <DRONE_TOKEN>
-    host: <DRONE_HOST>
+    collection_interval: 10s
+    drone:
+      token: <DRONE_TOKEN>
+      host: <DRONE_HOST>
     endpoint: /drone/webhook
     port: 3333
 

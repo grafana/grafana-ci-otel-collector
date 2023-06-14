@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
 const (
@@ -14,8 +15,9 @@ const (
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Endpoint: "/drone/webhook",
-		Port:     3333,
+		ScraperControllerSettings: scraperhelper.NewDefaultScraperControllerSettings(typeStr),
+		Endpoint:                  "/drone/webhook",
+		Port:                      3333,
 	}
 }
 
@@ -39,15 +41,19 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 
 }
 
-func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, cfg component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
-	r, err := getOrAddReceiver(set, cfg)
+func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
+	cfg := rConf.(*Config)
+	ns := newDroneScraper(set)
+	scraper, err := scraperhelper.NewScraper(typeStr, ns.scrape, scraperhelper.WithStart(ns.start))
+
 	if err != nil {
 		return nil, err
 	}
 
-	r.Unwrap().enableMetrics(consumer)
-	return r, nil
-
+	return scraperhelper.NewScraperControllerReceiver(
+		&cfg.ScraperControllerSettings, set, consumer,
+		scraperhelper.AddScraper(scraper),
+	)
 }
 
 func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg component.Config, consumer consumer.Logs) (receiver.Logs, error) {
@@ -58,7 +64,6 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 
 	r.Unwrap().enableLogs(consumer)
 	return r, nil
-
 }
 
 func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*SharedComponent[*droneReceiver], error) {

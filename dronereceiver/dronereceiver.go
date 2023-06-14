@@ -19,6 +19,8 @@ type droneReceiver struct {
 	cfg *Config
 	set receiver.CreateSettings
 
+	cancel context.CancelFunc
+
 	handler *droneWebhookHandler
 
 	httpServer *http.Server
@@ -32,10 +34,10 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 	httpClient := oauthConfig.Client(
 		context.Background(),
 		&oauth2.Token{
-			AccessToken: cfg.Token,
+			AccessToken: cfg.DroneConfig.Token,
 		},
 	)
-	droneClient := drone.NewClient(cfg.Host, httpClient)
+	droneClient := drone.NewClient(cfg.DroneConfig.Host, httpClient)
 
 	httpMux := http.NewServeMux()
 
@@ -97,6 +99,9 @@ func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 
 func (r *droneReceiver) Shutdown(_ context.Context) error {
 	r.httpServer.Shutdown(context.Background())
+	if r.cancel != nil {
+		r.cancel()
+	}
 
 	return nil
 }
@@ -107,8 +112,4 @@ func (r *droneReceiver) enableLogs(consumer consumer.Logs) {
 
 func (r *droneReceiver) enableTraces(consumer consumer.Traces) {
 	r.handler.nextTraceConsumer = consumer
-}
-
-func (r *droneReceiver) enableMetrics(consumer consumer.Metrics) {
-	r.handler.nextMetricsConsumer = consumer
 }

@@ -27,9 +27,8 @@ type droneWebhookHandler struct {
 	droneClient drone.Client
 	logger      *zap.Logger
 
-	nextLogsConsumer    consumer.Logs
-	nextMetricsConsumer consumer.Metrics
-	nextTraceConsumer   consumer.Traces
+	nextLogsConsumer  consumer.Logs
+	nextTraceConsumer consumer.Traces
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {

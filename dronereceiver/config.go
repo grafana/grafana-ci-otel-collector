@@ -2,22 +2,29 @@ package dronereceiver
 
 import (
 	"fmt"
+
+	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
+
+type DroneConfig struct {
+	Token string `mapstructure:"token"`
+	Host  string `mapstructure:"host"`
+}
 
 // Config defines configuration for dronereceiver receiver.
 type Config struct {
-	Token    string `mapstructure:"token"`
-	Host     string `mapstructure:"host"`
-	Endpoint string `mapstructure:"endpoint"`
-	Port     int    `mapstructure:"port"`
+	scraperhelper.ScraperControllerSettings `mapstructure:",squash"`
+	Endpoint                                string      `mapstructure:"endpoint"`
+	Port                                    int         `mapstructure:"port"`
+	DroneConfig                             DroneConfig `mapstructure:"drone"`
 }
 
 // Validate checks if the receiver configuration is valid
 func (cfg *Config) Validate() error {
-	if cfg.Host == "" {
+	if cfg.DroneConfig.Host == "" {
 		return fmt.Errorf("host must be defined")
 	}
-	if cfg.Token == "" {
+	if cfg.DroneConfig.Token == "" {
 		return fmt.Errorf("token must be defined")
 	}
 	return nil
