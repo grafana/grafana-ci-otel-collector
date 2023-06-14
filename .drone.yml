@@ -7,5 +7,5 @@ steps:
   - name: backend
     image: golang
     commands:
-      - go build
+      - make build
       - go test ./dronereceiver
