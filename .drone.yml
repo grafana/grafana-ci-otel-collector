@@ -4,8 +4,11 @@ type: docker
 name: default
 
 steps:
-  - name: backend
+  - name: build
     image: golang
     commands:
       - make build
+  - name: test
+    image: golang
+    commands:
       - go test ./dronereceiver
