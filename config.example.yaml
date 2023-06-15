@@ -1,5 +1,5 @@
 receivers:
-  dronetracereceiver:
+  dronereceiver:
     collection_interval: 10s
     drone:
       token: <DRONE_TOKEN>
@@ -31,6 +31,7 @@ service:
       receivers: [dronereceiver]
       processors: []
       exporters: [otlp, logging]
+
   telemetry:
     logs:
       level: debug

@@ -3,6 +3,7 @@ package dronereceiver
 import (
 	"fmt"
 
+	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
@@ -14,6 +15,7 @@ type DroneConfig struct {
 // Config defines configuration for dronereceiver receiver.
 type Config struct {
 	scraperhelper.ScraperControllerSettings `mapstructure:",squash"`
+	metadata.MetricsBuilderConfig           `mapstructure:",squash"`
 	Endpoint                                string      `mapstructure:"endpoint"`
 	Port                                    int         `mapstructure:"port"`
 	DroneConfig                             DroneConfig `mapstructure:"drone"`

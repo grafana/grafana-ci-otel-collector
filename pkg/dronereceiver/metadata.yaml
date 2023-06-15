@@ -1,0 +1,42 @@
+# Refer to https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/main/cmd/mdatagen/metadata-schema.yaml
+# for the full schema
+type: dronereceiver
+
+sem_conv_version: 1.9.0
+
+status:
+  class: receiver
+  stability:
+    development: [logs, traces, metrics]
+  warnings:
+    - Any additional information that should be brought to the consumer's attention
+
+resource_attributes:
+
+attributes:
+
+metrics:
+  total_builds:
+    enabled: true
+    description: Total number of builds.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation: cumulative
+  running_builds:
+    enabled: true
+    description: Total number of running builds.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+  pending_builds:
+    enabled: true
+    description: Total number of pending builds.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative

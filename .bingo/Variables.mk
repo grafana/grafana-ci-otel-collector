@@ -29,3 +29,9 @@ $(BUILDER): $(BINGO_DIR)/builder.mod
 	@echo "(re)installing $(GOBIN)/builder-v0.79.0"
 	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=builder.mod -o=$(GOBIN)/builder-v0.79.0 "go.opentelemetry.io/collector/cmd/builder"
 
+MDATAGEN := $(GOBIN)/mdatagen-v0.79.0
+$(MDATAGEN): $(BINGO_DIR)/mdatagen.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/mdatagen-v0.79.0"
+	@cd $(BINGO_DIR) && GOWORK=off $(GO) build -mod=mod -modfile=mdatagen.mod -o=$(GOBIN)/mdatagen-v0.79.0 "github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen"
+

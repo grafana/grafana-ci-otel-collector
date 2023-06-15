@@ -1,5 +1,6 @@
 /collector
 config.yaml
+.env
 
 # Editor junk
 *.sublime-workspace

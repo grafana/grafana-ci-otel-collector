@@ -2,20 +2,22 @@ package dronereceiver
 
 import (
 	"context"
+	"time"
 
+	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
-const (
-	typeStr = "dronereceiver"
-)
-
 func createDefaultConfig() component.Config {
+	cfg := scraperhelper.NewDefaultScraperControllerSettings(metadata.Type)
+	cfg.CollectionInterval = 10 * time.Second
+
 	return &Config{
-		ScraperControllerSettings: scraperhelper.NewDefaultScraperControllerSettings(typeStr),
+		ScraperControllerSettings: cfg,
+		MetricsBuilderConfig:      metadata.DefaultMetricsBuilderConfig(),
 		Endpoint:                  "/drone/webhook",
 		Port:                      3333,
 	}
@@ -23,11 +25,11 @@ func createDefaultConfig() component.Config {
 
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
-		typeStr,
+		metadata.Type,
 		createDefaultConfig,
-		receiver.WithTraces(createTraceReceiver, component.StabilityLevelAlpha),
-		receiver.WithMetrics(createMetricsReceiver, component.StabilityLevelAlpha),
-		receiver.WithLogs(createLogsReceiver, component.StabilityLevelAlpha))
+		receiver.WithTraces(createTraceReceiver, metadata.TracesStability),
+		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability),
+		receiver.WithLogs(createLogsReceiver, metadata.LogsStability))
 }
 
 func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg component.Config, consumer consumer.Traces) (receiver.Traces, error) {
@@ -43,8 +45,8 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 
 func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
-	ns := newDroneScraper(set)
-	scraper, err := scraperhelper.NewScraper(typeStr, ns.scrape, scraperhelper.WithStart(ns.start))
+	ns := newDroneScraper(set, cfg)
+	scraper, err := scraperhelper.NewScraper(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
 		return nil, err

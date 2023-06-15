@@ -18,7 +18,7 @@ receivers:
   - gomod: 'github.com/grafana/grafana-collector/dronereceiver v0.1.0'
     import: 'github.com/grafana/grafana-collector/dronereceiver'
     name: 'dronereceiver'
-    path: './dronereceiver'
+    path: './pkg/dronereceiver'
 
 replaces:
-  - github.com/grafana/grafana-collector/dronereceiver => ../dronereceiver
+  - github.com/grafana/grafana-collector/dronereceiver => ../pkg/dronereceiver
