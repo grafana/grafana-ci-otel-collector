@@ -32,6 +32,7 @@ services:
       - DRONE_REDIS_CONNECTION=redis://redis-server:6379
       - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
       - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
+      - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
   droneb:
     image: drone/drone:latest
     environment:
@@ -51,6 +52,7 @@ services:
       - DRONE_REDIS_CONNECTION=redis://redis-server:6379
       - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
       - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
+      - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
     depends_on:
       - dronea
   runner:

@@ -3,7 +3,7 @@ receivers:
     collection_interval: 10s
     drone:
       token: <DRONE_TOKEN>
-      host: <DRONE_HOST>
+      host: http://localhost:8080
     endpoint: /drone/webhook
     port: 3333
 
@@ -16,6 +16,13 @@ exporters:
     endpoint: localhost:4317
     tls:
       insecure: true
+  prometheus:
+    endpoint: 'localhost:3333'
+    send_timestamps: true
+    metric_expiration: 180m
+    enable_open_metrics: true
+    resource_to_telemetry_conversion:
+      enabled: true
 
 service:
   pipelines:
@@ -26,11 +33,11 @@ service:
     logs:
       receivers: [dronereceiver]
       processors: []
-      exporters: [otlp, logging]
+      exporters: [logging]
     metrics:
       receivers: [dronereceiver]
       processors: []
-      exporters: [otlp, logging]
+      exporters: [logging]
 
   telemetry:
     logs:

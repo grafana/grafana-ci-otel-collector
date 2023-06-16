@@ -55,6 +55,7 @@ The `docker-compose.localdrone.yml` file expects the following environment varia
 DRONE_SERVER_PROXY_HOST=
 DRONE_GITHUB_CLIENT_ID=
 DRONE_GITHUB_CLIENT_SECRET=
+GH_HANDLE=
 ```
 
 you can copy the example env vars file and replace the values:
@@ -118,9 +119,9 @@ docker-compose -f docker-compose.localdrone.yml up -d
 And use the ngrok forwarding url to access the Drone UI.
 Navigate to the repository you want to start monitoring and click on "Activate repository".
 
-### Generate a Drone machine token
+### Get your drone token
 
-Refer to the [Drone documentation](https://docs.drone.io/server/user/machine/)
+If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your drone token by navigating to https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
 
 ### Configure the collector
 
@@ -132,7 +133,7 @@ receivers:
     collection_interval: 15s
     drone:
       token: <YOUR TOKEN>
-      host: https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app
+      host: http://localhost:8080
     endpoint: /drone/webhook
     port: 3333
 ```
