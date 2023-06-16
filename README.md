@@ -47,6 +47,9 @@ curl -X POST -H "Content-Type: application/json" -d @./dronereceiver/testdata/bu
 
 It is possible to use a local Drone instance for easier development.
 
+Note that by default no webhook events are sent to the receiver from GitHub (i.e. when you push to a branch to trigger a build), you need to manually trigger builds on Drone.
+If you need to get those webhooks, you can configure it your repository settings on GitHub.
+
 ### Environment variables
 
 The `docker-compose.localdrone.yml` file expects the following environment variables to be set:
