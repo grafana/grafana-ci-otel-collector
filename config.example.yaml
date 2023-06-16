@@ -37,7 +37,7 @@ service:
     metrics:
       receivers: [dronereceiver]
       processors: []
-      exporters: [logging]
+      exporters: [prometheus, logging]
 
   telemetry:
     logs:
