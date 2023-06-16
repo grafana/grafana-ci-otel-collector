@@ -17,7 +17,7 @@ exporters:
     tls:
       insecure: true
   prometheus:
-    endpoint: 'localhost:3333'
+    endpoint: 'localhost:9090'
     send_timestamps: true
     metric_expiration: 180m
     enable_open_metrics: true
