@@ -1,0 +1,17 @@
+---
+kind: pipeline
+type: docker
+name: default
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+  - name: build
+    image: golang
+    commands:
+      - make build
+  - name: test
+    image: golang
+    commands:
+      - go test ./pkg/dronereceiver

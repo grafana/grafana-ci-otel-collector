@@ -1,5 +1,10 @@
-build:
-	ocb --config config/builder-config.yml
+include .bingo/Variables.mk
+
+metadata: $(MDATAGEN)
+	$(MDATAGEN) ./pkg/dronereceiver/metadata.yaml
+
+build: $(BINGO) $(BUILDER)
+	$(BUILDER) --config config/builder-config.yml
 
 run: 
-	./grafana-collector/grafana-ci-otelcol --config config.yaml
+	./collector/grafana-ci-otelcol --config config.yaml

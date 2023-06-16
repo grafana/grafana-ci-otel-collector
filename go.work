@@ -2,5 +2,5 @@ go 1.19
 
 use (
 	./collector // Generated collector
-	./drone/tracereceiver
+	./pkg/dronereceiver
 )

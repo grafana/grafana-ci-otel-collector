@@ -2,22 +2,10 @@
 
 ## Development
 
-Install the OpenTelemetry Collector Builder by following the instructios in [the official documentation](https://opentelemetry.io/docs/collector/custom-collector/#step-1---install-the-builder)
-
-The project is currently using the `v0.78.2` version of the builder. You can download the binary relevant to your platform from https://github.com/open-telemetry/opentelemetry-collector/releases/tag/cmd%2Fbuilder%2Fv0.78.2
-
-Once downloaded move it into your path and make it executable. on MacOS:
-
-```bash
-sudo mv <PATH_TO_DOWNLOADED_FILE> /usr/local/bin/ocb
-
-sudo chmod 777 /usr/local/bin/ocb
-```
-
 ### Configuring the collector
 
 The collector is configured using the `config.yaml` file.
-An example configuration can be found in `config.yaml.example`, copy the file to `config.yaml` and replace the values for the `dronetracereceiver` receiver with the ones relevant to your environment.
+An example configuration can be found in `config.yaml.example`, copy the file to `config.yaml` and replace the values for the `dronereceiver` receiver with the ones relevant to your environment.
 
 ```bash
 cp config.yaml.example config.yaml
@@ -26,7 +14,7 @@ cp config.yaml.example config.yaml
 ### Building
 
 ```bash
-make build
+make metadata && make build
 ```
 
 ### Running
@@ -43,12 +31,118 @@ Then you can start the collector with:
 make run
 ```
 
-## Drone traces receiver
+## Drone
 
-## Drone logs receiver
+### Generating traces
 
-TBD
+The receiver listens for Drone webhooks and generates trace data based on the information in the webhook payload.
 
-## Drone metrics receiver
+Until a more complete data generator is available, you can simulate a webhook call you can manually send a request to the receiver:
 
-TBD
+```bash
+curl -X POST -H "Content-Type: application/json" -d @./dronereceiver/testdata/build-completed.json http://localhost:3333/drone/webhook
+```
+
+## Local Drone instance
+
+It is possible to use a local Drone instance for easier development.
+
+Note that by default no webhook events are sent to the receiver from GitHub (i.e. when you push to a branch to trigger a build), you need to manually trigger builds on Drone.
+If you need to get those webhooks, you can configure it your repository settings on GitHub.
+
+### Environment variables
+
+The `docker-compose.localdrone.yml` file expects the following environment variables to be set:
+
+```bash
+DRONE_SERVER_PROXY_HOST=
+DRONE_GITHUB_CLIENT_ID=
+DRONE_GITHUB_CLIENT_SECRET=
+GH_HANDLE=
+```
+
+you can copy the example env vars file and replace the values:
+
+```bash
+cp .env.example .env
+```
+
+### ngrok
+
+First, [install ngrok](https://ngrok.com/download) to expose a tunnel to your local drone instance.
+
+Once installed, start ngrok with:
+
+```bash
+ngrok http 8080
+```
+
+the output should look something like this:
+
+```bash
+Session Status                online
+Account                       you@example.com
+Version                       3.3.1
+Region                        Europe (eu)
+Latency                       44ms
+Web Interface                 http://127.0.0.1:4040
+Forwarding                    https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app -> http://localhost:8080
+```
+
+Copy the forwarding url (in this case `https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app`) and use it to configure the `DRONE_SERVER_PROXY_HOST` environment variable in the `.env` file.
+
+### GitHub OAuth App
+
+We then need to create a GitHub OAuth App to use for authentication with Drone.
+Go to **Settings -> Developer settings -> OAuth Apps** and click on "New OAuth App".
+
+Pick whatever you want for the name and description, and use the ngrok forwarding url for the `Homepage URL` and `Authorization callback URL` fields as follows (example using the URL from above):
+
+```
+Homepage URL:
+https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app
+
+
+Authorization callback URL:
+https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/login
+```
+
+Click on "Register application".
+
+Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
+
+### Run Drone
+
+You can now start Drone with:
+
+```bash
+docker-compose -f docker-compose.localdrone.yml up -d
+```
+
+And use the ngrok forwarding url to access the Drone UI.
+Navigate to the repository you want to start monitoring and click on "Activate repository".
+
+### Get your drone token
+
+If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your drone token by navigating to https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
+
+### Configure the collector
+
+Update the `dronereceiver` receiver in the `config.yaml` file to use the ngrok forwarding url as follows (example using the URL from above):
+
+```yaml
+receivers:
+  dronereceiver:
+    collection_interval: 15s
+    drone:
+      token: <YOUR TOKEN>
+      host: http://localhost:8080
+    endpoint: /drone/webhook
+    port: 3333
+```
+
+### Start the collector
+
+```bash
+make metadata && make build && make run
+```
