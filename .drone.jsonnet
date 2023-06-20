@@ -32,10 +32,10 @@ local testStep() =
     };
 
 local pipeline(trigger) =
-    {
+    [{
       kind: 'pipeline',
       type: 'docker',
-      name: '%s-pipeline' % event,
+      name: 'test-pipeline',
       platform: {
         os: 'linux',
         arch: 'amd64',
@@ -45,6 +45,6 @@ local pipeline(trigger) =
         buildStep(),
         testStep(),
       ],
-    };
+    }];
 
 pipeline(prTrigger) + pipeline(mainTrigger)
