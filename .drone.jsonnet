@@ -1,5 +1,18 @@
 local goImage = 'golang:1.20.4';
 
+local prTrigger = {
+  event: [
+    'pull_request',
+  ],
+};
+
+local mainTrigger = {
+  branch: 'main',
+  event: [
+    'push',
+  ],
+};
+
 local buildStep() =
     {
         name: 'build',
@@ -18,7 +31,7 @@ local testStep() =
         ],
     };
 
-local pipeline(event) =
+local pipeline(trigger) =
     {
       kind: 'pipeline',
       type: 'docker',
@@ -27,13 +40,11 @@ local pipeline(event) =
         os: 'linux',
         arch: 'amd64',
       },
-      trigger: {
-        event: [event],
-      },
+      trigger: trigger,
       steps: [
         buildStep(),
         testStep(),
       ],
     };
 
-pipeline('pull_request') + pipeline('push')
+pipeline(prTrigger) + pipeline(mainTrigger)
