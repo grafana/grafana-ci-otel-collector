@@ -19,7 +19,7 @@ make metadata && make build
 
 ### Running
 
-In the example config an exportper is configured to send data locally. A `docker-compose` file is provided to start Grafana Tempo.
+In the example config an exporter is configured to send data locally. A `docker-compose` file is provided to start Grafana Tempo.
 
 ```bash
 docker-compose up -d
@@ -109,6 +109,8 @@ https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/login
 
 Click on "Register application".
 
+After the application is registered, generate a `Client secret`.
+
 Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
 
 ### Run Drone
@@ -116,7 +118,7 @@ Take note of the `Client ID` and `Client secret` values and use them to configur
 You can now start Drone with:
 
 ```bash
-docker-compose -f docker-compose.localdrone.yml up -d
+docker-compose -f docker-compose.localdrone.yaml up -d
 ```
 
 And use the ngrok forwarding url to access the Drone UI.
