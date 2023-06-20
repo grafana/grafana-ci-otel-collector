@@ -35,7 +35,7 @@ local pipeline(trigger) =
     [{
       kind: 'pipeline',
       type: 'docker',
-      name: 'test-pipeline',
+      name: '%s-pipeline' % trigger.event,
       platform: {
         os: 'linux',
         arch: 'amd64',
