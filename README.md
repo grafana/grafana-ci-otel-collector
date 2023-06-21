@@ -148,3 +148,31 @@ receivers:
 ```bash
 make metadata && make build && make run
 ```
+
+## Spin up Grafana as a Docker image locally
+
+### Run Docker image 
+
+Choose your Grafana image version. In this example we'll use `10.0.0`. Make sure to add `--add-host=host.docker.internal:host-gateway`
+for the image to be able to have access to your personal machine's localhost.
+
+```bash
+docker run --add-host=host.docker.internal:host-gateway --rm -p 3000:3000 grafana/grafana:10.0.0
+```
+
+### Set up Tempo datasource
+
+As of Grafana 10:
+
+`Toggle menu` -> `Connections` -> `Data sources` -> `Search for Tempo` -> `+ Add new data source`
+
+Under `HTTP`, in the `URL` field, provided that you still use the default app's port for Tempo (`3200`), add:
+
+```
+http://host.docker.internal:3200
+```
+
+Click `Save & Test`
+
+You are now ready to see your traces collector and play around with it using Tempo in Explore, or while building a new
+dashboard!
