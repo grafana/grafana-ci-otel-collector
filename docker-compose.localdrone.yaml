@@ -10,11 +10,13 @@ services:
       - '4317:4317' # otlp grpc
 
   # For local drone development
-  dronea:
+  drone:
     image: drone/drone:latest
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - '8080:80'
     environment:
       - DRONE_SERVER_HOST=localhost
       - DRONE_SERVER_PROTO=http
@@ -33,50 +35,21 @@ services:
       - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
       - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
       - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
-  droneb:
-    image: drone/drone:latest
-    environment:
-      - DRONE_SERVER_HOST=localhost
-      - DRONE_SERVER_PROTO=http
-      - DRONE_SERVER_PROXY_HOST=${DRONE_SERVER_PROXY_HOST}
-      - DRONE_SERVER_PROXY_PROTO=https
-      - DRONE_RPC_SECRET=48866d9ed701d1f0b917b7f8531c6247
-      - DRONE_COOKIE_SECRET=e8206356c843d81e05ab6735e7ebf075
-      - DRONE_COOKIE_TIMEOUT=720h
-      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
-      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
-      - DRONE_LOGS_DEBUG=true
-      - DRONE_CRON_DISABLED=true
-      - DRONE_DATABASE_DRIVER=postgres
-      - DRONE_DATABASE_DATASOURCE=postgres://postgres:postgres@db:5432/drone?sslmode=disable
-      - DRONE_REDIS_CONNECTION=redis://redis-server:6379
-      - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
-      - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
-      - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
-    depends_on:
-      - dronea
+      - DRONE_JSONNET_ENABLED=true
   runner:
-    image: drone/drone-runner-docker:latest
+    platform: 'linux/amd64'
+    image: drone/drone-runner-docker:linux-amd64
     environment:
-      - DRONE_RPC_HOST=proxy
+      - DRONE_RPC_HOST=drone
       - DRONE_RPC_PROTO=http
       - DRONE_RPC_SECRET=48866d9ed701d1f0b917b7f8531c6247
       - DRONE_TMATE_ENABLED=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
-      - proxy
-      - droneb
+      - drone
   redis-server:
     image: redis
-  proxy:
-    image: haproxy
-    ports:
-      - '8080:80'
-    volumes:
-      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-    depends_on:
-      - dronea
   db:
     image: postgres
     environment:
