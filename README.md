@@ -122,7 +122,7 @@ docker-compose -f docker-compose.localdrone.yaml up -d
 ```
 
 And use the ngrok forwarding url to access the Drone UI.
-Navigate to the repository you want to start monitoring and click on "Activate repository".
+Navigate to the repository you want to start monitoring and click on "Activate repository", then click on settings and replace `.drone.yaml` with `.drone.jsonnet`
 
 ### Get your drone token
 
@@ -151,7 +151,7 @@ make metadata && make build && make run
 
 ## Spin up Grafana as a Docker image locally
 
-### Run Docker image 
+### Run Docker image
 
 Choose your Grafana image version. In this example we'll use `10.0.0`. Make sure to add `--add-host=host.docker.internal:host-gateway`
 for the image to be able to have access to your personal machine's localhost.

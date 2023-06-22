@@ -6,6 +6,12 @@ local prTrigger = {
   ],
 };
 
+local customTrigger = {
+  event: [
+    'custom',
+  ],
+};
+
 local mainTrigger = {
   branch: 'main',
   event: [
@@ -47,4 +53,4 @@ local pipeline(trigger) =
       ],
     }];
 
-pipeline(prTrigger) + pipeline(mainTrigger)
+pipeline(prTrigger) + pipeline(mainTrigger) + pipeline(customTrigger)
