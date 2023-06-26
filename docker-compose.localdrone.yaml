@@ -42,7 +42,7 @@ services:
       - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
       - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
       - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
-      - DRONE_JSONNET_ENABLED=true
+      - DRONE_STATUS_NAME=continuous-integration/drone-local-${GH_HANDLE}
   runner:
     platform: 'linux/amd64'
     image: drone/drone-runner-docker:linux-amd64
