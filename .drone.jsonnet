@@ -56,10 +56,14 @@ local verifyGenPipeline() =
         os: 'linux',
         arch: 'amd64',
       },
-      paths: {
-        include: ['pkg/dronereceiver/metadata.yaml'],
+      trigger: {
+        event: [
+          'pull_request',
+        ],
+        paths: {
+          include: ['pkg/dronereceiver/metadata.yaml'],
+        },
       },
-      trigger: prTrigger,
       steps: [
         verifyGenStep(),
       ],
