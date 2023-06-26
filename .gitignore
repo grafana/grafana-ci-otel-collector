@@ -1,6 +1,7 @@
 /collector
 config.yaml
 .env
+/.drone/vendor
 
 # Editor junk
 *.sublime-workspace

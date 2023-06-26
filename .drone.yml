@@ -1,0 +1,54 @@
+---
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
+name: pr
+steps:
+- commands:
+  - make build
+  image: golang:1.20.4
+  name: build
+- commands:
+  - go test ./pkg/dronereceiver
+  image: golang:1.20.4
+  name: test
+trigger:
+  event:
+  - pull_request
+type: docker
+---
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
+name: main
+steps:
+- commands:
+  - make build
+  image: golang:1.20.4
+  name: build
+- commands:
+  - go test ./pkg/dronereceiver
+  image: golang:1.20.4
+  name: test
+trigger:
+  branch: main
+  event:
+  - push
+type: docker
+---
+kind: pipeline
+name: verify-gen-pipeline
+steps:
+- commands:
+  - make metadata
+  - 'if [ -n "$(git status --porcelain)" ]; then echo "ERROR: Please run make metadata
+    and commit your changes." && git diff --exit-code; fi'
+  image: golang:1.20.4
+  name: verify-gen
+trigger:
+  event:
+  - pull_request
+  paths:
+    include:
+    - pkg/dronereceiver/metadata.yaml
+type: docker
