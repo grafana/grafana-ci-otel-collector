@@ -122,7 +122,7 @@ docker-compose -f docker-compose.localdrone.yaml up -d
 ```
 
 And use the ngrok forwarding url to access the Drone UI.
-Navigate to the repository you want to start monitoring and click on "Activate repository", then click on settings and replace `.drone.yaml` with `.drone.jsonnet`
+Navigate to the repository you want to start monitoring and click on "Activate repository".
 
 ### Get your drone token
 
@@ -176,3 +176,7 @@ Click `Save & Test`
 
 You are now ready to see your traces collector and play around with it using Tempo in Explore, or while building a new
 dashboard!
+
+## Make CI/CD changes
+
+See [Make CI/CD changes](.drone/README.md)
