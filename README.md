@@ -8,7 +8,7 @@ The collector is configured using the `config.yaml` file.
 An example configuration can be found in `config.yaml.example`, copy the file to `config.yaml` and replace the values for the `dronereceiver` receiver with the ones relevant to your environment.
 
 ```bash
-cp config.yaml.example config.yaml
+cp config.example.yaml config.yaml
 ```
 
 ### Building
@@ -118,7 +118,7 @@ Take note of the `Client ID` and `Client secret` values and use them to configur
 You can now start Drone with:
 
 ```bash
-docker-compose -f docker-compose.localdrone.yaml up -d
+docker compose -f docker-compose.localdrone.yaml up -d
 ```
 
 And use the ngrok forwarding url to access the Drone UI.
