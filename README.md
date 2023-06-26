@@ -176,3 +176,7 @@ Click `Save & Test`
 
 You are now ready to see your traces collector and play around with it using Tempo in Explore, or while building a new
 dashboard!
+
+## Make CI/CD changes
+
+See [Make CI/CD changes](.drone/README.md)
