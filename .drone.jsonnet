@@ -60,7 +60,7 @@ local verifyGenPipeline() =
         event: [
           'pull_request',
         ],
-        paths: {
+        paths1: {
           include: ['pkg/dronereceiver/metadata.yaml'],
         },
       },
