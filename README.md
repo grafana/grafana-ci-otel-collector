@@ -122,7 +122,7 @@ docker-compose -f docker-compose.localdrone.yaml up -d
 ```
 
 And use the ngrok forwarding url to access the Drone UI.
-Navigate to the repository you want to start monitoring and click on "Activate repository", then click on settings and replace `.drone.yaml` with `.drone.jsonnet`
+Navigate to the repository you want to start monitoring and click on "Activate repository".
 
 ### Get your drone token
 
