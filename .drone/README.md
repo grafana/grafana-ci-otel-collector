@@ -30,5 +30,5 @@ After you are happy with the changes you've made in `.drone/drone.jsonnet` from 
 drone jsonnet --stream \
               --format \
               --source <(jsonnet -J .drone/vendor/ .drone/drone.jsonnet) \
-              --target ../.drone.yml
+              --target .drone.yml
 ```
