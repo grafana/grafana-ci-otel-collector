@@ -20,6 +20,24 @@ type: docker
 image_pull_secrets:
 - dockerconfigjson
 kind: pipeline
+name: custom
+steps:
+- commands:
+  - make build
+  image: golang:1.20.4
+  name: build
+- commands:
+  - go test ./pkg/dronereceiver
+  image: golang:1.20.4
+  name: test
+trigger:
+  event:
+  - custom
+type: docker
+---
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
 name: main
 steps:
 - commands:

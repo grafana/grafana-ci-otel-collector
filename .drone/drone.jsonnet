@@ -45,6 +45,19 @@ local verifyGenTrigger = {
       'go test ./pkg/dronereceiver',
     ]),
   ]),
+  pl.new('custom')
+  + pl.withImagePullSecrets(['dockerconfigjson'])
+  + pl.withTrigger(customTrigger)
+  + pl.withSteps([
+    step.new('build', image=goImage)
+    + step.withCommands([
+      'make build',
+    ]),
+    step.new('test', image=goImage)
+    + step.withCommands([
+      'go test ./pkg/dronereceiver',
+    ]),
+  ]),
   pl.new('main')
   + pl.withImagePullSecrets(['dockerconfigjson'])
   + pl.withTrigger(mainTrigger)
