@@ -37,6 +37,34 @@ local testStep() =
         ],
     };
 
+local verifyGenStep() =
+    {
+        name: 'verify-gen',
+        image: goImage,
+        commands: [
+            'make metadata',
+            'if [ -n "$(git status --porcelain)" ]; then echo "ERROR: Please run make metadata and commit your changes." && git diff --exit-code; fi',
+        ],
+    };
+
+local verifyGenPipeline() =
+    [{
+      kind: 'pipeline',
+      type: 'docker',
+      name: 'verify-gen-pipeline' ,
+      platform: {
+        os: 'linux',
+        arch: 'amd64',
+      },
+      paths: {
+        include: ['pkg/dronereceiver/metadata.yaml'],
+      },
+      trigger: prTrigger,
+      steps: [
+        verifyGenStep(),
+      ],
+    }];
+
 local pipeline(trigger) =
     [{
       kind: 'pipeline',
@@ -53,4 +81,4 @@ local pipeline(trigger) =
       ],
     }];
 
-pipeline(prTrigger) + pipeline(mainTrigger) + pipeline(customTrigger)
+pipeline(prTrigger) + pipeline(mainTrigger) + pipeline(customTrigger) + verifyGenPipeline()
