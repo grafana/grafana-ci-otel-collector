@@ -12,23 +12,86 @@ import (
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 )
 
-type metricPendingBuilds struct {
+// AttributeBuildStatus specifies the a value build.status attribute.
+type AttributeBuildStatus int
+
+const (
+	_ AttributeBuildStatus = iota
+	AttributeBuildStatusPending
+	AttributeBuildStatusRunning
+	AttributeBuildStatusSuccess
+	AttributeBuildStatusFailure
+	AttributeBuildStatusSkipped
+	AttributeBuildStatusError
+	AttributeBuildStatusKilled
+	AttributeBuildStatusBlocked
+	AttributeBuildStatusPaused
+	AttributeBuildStatusWaitingOnDependencies
+	AttributeBuildStatusUnknown
+)
+
+// String returns the string representation of the AttributeBuildStatus.
+func (av AttributeBuildStatus) String() string {
+	switch av {
+	case AttributeBuildStatusPending:
+		return "pending"
+	case AttributeBuildStatusRunning:
+		return "running"
+	case AttributeBuildStatusSuccess:
+		return "success"
+	case AttributeBuildStatusFailure:
+		return "failure"
+	case AttributeBuildStatusSkipped:
+		return "skipped"
+	case AttributeBuildStatusError:
+		return "error"
+	case AttributeBuildStatusKilled:
+		return "killed"
+	case AttributeBuildStatusBlocked:
+		return "blocked"
+	case AttributeBuildStatusPaused:
+		return "paused"
+	case AttributeBuildStatusWaitingOnDependencies:
+		return "waiting_on_dependencies"
+	case AttributeBuildStatusUnknown:
+		return "unknown"
+	}
+	return ""
+}
+
+// MapAttributeBuildStatus is a helper map of string to AttributeBuildStatus attribute value.
+var MapAttributeBuildStatus = map[string]AttributeBuildStatus{
+	"pending":                 AttributeBuildStatusPending,
+	"running":                 AttributeBuildStatusRunning,
+	"success":                 AttributeBuildStatusSuccess,
+	"failure":                 AttributeBuildStatusFailure,
+	"skipped":                 AttributeBuildStatusSkipped,
+	"error":                   AttributeBuildStatusError,
+	"killed":                  AttributeBuildStatusKilled,
+	"blocked":                 AttributeBuildStatusBlocked,
+	"paused":                  AttributeBuildStatusPaused,
+	"waiting_on_dependencies": AttributeBuildStatusWaitingOnDependencies,
+	"unknown":                 AttributeBuildStatusUnknown,
+}
+
+type metricBuildsTotal struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills pending_builds metric with initial data.
-func (m *metricPendingBuilds) init() {
-	m.data.SetName("pending_builds")
-	m.data.SetDescription("Total number of pending builds.")
+// init fills builds_total metric with initial data.
+func (m *metricBuildsTotal) init() {
+	m.data.SetName("builds_total")
+	m.data.SetDescription("Total number of builds.")
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricPendingBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+func (m *metricBuildsTotal) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -36,17 +99,18 @@ func (m *metricPendingBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommo
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
+	dp.Attributes().PutStr("build.status", buildStatusAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricPendingBuilds) updateCapacity() {
+func (m *metricBuildsTotal) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricPendingBuilds) emit(metrics pmetric.MetricSlice) {
+func (m *metricBuildsTotal) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -54,8 +118,8 @@ func (m *metricPendingBuilds) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricPendingBuilds(cfg MetricConfig) metricPendingBuilds {
-	m := metricPendingBuilds{config: cfg}
+func newMetricBuildsTotal(cfg MetricConfig) metricBuildsTotal {
+	m := metricBuildsTotal{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -63,15 +127,15 @@ func newMetricPendingBuilds(cfg MetricConfig) metricPendingBuilds {
 	return m
 }
 
-type metricRestartedBuilds struct {
+type metricRestartsTotal struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills restarted_builds metric with initial data.
-func (m *metricRestartedBuilds) init() {
-	m.data.SetName("restarted_builds")
+// init fills restarts_total metric with initial data.
+func (m *metricRestartsTotal) init() {
+	m.data.SetName("restarts_total")
 	m.data.SetDescription("Total number build restarts.")
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
@@ -79,7 +143,7 @@ func (m *metricRestartedBuilds) init() {
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 }
 
-func (m *metricRestartedBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+func (m *metricRestartsTotal) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
 	if !m.config.Enabled {
 		return
 	}
@@ -90,14 +154,14 @@ func (m *metricRestartedBuilds) recordDataPoint(start pcommon.Timestamp, ts pcom
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricRestartedBuilds) updateCapacity() {
+func (m *metricRestartsTotal) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricRestartedBuilds) emit(metrics pmetric.MetricSlice) {
+func (m *metricRestartsTotal) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -105,110 +169,8 @@ func (m *metricRestartedBuilds) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricRestartedBuilds(cfg MetricConfig) metricRestartedBuilds {
-	m := metricRestartedBuilds{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
-type metricRunningBuilds struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills running_builds metric with initial data.
-func (m *metricRunningBuilds) init() {
-	m.data.SetName("running_builds")
-	m.data.SetDescription("Total number of running builds.")
-	m.data.SetUnit("1")
-	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(false)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-}
-
-func (m *metricRunningBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricRunningBuilds) updateCapacity() {
-	if m.data.Sum().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Sum().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricRunningBuilds) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricRunningBuilds(cfg MetricConfig) metricRunningBuilds {
-	m := metricRunningBuilds{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
-type metricTotalBuilds struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills total_builds metric with initial data.
-func (m *metricTotalBuilds) init() {
-	m.data.SetName("total_builds")
-	m.data.SetDescription("Total number of builds.")
-	m.data.SetUnit("1")
-	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(true)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-}
-
-func (m *metricTotalBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricTotalBuilds) updateCapacity() {
-	if m.data.Sum().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Sum().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricTotalBuilds) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricTotalBuilds(cfg MetricConfig) metricTotalBuilds {
-	m := metricTotalBuilds{config: cfg}
+func newMetricRestartsTotal(cfg MetricConfig) metricRestartsTotal {
+	m := metricRestartsTotal{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -219,15 +181,13 @@ func newMetricTotalBuilds(cfg MetricConfig) metricTotalBuilds {
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	startTime             pcommon.Timestamp   // start time that will be applied to all recorded data points.
-	metricsCapacity       int                 // maximum observed number of metrics per resource.
-	resourceCapacity      int                 // maximum observed number of resource attributes.
-	metricsBuffer         pmetric.Metrics     // accumulates metrics data before emitting.
-	buildInfo             component.BuildInfo // contains version information
-	metricPendingBuilds   metricPendingBuilds
-	metricRestartedBuilds metricRestartedBuilds
-	metricRunningBuilds   metricRunningBuilds
-	metricTotalBuilds     metricTotalBuilds
+	startTime           pcommon.Timestamp   // start time that will be applied to all recorded data points.
+	metricsCapacity     int                 // maximum observed number of metrics per resource.
+	resourceCapacity    int                 // maximum observed number of resource attributes.
+	metricsBuffer       pmetric.Metrics     // accumulates metrics data before emitting.
+	buildInfo           component.BuildInfo // contains version information
+	metricBuildsTotal   metricBuildsTotal
+	metricRestartsTotal metricRestartsTotal
 }
 
 // metricBuilderOption applies changes to default metrics builder.
@@ -242,13 +202,11 @@ func WithStartTime(startTime pcommon.Timestamp) metricBuilderOption {
 
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSettings, options ...metricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		startTime:             pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:         pmetric.NewMetrics(),
-		buildInfo:             settings.BuildInfo,
-		metricPendingBuilds:   newMetricPendingBuilds(mbc.Metrics.PendingBuilds),
-		metricRestartedBuilds: newMetricRestartedBuilds(mbc.Metrics.RestartedBuilds),
-		metricRunningBuilds:   newMetricRunningBuilds(mbc.Metrics.RunningBuilds),
-		metricTotalBuilds:     newMetricTotalBuilds(mbc.Metrics.TotalBuilds),
+		startTime:           pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:       pmetric.NewMetrics(),
+		buildInfo:           settings.BuildInfo,
+		metricBuildsTotal:   newMetricBuildsTotal(mbc.Metrics.BuildsTotal),
+		metricRestartsTotal: newMetricRestartsTotal(mbc.Metrics.RestartsTotal),
 	}
 	for _, op := range options {
 		op(mb)
@@ -302,10 +260,8 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/dronereceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricPendingBuilds.emit(ils.Metrics())
-	mb.metricRestartedBuilds.emit(ils.Metrics())
-	mb.metricRunningBuilds.emit(ils.Metrics())
-	mb.metricTotalBuilds.emit(ils.Metrics())
+	mb.metricBuildsTotal.emit(ils.Metrics())
+	mb.metricRestartsTotal.emit(ils.Metrics())
 
 	for _, op := range rmo {
 		op(rm)
@@ -326,24 +282,14 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 	return metrics
 }
 
-// RecordPendingBuildsDataPoint adds a data point to pending_builds metric.
-func (mb *MetricsBuilder) RecordPendingBuildsDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricPendingBuilds.recordDataPoint(mb.startTime, ts, val)
+// RecordBuildsTotalDataPoint adds a data point to builds_total metric.
+func (mb *MetricsBuilder) RecordBuildsTotalDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus) {
+	mb.metricBuildsTotal.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String())
 }
 
-// RecordRestartedBuildsDataPoint adds a data point to restarted_builds metric.
-func (mb *MetricsBuilder) RecordRestartedBuildsDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricRestartedBuilds.recordDataPoint(mb.startTime, ts, val)
-}
-
-// RecordRunningBuildsDataPoint adds a data point to running_builds metric.
-func (mb *MetricsBuilder) RecordRunningBuildsDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricRunningBuilds.recordDataPoint(mb.startTime, ts, val)
-}
-
-// RecordTotalBuildsDataPoint adds a data point to total_builds metric.
-func (mb *MetricsBuilder) RecordTotalBuildsDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricTotalBuilds.recordDataPoint(mb.startTime, ts, val)
+// RecordRestartsTotalDataPoint adds a data point to restarts_total metric.
+func (mb *MetricsBuilder) RecordRestartsTotalDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricRestartsTotal.recordDataPoint(mb.startTime, ts, val)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

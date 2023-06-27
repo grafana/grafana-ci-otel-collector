@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scrapererror"
+	"go.uber.org/zap"
 )
 
 type droneScraper struct {
@@ -52,20 +53,29 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 }
 
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
-	var buildCount int
-	builds := r.db.QueryRow(ctx, "SELECT count(*) FROM builds")
-	builds.Scan(&buildCount)
-	r.mb.RecordTotalBuildsDataPoint(now, int64(buildCount))
+	var buildCount int64
+	rows, err := r.db.Query(ctx, "SELECT count(*), build_status FROM builds GROUP BY build_status")
 
-	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'pending'")
-	builds.Scan(&buildCount)
-	r.mb.RecordPendingBuildsDataPoint(now, int64(buildCount))
+	if err != nil {
+		r.settings.Logger.Error("Query error", zap.Error(err))
+	}
 
-	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'running'")
-	builds.Scan(&buildCount)
-	r.mb.RecordRunningBuildsDataPoint(now, int64(buildCount))
+	for rows.Next() {
+		var status string
+		err := rows.Scan(&buildCount, &status)
+		if err != nil {
+			r.settings.Logger.Error("Error scanning row", zap.Error(err))
+			continue
+		}
 
-	builds = r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
+		if statusAttr, ok := metadata.MapAttributeBuildStatus[status]; ok {
+			r.mb.RecordBuildsTotalDataPoint(now, buildCount, statusAttr)
+		} else {
+			r.mb.RecordBuildsTotalDataPoint(now, buildCount, statusAttr)
+		}
+	}
+
+	builds := r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
 	builds.Scan(&buildCount)
-	r.mb.RecordRestartedBuildsDataPoint(now, int64(buildCount))
+	r.mb.RecordRestartsTotalDataPoint(now, buildCount)
 }
