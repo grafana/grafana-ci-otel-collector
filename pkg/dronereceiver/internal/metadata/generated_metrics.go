@@ -63,6 +63,57 @@ func newMetricPendingBuilds(cfg MetricConfig) metricPendingBuilds {
 	return m
 }
 
+type metricRestartedBuilds struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills restarted_builds metric with initial data.
+func (m *metricRestartedBuilds) init() {
+	m.data.SetName("restarted_builds")
+	m.data.SetDescription("Total number build restarts.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+}
+
+func (m *metricRestartedBuilds) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricRestartedBuilds) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricRestartedBuilds) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricRestartedBuilds(cfg MetricConfig) metricRestartedBuilds {
+	m := metricRestartedBuilds{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricRunningBuilds struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -168,14 +219,15 @@ func newMetricTotalBuilds(cfg MetricConfig) metricTotalBuilds {
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	startTime           pcommon.Timestamp   // start time that will be applied to all recorded data points.
-	metricsCapacity     int                 // maximum observed number of metrics per resource.
-	resourceCapacity    int                 // maximum observed number of resource attributes.
-	metricsBuffer       pmetric.Metrics     // accumulates metrics data before emitting.
-	buildInfo           component.BuildInfo // contains version information
-	metricPendingBuilds metricPendingBuilds
-	metricRunningBuilds metricRunningBuilds
-	metricTotalBuilds   metricTotalBuilds
+	startTime             pcommon.Timestamp   // start time that will be applied to all recorded data points.
+	metricsCapacity       int                 // maximum observed number of metrics per resource.
+	resourceCapacity      int                 // maximum observed number of resource attributes.
+	metricsBuffer         pmetric.Metrics     // accumulates metrics data before emitting.
+	buildInfo             component.BuildInfo // contains version information
+	metricPendingBuilds   metricPendingBuilds
+	metricRestartedBuilds metricRestartedBuilds
+	metricRunningBuilds   metricRunningBuilds
+	metricTotalBuilds     metricTotalBuilds
 }
 
 // metricBuilderOption applies changes to default metrics builder.
@@ -190,12 +242,13 @@ func WithStartTime(startTime pcommon.Timestamp) metricBuilderOption {
 
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSettings, options ...metricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		startTime:           pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:       pmetric.NewMetrics(),
-		buildInfo:           settings.BuildInfo,
-		metricPendingBuilds: newMetricPendingBuilds(mbc.Metrics.PendingBuilds),
-		metricRunningBuilds: newMetricRunningBuilds(mbc.Metrics.RunningBuilds),
-		metricTotalBuilds:   newMetricTotalBuilds(mbc.Metrics.TotalBuilds),
+		startTime:             pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:         pmetric.NewMetrics(),
+		buildInfo:             settings.BuildInfo,
+		metricPendingBuilds:   newMetricPendingBuilds(mbc.Metrics.PendingBuilds),
+		metricRestartedBuilds: newMetricRestartedBuilds(mbc.Metrics.RestartedBuilds),
+		metricRunningBuilds:   newMetricRunningBuilds(mbc.Metrics.RunningBuilds),
+		metricTotalBuilds:     newMetricTotalBuilds(mbc.Metrics.TotalBuilds),
 	}
 	for _, op := range options {
 		op(mb)
@@ -250,6 +303,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricPendingBuilds.emit(ils.Metrics())
+	mb.metricRestartedBuilds.emit(ils.Metrics())
 	mb.metricRunningBuilds.emit(ils.Metrics())
 	mb.metricTotalBuilds.emit(ils.Metrics())
 
@@ -275,6 +329,11 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 // RecordPendingBuildsDataPoint adds a data point to pending_builds metric.
 func (mb *MetricsBuilder) RecordPendingBuildsDataPoint(ts pcommon.Timestamp, val int64) {
 	mb.metricPendingBuilds.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordRestartedBuildsDataPoint adds a data point to restarted_builds metric.
+func (mb *MetricsBuilder) RecordRestartedBuildsDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricRestartedBuilds.recordDataPoint(mb.startTime, ts, val)
 }
 
 // RecordRunningBuildsDataPoint adds a data point to running_builds metric.

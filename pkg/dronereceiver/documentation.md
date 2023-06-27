@@ -20,6 +20,14 @@ Total number of pending builds.
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | 1 | Sum | Int | Cumulative | false |
 
+### restarted_builds
+
+Total number build restarts.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| 1 | Sum | Int | Cumulative | true |
+
 ### running_builds
 
 Total number of running builds.

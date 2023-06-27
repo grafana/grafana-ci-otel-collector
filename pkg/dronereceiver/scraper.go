@@ -64,4 +64,8 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'running'")
 	builds.Scan(&buildCount)
 	r.mb.RecordRunningBuildsDataPoint(now, int64(buildCount))
+
+	builds = r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
+	builds.Scan(&buildCount)
+	r.mb.RecordRestartedBuildsDataPoint(now, int64(buildCount))
 }

@@ -40,3 +40,11 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
+  restarted_builds:
+    enabled: true
+    description: Total number build restarts.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation: cumulative
