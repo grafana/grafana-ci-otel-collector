@@ -54,18 +54,30 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
 	var buildCount int
 	builds := r.db.QueryRow(ctx, "SELECT count(*) FROM builds")
-	builds.Scan(&buildCount)
+	err := builds.Scan(&buildCount)
+	if err != nil {
+		errs.Add(err)
+	}
 	r.mb.RecordTotalBuildsDataPoint(now, int64(buildCount))
 
 	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'pending'")
-	builds.Scan(&buildCount)
+	err = builds.Scan(&buildCount)
+	if err != nil {
+		errs.Add(err)
+	}
 	r.mb.RecordPendingBuildsDataPoint(now, int64(buildCount))
 
 	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'running'")
-	builds.Scan(&buildCount)
+	err = builds.Scan(&buildCount)
+	if err != nil {
+		errs.Add(err)
+	}
 	r.mb.RecordRunningBuildsDataPoint(now, int64(buildCount))
 
 	builds = r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
-	builds.Scan(&buildCount)
+	err = builds.Scan(&buildCount)
+	if err != nil {
+		errs.Add(err)
+	}
 	r.mb.RecordRestartedBuildsDataPoint(now, int64(buildCount))
 }
