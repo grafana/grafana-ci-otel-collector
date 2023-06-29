@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scrapererror"
-	"go.uber.org/zap"
 )
 
 type droneScraper struct {
@@ -57,7 +56,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 	rows, err := r.db.Query(ctx, "SELECT count(*), build_status FROM builds GROUP BY build_status")
 
 	if err != nil {
-		r.settings.Logger.Error("Query error", zap.Error(err))
+		errs.Add(err)
 	}
 
 	values := make(map[metadata.AttributeBuildStatus]int64)
@@ -65,7 +64,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		var status string
 		err := rows.Scan(&buildCount, &status)
 		if err != nil {
-			r.settings.Logger.Error("Error scanning row", zap.Error(err))
+			errs.Add(err)
 			continue
 		}
 
@@ -85,6 +84,9 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 	}
 
 	builds := r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
-	builds.Scan(&buildCount)
+	err = builds.Scan(&buildCount)
+	if err != nil {
+		errs.Add(err)
+	}
 	r.mb.RecordRestartsTotalDataPoint(now, buildCount)
 }
