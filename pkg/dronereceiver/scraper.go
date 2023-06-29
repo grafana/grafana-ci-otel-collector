@@ -60,6 +60,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		r.settings.Logger.Error("Query error", zap.Error(err))
 	}
 
+	values := make(map[metadata.AttributeBuildStatus]int64)
 	for rows.Next() {
 		var status string
 		err := rows.Scan(&buildCount, &status)
@@ -68,10 +69,18 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 			continue
 		}
 
-		if statusAttr, ok := metadata.MapAttributeBuildStatus[status]; ok {
-			r.mb.RecordBuildsTotalDataPoint(now, buildCount, statusAttr)
+		if key, ok := metadata.MapAttributeBuildStatus[status]; ok {
+			values[key] = buildCount
 		} else {
-			r.mb.RecordBuildsTotalDataPoint(now, buildCount, statusAttr)
+			values[metadata.AttributeBuildStatusUnknown] += buildCount
+		}
+	}
+
+	for _, statusAttr := range metadata.MapAttributeBuildStatus {
+		if val, ok := values[statusAttr]; ok {
+			r.mb.RecordBuildsTotalDataPoint(now, val, statusAttr)
+		} else {
+			r.mb.RecordBuildsTotalDataPoint(now, 0, statusAttr)
 		}
 	}
 
