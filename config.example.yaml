@@ -17,7 +17,7 @@ exporters:
     tls:
       insecure: true
   prometheus:
-    endpoint: 'localhost:9090'
+    endpoint: 'localhost:9091'
     send_timestamps: true
     metric_expiration: 180m
     namespace: ci
