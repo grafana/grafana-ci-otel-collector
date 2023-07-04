@@ -24,6 +24,14 @@ metrics_generator:
     remote_write:
       - url: http://host.docker.internal:9090/api/v1/write
         send_exemplars: true
+  processor:
+    span_metrics:
+      intrinsic_dimensions: # Remove labels that are related to distributed systems
+        service: false # Always build
+        span_kind: false # Not applicable
+        status_code: false # set this to status.code span attribute somehow?
+      dimensions:
+        - "code"
 
 storage:
   trace:
