@@ -29,9 +29,10 @@ metrics_generator:
       intrinsic_dimensions: # Remove labels that are related to distributed systems
         service: false # Always build
         span_kind: false # Not applicable
-        status_code: false # set this to status.code span attribute somehow?
+        status_code: true # set this to status.code span attribute somehow?
       dimensions:
-        - "code"
+        - "repo.name"
+        - "repo.branch"
 
 storage:
   trace:

@@ -51,6 +51,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 
 	build := completedBuild.Build
+	repo := completedBuild.Repo
 
 	if build.Finished == 0 {
 		return
@@ -74,17 +75,19 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	scopeSpans.Scope().SetVersion("0.1.0")
 
 	resourceAttrs := resourceSpan.Resource().Attributes()
-	resourceAttrs.PutStr(conventions.AttributeServiceName, "build")
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
+	resourceAttrs.PutStr(conventions.AttributeServiceName, "drone")
 	resourceAttrs.PutInt("build.number", build.Number)
 	resourceAttrs.PutInt("build.id", build.ID)
+	resourceAttrs.PutStr("repo.name", repo.Name)
+	resourceAttrs.PutStr("repo.branch", repo.Branch)
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 
-	buildSpan.SetName(build.Title)
+	//buildSpan.SetName(build.Title)
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
@@ -97,6 +100,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
 		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
 
+		stageSpan.Status().SetCode(ptrace.StatusCode(stage.ExitCode))
 		stageSpan.SetName(stage.Name)
 		stageSpan.SetTraceID(traceId)
 		stageSpan.SetSpanID(stageId)
@@ -110,6 +114,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetTraceID(traceId)
 			stepSpan.SetParentSpanID(stageId)
 			stepSpan.SetSpanID(NewSpanID())
+
+			stepSpan.Status().SetCode(ptrace.StatusCode(step.ExitCode))
 
 			stepSpan.SetName(step.Name)
 
