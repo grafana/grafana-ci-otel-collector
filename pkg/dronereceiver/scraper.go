@@ -77,9 +77,9 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 
 	for _, statusAttr := range metadata.MapAttributeBuildStatus {
 		if val, ok := values[statusAttr]; ok {
-			r.mb.RecordBuildsTotalDataPoint(now, val, statusAttr)
+			r.mb.RecordBuildsNumberDataPoint(now, val, statusAttr)
 		} else {
-			r.mb.RecordBuildsTotalDataPoint(now, 0, statusAttr)
+			r.mb.RecordBuildsNumberDataPoint(now, 0, statusAttr)
 		}
 	}
 

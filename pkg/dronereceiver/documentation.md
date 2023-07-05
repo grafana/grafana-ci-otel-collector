@@ -12,13 +12,13 @@ metrics:
     enabled: false
 ```
 
-### builds_total
+### builds_number
 
-Total number of builds.
+Number of builds.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | true |
+| 1 | Sum | Int | Cumulative | false |
 
 #### Attributes
 

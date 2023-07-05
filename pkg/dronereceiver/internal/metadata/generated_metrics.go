@@ -74,24 +74,24 @@ var MapAttributeBuildStatus = map[string]AttributeBuildStatus{
 	"unknown":                 AttributeBuildStatusUnknown,
 }
 
-type metricBuildsTotal struct {
+type metricBuildsNumber struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills builds_total metric with initial data.
-func (m *metricBuildsTotal) init() {
-	m.data.SetName("builds_total")
-	m.data.SetDescription("Total number of builds.")
+// init fills builds_number metric with initial data.
+func (m *metricBuildsNumber) init() {
+	m.data.SetName("builds_number")
+	m.data.SetDescription("Number of builds.")
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricBuildsTotal) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string) {
+func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -103,14 +103,14 @@ func (m *metricBuildsTotal) recordDataPoint(start pcommon.Timestamp, ts pcommon.
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricBuildsTotal) updateCapacity() {
+func (m *metricBuildsNumber) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricBuildsTotal) emit(metrics pmetric.MetricSlice) {
+func (m *metricBuildsNumber) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -118,8 +118,8 @@ func (m *metricBuildsTotal) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricBuildsTotal(cfg MetricConfig) metricBuildsTotal {
-	m := metricBuildsTotal{config: cfg}
+func newMetricBuildsNumber(cfg MetricConfig) metricBuildsNumber {
+	m := metricBuildsNumber{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -186,7 +186,7 @@ type MetricsBuilder struct {
 	resourceCapacity    int                 // maximum observed number of resource attributes.
 	metricsBuffer       pmetric.Metrics     // accumulates metrics data before emitting.
 	buildInfo           component.BuildInfo // contains version information
-	metricBuildsTotal   metricBuildsTotal
+	metricBuildsNumber  metricBuildsNumber
 	metricRestartsTotal metricRestartsTotal
 }
 
@@ -205,7 +205,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSetting
 		startTime:           pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:       pmetric.NewMetrics(),
 		buildInfo:           settings.BuildInfo,
-		metricBuildsTotal:   newMetricBuildsTotal(mbc.Metrics.BuildsTotal),
+		metricBuildsNumber:  newMetricBuildsNumber(mbc.Metrics.BuildsNumber),
 		metricRestartsTotal: newMetricRestartsTotal(mbc.Metrics.RestartsTotal),
 	}
 	for _, op := range options {
@@ -260,7 +260,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/dronereceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricBuildsTotal.emit(ils.Metrics())
+	mb.metricBuildsNumber.emit(ils.Metrics())
 	mb.metricRestartsTotal.emit(ils.Metrics())
 
 	for _, op := range rmo {
@@ -282,9 +282,9 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 	return metrics
 }
 
-// RecordBuildsTotalDataPoint adds a data point to builds_total metric.
-func (mb *MetricsBuilder) RecordBuildsTotalDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus) {
-	mb.metricBuildsTotal.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String())
+// RecordBuildsNumberDataPoint adds a data point to builds_number metric.
+func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus) {
+	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String())
 }
 
 // RecordRestartsTotalDataPoint adds a data point to restarts_total metric.

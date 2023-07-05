@@ -56,7 +56,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildsTotalDataPoint(ts, 1, AttributeBuildStatus(1))
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatus(1))
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -87,14 +87,14 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "builds_total":
-					assert.False(t, validatedMetrics["builds_total"], "Found a duplicate in the metrics slice: builds_total")
-					validatedMetrics["builds_total"] = true
+				case "builds_number":
+					assert.False(t, validatedMetrics["builds_number"], "Found a duplicate in the metrics slice: builds_number")
+					validatedMetrics["builds_number"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "Total number of builds.", ms.At(i).Description())
+					assert.Equal(t, "Number of builds.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
-					assert.Equal(t, true, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, false, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
 					dp := ms.At(i).Sum().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())

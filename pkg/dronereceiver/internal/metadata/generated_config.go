@@ -25,13 +25,13 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for dronereceiver metrics.
 type MetricsConfig struct {
-	BuildsTotal   MetricConfig `mapstructure:"builds_total"`
+	BuildsNumber  MetricConfig `mapstructure:"builds_number"`
 	RestartsTotal MetricConfig `mapstructure:"restarts_total"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		BuildsTotal: MetricConfig{
+		BuildsNumber: MetricConfig{
 			Enabled: true,
 		},
 		RestartsTotal: MetricConfig{

@@ -34,13 +34,13 @@ attributes:
     type: string
 
 metrics:
-  builds_total:
+  builds_number:
     enabled: true
-    description: Total number of builds.
+    description: Number of builds.
     unit: 1
     sum:
       value_type: int
-      monotonic: true
+      monotonic: false
       aggregation: cumulative
     attributes: [build.status]
   restarts_total:

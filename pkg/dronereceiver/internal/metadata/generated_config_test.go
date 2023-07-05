@@ -26,7 +26,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsTotal:   MetricConfig{Enabled: true},
+					BuildsNumber:  MetricConfig{Enabled: true},
 					RestartsTotal: MetricConfig{Enabled: true},
 				},
 			},
@@ -35,7 +35,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsTotal:   MetricConfig{Enabled: false},
+					BuildsNumber:  MetricConfig{Enabled: false},
 					RestartsTotal: MetricConfig{Enabled: false},
 				},
 			},
