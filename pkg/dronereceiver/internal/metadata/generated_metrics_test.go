@@ -56,19 +56,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordPendingBuildsDataPoint(ts, 1)
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatus(1))
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordRestartedBuildsDataPoint(ts, 1)
-
-			defaultMetricsCount++
-			allMetricsCount++
-			mb.RecordRunningBuildsDataPoint(ts, 1)
-
-			defaultMetricsCount++
-			allMetricsCount++
-			mb.RecordTotalBuildsDataPoint(ts, 1)
+			mb.RecordRestartsTotalDataPoint(ts, 1)
 
 			metrics := mb.Emit()
 
@@ -95,12 +87,12 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "pending_builds":
-					assert.False(t, validatedMetrics["pending_builds"], "Found a duplicate in the metrics slice: pending_builds")
-					validatedMetrics["pending_builds"] = true
+				case "builds_number":
+					assert.False(t, validatedMetrics["builds_number"], "Found a duplicate in the metrics slice: builds_number")
+					validatedMetrics["builds_number"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "Total number of pending builds.", ms.At(i).Description())
+					assert.Equal(t, "Number of builds.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
 					assert.Equal(t, false, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
@@ -109,40 +101,15 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-				case "restarted_builds":
-					assert.False(t, validatedMetrics["restarted_builds"], "Found a duplicate in the metrics slice: restarted_builds")
-					validatedMetrics["restarted_builds"] = true
+					attrVal, ok := dp.Attributes().Get("build.status")
+					assert.True(t, ok)
+					assert.Equal(t, "pending", attrVal.Str())
+				case "restarts_total":
+					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
+					validatedMetrics["restarts_total"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
 					assert.Equal(t, "Total number build restarts.", ms.At(i).Description())
-					assert.Equal(t, "1", ms.At(i).Unit())
-					assert.Equal(t, true, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-				case "running_builds":
-					assert.False(t, validatedMetrics["running_builds"], "Found a duplicate in the metrics slice: running_builds")
-					validatedMetrics["running_builds"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "Total number of running builds.", ms.At(i).Description())
-					assert.Equal(t, "1", ms.At(i).Unit())
-					assert.Equal(t, false, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-				case "total_builds":
-					assert.False(t, validatedMetrics["total_builds"], "Found a duplicate in the metrics slice: total_builds")
-					validatedMetrics["total_builds"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "Total number of builds.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
 					assert.Equal(t, true, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())

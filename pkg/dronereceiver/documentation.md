@@ -12,33 +12,23 @@ metrics:
     enabled: false
 ```
 
-### pending_builds
+### builds_number
 
-Total number of pending builds.
+Number of builds.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | 1 | Sum | Int | Cumulative | false |
 
-### restarted_builds
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| build.status | Build status | Str: ``pending``, ``running``, ``success``, ``failure``, ``skipped``, ``error``, ``killed``, ``blocked``, ``paused``, ``waiting_on_dependencies``, ``unknown`` |
+
+### restarts_total
 
 Total number build restarts.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | true |
-
-### running_builds
-
-Total number of running builds.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | false |
-
-### total_builds
-
-Total number of builds.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |

@@ -25,24 +25,16 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for dronereceiver metrics.
 type MetricsConfig struct {
-	PendingBuilds   MetricConfig `mapstructure:"pending_builds"`
-	RestartedBuilds MetricConfig `mapstructure:"restarted_builds"`
-	RunningBuilds   MetricConfig `mapstructure:"running_builds"`
-	TotalBuilds     MetricConfig `mapstructure:"total_builds"`
+	BuildsNumber  MetricConfig `mapstructure:"builds_number"`
+	RestartsTotal MetricConfig `mapstructure:"restarts_total"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		PendingBuilds: MetricConfig{
+		BuildsNumber: MetricConfig{
 			Enabled: true,
 		},
-		RestartedBuilds: MetricConfig{
-			Enabled: true,
-		},
-		RunningBuilds: MetricConfig{
-			Enabled: true,
-		},
-		TotalBuilds: MetricConfig{
+		RestartsTotal: MetricConfig{
 			Enabled: true,
 		},
 	}

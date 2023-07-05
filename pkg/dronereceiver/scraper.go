@@ -52,32 +52,41 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 }
 
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
-	var buildCount int
-	builds := r.db.QueryRow(ctx, "SELECT count(*) FROM builds")
-	err := builds.Scan(&buildCount)
+	var buildCount int64
+	rows, err := r.db.Query(ctx, "SELECT count(*), build_status FROM builds GROUP BY build_status")
+
 	if err != nil {
 		errs.Add(err)
 	}
-	r.mb.RecordTotalBuildsDataPoint(now, int64(buildCount))
 
-	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'pending'")
+	values := make(map[metadata.AttributeBuildStatus]int64)
+	for rows.Next() {
+		var status string
+		err := rows.Scan(&buildCount, &status)
+		if err != nil {
+			errs.Add(err)
+			continue
+		}
+
+		if key, ok := metadata.MapAttributeBuildStatus[status]; ok {
+			values[key] = buildCount
+		} else {
+			values[metadata.AttributeBuildStatusUnknown] += buildCount
+		}
+	}
+
+	for _, statusAttr := range metadata.MapAttributeBuildStatus {
+		if val, ok := values[statusAttr]; ok {
+			r.mb.RecordBuildsNumberDataPoint(now, val, statusAttr)
+		} else {
+			r.mb.RecordBuildsNumberDataPoint(now, 0, statusAttr)
+		}
+	}
+
+	builds := r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
 	err = builds.Scan(&buildCount)
 	if err != nil {
 		errs.Add(err)
 	}
-	r.mb.RecordPendingBuildsDataPoint(now, int64(buildCount))
-
-	builds = r.db.QueryRow(ctx, "SELECT count(*) FROM builds WHERE build_status = 'running'")
-	err = builds.Scan(&buildCount)
-	if err != nil {
-		errs.Add(err)
-	}
-	r.mb.RecordRunningBuildsDataPoint(now, int64(buildCount))
-
-	builds = r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
-	err = builds.Scan(&buildCount)
-	if err != nil {
-		errs.Add(err)
-	}
-	r.mb.RecordRestartedBuildsDataPoint(now, int64(buildCount))
+	r.mb.RecordRestartsTotalDataPoint(now, buildCount)
 }

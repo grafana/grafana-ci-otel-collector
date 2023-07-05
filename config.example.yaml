@@ -17,9 +17,10 @@ exporters:
     tls:
       insecure: true
   prometheus:
-    endpoint: 'localhost:9090'
+    endpoint: 'localhost:9091'
     send_timestamps: true
     metric_expiration: 180m
+    namespace: ci
     enable_open_metrics: true
     resource_to_telemetry_conversion:
       enabled: true

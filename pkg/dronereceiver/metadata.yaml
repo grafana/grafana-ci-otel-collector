@@ -14,33 +14,36 @@ status:
 resource_attributes:
 
 attributes:
+  build.status:
+    description: Build status
+    # TODO: double check if the following list is correct
+    enum:
+      [
+        pending,
+        running,
+        success,
+        failure,
+        skipped,
+        error,
+        killed,
+        blocked,
+        paused,
+        waiting_on_dependencies,
+        unknown,
+      ]
+    type: string
 
 metrics:
-  total_builds:
+  builds_number:
     enabled: true
-    description: Total number of builds.
-    unit: 1
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation: cumulative
-  running_builds:
-    enabled: true
-    description: Total number of running builds.
+    description: Number of builds.
     unit: 1
     sum:
       value_type: int
       monotonic: false
       aggregation: cumulative
-  pending_builds:
-    enabled: true
-    description: Total number of pending builds.
-    unit: 1
-    sum:
-      value_type: int
-      monotonic: false
-      aggregation: cumulative
-  restarted_builds:
+    attributes: [build.status]
+  restarts_total:
     enabled: true
     description: Total number build restarts.
     unit: 1
