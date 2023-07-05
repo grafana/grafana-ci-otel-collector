@@ -47,6 +47,7 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	r.scrapeBuilds(ctx, now, errs)
+	r.scrapeRestartedBuilds(ctx, now, errs)
 
 	return r.mb.Emit(), errs.Combine()
 }
@@ -83,10 +84,14 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		}
 	}
 
-	builds := r.db.QueryRow(ctx, "SELECT SUM(occurrence_count - 1) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
-	err = builds.Scan(&buildCount)
+}
+
+func (r *droneScraper) scrapeRestartedBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
+	var count int64
+	builds := r.db.QueryRow(ctx, "SELECT COALESCE(SUM(occurrence_count - 1), 0) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
+	err := builds.Scan(&count)
 	if err != nil {
 		errs.Add(err)
 	}
-	r.mb.RecordRestartsTotalDataPoint(now, buildCount)
+	r.mb.RecordRestartsTotalDataPoint(now, count)
 }
