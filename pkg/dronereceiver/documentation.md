@@ -16,6 +16,8 @@ metrics:
 
 Number of builds.
 
+Currently there's no way to differentiate between restarted builds and manually triggered builds. This means builds started manually (i.e. via Drone UI or via APis) will count towards this metric should they run against a branch for which a build has already been executed.
+
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | 1 | Sum | Int | Cumulative | false |
