@@ -27,9 +27,8 @@ metrics_generator:
   processor:
     span_metrics:
       intrinsic_dimensions: # Remove labels that are related to distributed systems
-        service: false # Always build
+        service: false # Always drone
         span_kind: false # Not applicable
-        status_code: true # set this to status.code span attribute somehow?
       dimensions:
         - "repo.name"
         - "repo.branch"
@@ -43,4 +42,4 @@ storage:
       path: /tmp/tempo/blocks
 
 overrides:
-  metrics_generator_processors: [service-graphs, span-metrics] # enables metrics generator
+  metrics_generator_processors: [span-metrics] # enables metrics generator
