@@ -31,6 +31,9 @@ type droneWebhookHandler struct {
 	nextTraceConsumer consumer.Traces
 }
 
+const CI_KIND = "ci.kind"
+const CI_STAGE = "ci.stage"
+
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
 	// TODO: this is just a stub for now
 	d.logger.Info("Got request")
@@ -86,6 +89,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
+	buildSpan.Attributes().PutStr(CI_KIND, "build")
 
 	//buildSpan.SetName(build.Title)
 
@@ -105,6 +109,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.SetTraceID(traceId)
 		stageSpan.SetSpanID(stageId)
 		stageSpan.SetParentSpanID(buildId)
+		stageSpan.Attributes().PutStr(CI_KIND, "stage")
 
 		stageSpan.SetStartTimestamp(pcommon.Timestamp(stage.Started * 1000000000))
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
@@ -114,6 +119,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetTraceID(traceId)
 			stepSpan.SetParentSpanID(stageId)
 			stepSpan.SetSpanID(NewSpanID())
+			stepSpan.Attributes().PutStr(CI_KIND, "step")
+			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
 
 			stepSpan.Status().SetCode(ptrace.StatusCode(step.ExitCode))
 

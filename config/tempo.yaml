@@ -32,6 +32,8 @@ metrics_generator:
       dimensions:
         - "repo.name"
         - "repo.branch"
+        - "ci.kind"
+        - "ci.stage"
 
 storage:
   trace:
