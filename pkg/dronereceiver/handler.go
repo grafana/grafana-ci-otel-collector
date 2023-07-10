@@ -39,7 +39,11 @@ func getOtelExitCode(code int) ptrace.StatusCode {
 		return ptrace.StatusCodeOk
 	}
 
-	return ptrace.StatusCodeError
+	if code == 1 {
+		return ptrace.StatusCodeError
+	}
+
+	return ptrace.StatusCodeUnset
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
