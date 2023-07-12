@@ -34,6 +34,7 @@ metrics_generator:
         - "repo.branch"
         - "ci.kind"
         - "ci.stage"
+  metrics_ingestion_time_range_slack: 3600s
 
 storage:
   trace:
