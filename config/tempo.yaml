@@ -22,8 +22,19 @@ metrics_generator:
   storage:
     path: /tmp/tempo/generator/wal
     remote_write:
-      - url: http://prometheus:9090/api/v1/write
+      - url: http://host.docker.internal:9090/api/v1/write
         send_exemplars: true
+  processor:
+    span_metrics:
+      intrinsic_dimensions: # Remove labels that are related to distributed systems
+        service: false # Always drone
+        span_kind: false # Not applicable
+      dimensions:
+        - "repo.name"
+        - "repo.branch"
+        - "ci.kind"
+        - "ci.stage"
+  metrics_ingestion_time_range_slack: 3600s
 
 storage:
   trace:
@@ -34,4 +45,4 @@ storage:
       path: /tmp/tempo/blocks
 
 overrides:
-  metrics_generator_processors: [service-graphs, span-metrics] # enables metrics generator
+  metrics_generator_processors: [span-metrics] # enables metrics generator
