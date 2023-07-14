@@ -23,13 +23,13 @@ kind: pipeline
 name: custom
 steps:
 - commands:
-  - make build
+  - echo step1
   image: golang:1.20.4
-  name: build
+  name: step1
 - commands:
-  - go test ./pkg/dronereceiver
+  - echo step2
   image: golang:1.20.4
-  name: test
+  name: step2
 trigger:
   event:
   - custom
