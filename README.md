@@ -195,10 +195,11 @@ about your local machine, discovered and scraped using the agent.
 In the `config.yaml` (provided that you've copied these bits from config.example.yaml):
 
 ```yaml
-prometheusremotewrite:
-  endpoint: "https://prometheus-dev-01-dev-us-central-0.grafana-dev.net/api/prom/push"
-  auth:
-    authenticator: basicauth/client
+exporters:
+    prometheusremotewrite:
+      endpoint: "https://prometheus-dev-01-dev-us-central-0.grafana-dev.net/api/prom/push"
+      auth:
+        authenticator: basicauth/client
 
 extensions:
   basicauth/client:
