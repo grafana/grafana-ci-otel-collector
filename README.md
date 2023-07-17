@@ -214,7 +214,7 @@ you need to replace the `username` and `password` with the ones that are specifi
 Re-run the collector to pick up the changes. After that you should be able to rerun [the same query example in Explore](https://gracie.grafana-dev.net/goto/mP1u6cC4R?orgId=1)
 but this time being able to see the desired metrics such as `builds_metrics` etc.
 
-As of July 14th 2023, both Prometheus exported and Prometheus Remote Write exporter are used, for ease of local
+As of July 14th 2023, both Prometheus exporter and Prometheus Remote Write exporter are used, for ease of local
 development.
 
 ## Make CI/CD changes
