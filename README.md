@@ -1,4 +1,4 @@
-# grafana-ci-collector
+mi# grafana-ci-collector
 
 ## Development
 
@@ -207,6 +207,12 @@ extensions:
       username: username
       password: password
 
+
+service:
+  pipelines:
+    ...
+    metrics:
+      exporters: [prometheusremotewrite]
 ```
 
 you need to replace the `username` and `password` with the ones that are specified in your `agent.yaml` file
