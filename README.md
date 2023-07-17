@@ -1,4 +1,4 @@
-mi# grafana-ci-collector
+# grafana-ci-collector
 
 ## Development
 
