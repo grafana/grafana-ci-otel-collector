@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"time"
 
 	drone "github.com/drone/drone-go/drone"
 	"github.com/google/uuid"
@@ -34,6 +35,7 @@ type droneWebhookHandler struct {
 
 const CI_KIND = "ci.kind"
 const CI_STAGE = "ci.stage"
+const CI_STEP = "ci.step"
 
 func getOtelExitCode(code int) ptrace.StatusCode {
 	if code == 0 {
@@ -153,16 +155,31 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 			lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
 			if err != nil {
-				break
+				d.logger.Error("error retrieving logs", zap.Error(err))
+				continue
 			}
+			// TODO: put this somewhere for logfmt
+			// 	processors:
+			//   resource:
+			//     attributes:
+			//     - action: insert
+			//       key: loki.format
+			//       value: logfmt
 
 			log := logs.ResourceLogs().AppendEmpty()
 			logScope := log.ScopeLogs().AppendEmpty()
+
+			now := pcommon.NewTimestampFromTime(time.Now())
+
 			for _, line := range lines {
 				record := logScope.LogRecords().AppendEmpty()
 				record.SetTraceID(traceId)
 				record.SetSpanID(stepSpanId)
-				record.SetTimestamp(pcommon.Timestamp(line.Timestamp))
+
+				record.SetObservedTimestamp(now)
+				record.SetTimestamp(pcommon.Timestamp((step.Started + line.Timestamp) * 1000000000))
+				record.Attributes().PutStr(CI_STAGE, stage.Name)
+				record.Attributes().PutStr(CI_STEP, step.Name)
 				record.Body().SetStr(line.Message)
 			}
 		}
@@ -170,6 +187,9 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 	if d.nextTraceConsumer != nil {
 		d.nextTraceConsumer.ConsumeTraces(req.Context(), traces)
+	}
+	if d.nextLogsConsumer != nil {
+		d.nextLogsConsumer.ConsumeLogs(req.Context(), logs)
 	}
 }
 
