@@ -15,6 +15,7 @@ processors:
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.79.0
 
 extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.79.0
 
 receivers:
   - gomod: 'github.com/grafana/grafana-collector/dronereceiver v0.1.0'
