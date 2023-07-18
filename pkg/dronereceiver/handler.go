@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 	"go.uber.org/zap"
@@ -51,6 +52,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	d.logger.Info("Got request")
 
 	traces := ptrace.NewTraces()
+	logs := plog.NewLogs()
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -134,10 +136,11 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
 
 		for _, step := range stage.Steps {
+			stepSpanId := NewSpanID()
 			stepSpan := stageSpans.Spans().AppendEmpty()
 			stepSpan.SetTraceID(traceId)
 			stepSpan.SetParentSpanID(stageId)
-			stepSpan.SetSpanID(NewSpanID())
+			stepSpan.SetSpanID(stepSpanId)
 			stepSpan.Attributes().PutStr(CI_KIND, "step")
 			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
 
@@ -147,6 +150,21 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
+
+			lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
+			if err != nil {
+				break
+			}
+
+			log := logs.ResourceLogs().AppendEmpty()
+			logScope := log.ScopeLogs().AppendEmpty()
+			for _, line := range lines {
+				record := logScope.LogRecords().AppendEmpty()
+				record.SetTraceID(traceId)
+				record.SetSpanID(stepSpanId)
+				record.SetTimestamp(pcommon.Timestamp(line.Timestamp))
+				record.Body().SetStr(line.Message)
+			}
 		}
 	}
 
