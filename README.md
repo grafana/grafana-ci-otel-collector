@@ -177,53 +177,6 @@ Click `Save & Test`
 You are now ready to see your traces collector and play around with it using Tempo in Explore, or while building a new
 dashboard!
 
-## Setup Prometheus RW
-### Install and use the Grafana Agent
-Together with the Prometheus exporter which exports metrics to `localhost:9091` we can use 
-Prometheus Remote Write (RW) and have the Grafana Agent collect the metrics on our behalf.
-
-In order to make this work, we need to go to our instance and follow the instructions to install Grafana Agent 
-(in this case https://gracie.grafana-dev.net/connections/infrastructure/grafana-agent).
-
-Follow the instructions to install Grafana Agent on your local machine.
-
-After the above is done, and once you are sure that the agent runs already as a service on your local machine,
-running [a query example in Explore](https://gracie.grafana-dev.net/goto/mP1u6cC4R?orgId=1), should give you info 
-about your local machine, discovered and scraped using the agent.
-
-### Configure the Grafana Agent for the OTel Collector
-In the `config.yaml` (provided that you've copied these bits from config.example.yaml):
-
-```yaml
-exporters:
-    prometheusremotewrite:
-      endpoint: "https://prometheus-dev-01-dev-us-central-0.grafana-dev.net/api/prom/push"
-      auth:
-        authenticator: basicauth/client
-
-extensions:
-  basicauth/client:
-    client_auth:
-      username: username
-      password: password
-
-
-service:
-  pipelines:
-    ...
-    metrics:
-      exporters: [prometheusremotewrite]
-```
-
-you need to replace the `username` and `password` with the ones that are specified in your `agent.yaml` file
-(found in `$(brew --prefix)/etc/grafana-agent/config.yml` for MacOS users).
-
-Re-run the collector to pick up the changes. After that you should be able to rerun [the same query example in Explore](https://gracie.grafana-dev.net/goto/mP1u6cC4R?orgId=1)
-but this time being able to see the desired metrics such as `builds_metrics` etc.
-
-As of July 14th 2023, both Prometheus exporter and Prometheus Remote Write exporter are used, for ease of local
-development.
-
 ## Make CI/CD changes
 
 See [Make CI/CD changes](.drone/README.md)

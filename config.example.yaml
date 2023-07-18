@@ -16,24 +16,11 @@ exporters:
     endpoint: localhost:4317
     tls:
       insecure: true
-  prometheus:
-    endpoint: 'localhost:9091'
-    send_timestamps: true
-    metric_expiration: 180m
+  prometheusremotewrite:
+    endpoint: 'http://localhost:9090/api/v1/write'
     namespace: ci
-    enable_open_metrics: true
     resource_to_telemetry_conversion:
       enabled: true
-  prometheusremotewrite:
-    endpoint: "https://prometheus-dev-01-dev-us-central-0.grafana-dev.net/api/prom/push"
-    auth:
-      authenticator: basicauth/client
-
-extensions:
-  basicauth/client:
-    client_auth:
-      username: username
-      password: password
 
 service:
   pipelines:
@@ -48,7 +35,7 @@ service:
     metrics:
       receivers: [dronereceiver]
       processors: []
-      exporters: [prometheusremotewrite, prometheus, logging]
+      exporters: [prometheusremotewrite, logging]
 
   telemetry:
     logs:
