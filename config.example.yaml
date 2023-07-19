@@ -33,9 +33,9 @@ service:
     logs:
       receivers: [dronereceiver]
       processors: []
-      exporters: [logging]
+      exporters: [loki, logging]
     metrics:
-      receivers: [loki, dronereceiver]
+      receivers: [dronereceiver]
       processors: []
       exporters: [prometheusremotewrite, logging]
 
