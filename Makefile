@@ -16,6 +16,6 @@ docker-build:
 docker-run:
 	@echo "running docker container"
 	docker run -it -v $$PWD:/tmp -e NETWORK_HOST=host.docker.internal -p 3333:3333 \
- 		test-collector:rw-no-agent --config /tmp/config.yaml
+ 		grafana-ci-otel-collector:latest --config /tmp/config.yaml
 
 docker: docker-build docker-run
