@@ -158,13 +158,6 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 				d.logger.Error("error retrieving logs", zap.Error(err))
 				continue
 			}
-			// TODO: put this somewhere for logfmt
-			// 	processors:
-			//   resource:
-			//     attributes:
-			//     - action: insert
-			//       key: loki.format
-			//       value: logfmt
 
 			log := logs.ResourceLogs().AppendEmpty()
 			logScope := log.ScopeLogs().AppendEmpty()
