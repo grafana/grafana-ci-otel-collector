@@ -16,7 +16,6 @@ docker-build:
 docker-run:
 	@echo "running docker container"
 	docker run -it -v $$PWD:/tmp -e NETWORK_HOST=host.docker.internal -p 3333:3333 \
-		--add-host=host.docker.internal:host-gateway \
  		test-collector:rw-no-agent --config /tmp/config.yaml
 
 docker: docker-build docker-run
