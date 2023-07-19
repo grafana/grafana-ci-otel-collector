@@ -165,7 +165,7 @@ make docker-run
 
 Do both at once:
 ```bash
-make drone
+make docker
 ```
 
 **NOTES:** 
