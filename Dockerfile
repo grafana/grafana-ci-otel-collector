@@ -1,6 +1,8 @@
 FROM golang:1.20-alpine3.17 as go-builder
 WORKDIR /collector
 
+ENV NETWORK_HOST=host.docker.internal
+
 COPY . .
 
 RUN go install github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen@v0.79.0

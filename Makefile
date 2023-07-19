@@ -11,7 +11,7 @@ run:
 
 docker-build:
 	@echo "building docker container grafana-ci-otel-collector"
-	docker build -e NETWORK_HOST=host.docker.internal -t grafana-ci-otel-collector .
+	docker build -t grafana-ci-otel-collector .
 
 docker-run:
 	@echo "running docker container"
