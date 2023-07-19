@@ -31,7 +31,7 @@ ruler:
 
 ingester:
   chunk_target_size: 1000
-  max_chunk_age: 10s
+  max_chunk_age: 1h
   chunk_idle_period: 10s
   flush_check_period: 10s
 # By default, Loki will send anonymous, but uniquely-identifiable usage and configuration
