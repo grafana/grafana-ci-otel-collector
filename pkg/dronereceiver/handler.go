@@ -34,12 +34,12 @@ type droneWebhookHandler struct {
 const CI_KIND = "ci.kind"
 const CI_STAGE = "ci.stage"
 
-func getOtelExitCode(code int) ptrace.StatusCode {
-	if code == 0 {
+func getOtelExitCode(code string) ptrace.StatusCode {
+	if code == "success" {
 		return ptrace.StatusCodeOk
 	}
 
-	if code == 1 {
+	if code == "failure" {
 		return ptrace.StatusCodeError
 	}
 
@@ -72,12 +72,6 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	buildCode := 0
-
-	if build.Error != "" {
-		buildCode = 1
-	}
-
 	traceId := NewTraceID()
 	buildId := NewSpanID()
 
@@ -108,9 +102,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 	buildSpan.Attributes().PutStr(CI_KIND, "build")
-	buildSpan.Status().SetCode(getOtelExitCode(buildCode))
-
-	//buildSpan.SetName(build.Title)
+	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
@@ -123,7 +115,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
 		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
 
-		stageSpan.Status().SetCode(getOtelExitCode(stage.ExitCode))
+		stageSpan.Status().SetCode(getOtelExitCode(stage.Status))
 		stageSpan.SetName(stage.Name)
 		stageSpan.SetTraceID(traceId)
 		stageSpan.SetSpanID(stageId)
@@ -141,7 +133,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.Attributes().PutStr(CI_KIND, "step")
 			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
 
-			stepSpan.Status().SetCode(getOtelExitCode(step.ExitCode))
+			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
 
 			stepSpan.SetName(step.Name)
 
