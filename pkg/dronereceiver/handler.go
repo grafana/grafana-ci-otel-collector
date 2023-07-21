@@ -104,8 +104,6 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.Attributes().PutStr(CI_KIND, "build")
 	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
 
-	//buildSpan.SetName(build.Title)
-
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
 
