@@ -14,7 +14,7 @@ cp config.example.yaml config.yaml
 ### Building
 
 ```bash
-make metadata && make build
+NETWORK_HOST=localhost && make metadata && make build
 ```
 
 ### Running
@@ -28,7 +28,7 @@ docker-compose up -d
 Then you can start the collector with:
 
 ```bash
-make run
+NETWORK_HOST=localhost && make run
 ```
 
 ## Drone
@@ -146,8 +146,31 @@ receivers:
 ### Start the collector
 
 ```bash
-make metadata && make build && make run
+NETWORK_HOST=localhost && make metadata && make build && make run
 ```
+
+### Spin up the collector as a Docker image
+
+Build the Docker image:
+
+```bash
+make docker-build
+```
+
+Run the Docker image:
+
+```bash
+make docker-run
+```
+
+Do both at once:
+```bash
+make docker
+```
+
+**NOTES:** 
+* When building/running the Docker image, we are specifying `$NETWORK_HOST` var to be `host.docker.internal`.
+* We are forwarding the 3333 port (`-p 3333:3333`) so the `curl` test command in [Generating Traces](#generating-graces) can work.
 
 ## Spin up Grafana as a Docker image locally
 

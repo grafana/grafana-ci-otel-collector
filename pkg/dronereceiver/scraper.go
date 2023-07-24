@@ -2,6 +2,8 @@ package dronereceiver // import "github.com/open-telemetry/opentelemetry-collect
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
@@ -11,6 +13,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scrapererror"
+)
+
+const (
+	localhost = "localhost"
 )
 
 type droneScraper struct {
@@ -27,8 +33,15 @@ func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *droneScrape
 }
 
 func (r *droneScraper) start(_ context.Context, host component.Host) error {
+	networkHost := localhost
+	if networkHostEnv, ok := os.LookupEnv("NETWORK_HOST"); ok {
+		networkHost = networkHostEnv
+	} else {
+		r.settings.Logger.Info("NETWORK_HOST env var is missing, defaulting to localhost")
+	}
+
 	r.settings.Logger.Info("Starting the drone scraper")
-	conn, err := pgx.Connect(context.Background(), "postgres://postgres:postgres@localhost:5432/drone?sslmode=disable")
+	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://postgres:postgres@%s:5432/drone?sslmode=disable", networkHost))
 
 	if err != nil {
 		return err
