@@ -21,6 +21,8 @@ exporters:
     namespace: ci
     resource_to_telemetry_conversion:
       enabled: true
+  loki:
+    endpoint: http://${NETWORK_HOST}:3100/loki/api/v1/push
 
 service:
   pipelines:
@@ -31,7 +33,7 @@ service:
     logs:
       receivers: [dronereceiver]
       processors: []
-      exporters: [logging]
+      exporters: [loki, logging]
     metrics:
       receivers: [dronereceiver]
       processors: []
