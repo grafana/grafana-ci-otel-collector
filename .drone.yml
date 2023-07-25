@@ -48,11 +48,55 @@ steps:
   - go test ./pkg/dronereceiver
   image: golang:1.20.4
   name: test
+- commands:
+  - echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io
+  - docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
+  environment:
+    GCR_CREDENTIALS:
+      from_secret: gcr_credentials
+  image: docker:dind
+  name: build-docker
+  volumes:
+  - name: dockerDind
+    path: /var/run
+- depends_on:
+  - publish-to-gcr
+  image: us.gcr.io/kubernetes-dev/drone/plugins/updater
+  name: update-deployment-tools
+  settings:
+    config_json: |
+      {
+        "destination_branch": "master",
+        "pull_request_branch_prefix": "grafana-ci-otel-collector/",
+        "pull_request_enabled": true,
+        "pull_request_team_reviewers": [],
+        "pull_request_title": "[CI/CD] Update grafana-ci-otel-collector",
+        "repo_name": "deployment_tools",
+        "update_jsonnet_attribute_configs": [
+          {
+            "file_path": "ksonnet/environments/grafana-ci-otel-collector/waves.libsonnet",
+            "jsonnet_key": "collectorImage",
+            "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
+          }
+        ]
+      }
+    github_app_id:
+      from_secret: gh_app_id
+    github_app_installation_id:
+      from_secret: gh_app_installation_id
+    github_app_private_key:
+      from_secret: gh_app_private_key
 trigger:
   branch: main
   event:
   - push
 type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
+- name: dockerDind
+  temp: {}
 ---
 kind: pipeline
 name: verify-gen-pipeline
@@ -70,3 +114,33 @@ trigger:
     include:
     - pkg/dronereceiver/metadata.yaml
 type: docker
+---
+get:
+  name: service-account
+  path: infra/data/ci/gcr-admin
+kind: secret
+name: gcr_credentials
+---
+get:
+  name: app-id
+  path: infra/data/ci/grafana-release-eng/grafana-delivery-bot
+kind: secret
+name: gh_app_id
+---
+get:
+  name: app-installation-id
+  path: infra/data/ci/grafana-release-eng/grafana-delivery-bot
+kind: secret
+name: gh_app_installation_id
+---
+get:
+  name: app-private-key
+  path: infra/data/ci/grafana-release-eng/grafana-delivery-bot
+kind: secret
+name: gh_app_private_key
+---
+get:
+  name: .dockerconfigjson
+  path: secret/data/common/gcr
+kind: secret
+name: dockerconfigjson
