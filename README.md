@@ -59,6 +59,9 @@ DRONE_SERVER_PROXY_HOST=
 DRONE_GITHUB_CLIENT_ID=
 DRONE_GITHUB_CLIENT_SECRET=
 GH_HANDLE=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
 ```
 
 you can copy the example env vars file and replace the values:

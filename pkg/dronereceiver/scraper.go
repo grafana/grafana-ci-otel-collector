@@ -3,6 +3,7 @@ package dronereceiver // import "github.com/open-telemetry/opentelemetry-collect
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
 	"time"
 
@@ -39,9 +40,16 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 	} else {
 		r.settings.Logger.Info("NETWORK_HOST env var is missing, defaulting to localhost")
 	}
+	err := godotenv.Load()
+	if err != nil {
+		r.settings.Logger.Fatal("Error loading .env file")
+	}
+	postgresUser := os.Getenv("POSTGRES_USER")
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	postgresDB := os.Getenv("POSTGRES_DB")
 
 	r.settings.Logger.Info("Starting the drone scraper")
-	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://postgres:postgres@%s:5432/drone?sslmode=disable", networkHost))
+	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", postgresUser, postgresPassword, networkHost, postgresDB))
 
 	if err != nil {
 		return err
