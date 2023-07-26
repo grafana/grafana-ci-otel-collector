@@ -65,35 +65,68 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 	return r.mb.Emit(), errs.Combine()
 }
 
+// repo_slug, build_source, build_status
+type Builds map[string]map[string]map[metadata.AttributeBuildStatus]int64
+
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
 	var buildCount int64
-	rows, err := r.db.Query(ctx, "SELECT count(*), build_status FROM builds GROUP BY build_status")
+	rows, err := r.db.Query(ctx, `
+		SELECT 
+			count(*),
+			build_status,
+			r.repo_slug,
+			build_source 
+		FROM 
+			builds 
+		LEFT JOIN
+			repos r 
+		ON 
+			build_repo_id = r.repo_id  
+		GROUP BY 
+			build_status,
+			r.repo_slug,
+			build_source
+	`)
 
 	if err != nil {
 		errs.Add(err)
 	}
 
-	values := make(map[metadata.AttributeBuildStatus]int64)
+	values := make(Builds)
 	for rows.Next() {
 		var status string
-		err := rows.Scan(&buildCount, &status)
+		var slug string
+		var source string
+		err := rows.Scan(&buildCount, &status, &slug, &source)
 		if err != nil {
 			errs.Add(err)
 			continue
 		}
 
+		if _, ok := values[slug]; !ok {
+			values[slug] = make(map[string]map[metadata.AttributeBuildStatus]int64)
+		}
+
+		if _, ok := values[slug][source]; !ok {
+			values[slug][source] = make(map[metadata.AttributeBuildStatus]int64)
+		}
+
 		if key, ok := metadata.MapAttributeBuildStatus[status]; ok {
-			values[key] = buildCount
+			values[slug][source][key] = buildCount
 		} else {
-			values[metadata.AttributeBuildStatusUnknown] += buildCount
+			values[slug][source][key] += buildCount
 		}
 	}
 
-	for _, statusAttr := range metadata.MapAttributeBuildStatus {
-		if val, ok := values[statusAttr]; ok {
-			r.mb.RecordBuildsNumberDataPoint(now, val, statusAttr)
-		} else {
-			r.mb.RecordBuildsNumberDataPoint(now, 0, statusAttr)
+	for slug, repo := range values {
+		for branch, source := range repo {
+			for _, statusAttr := range metadata.MapAttributeBuildStatus {
+				if val, ok := source[statusAttr]; ok {
+					r.mb.RecordBuildsNumberDataPoint(now, val, statusAttr, slug, branch)
+				} else {
+					r.mb.RecordBuildsNumberDataPoint(now, 0, statusAttr, slug, branch)
+				}
+			}
 		}
 	}
 

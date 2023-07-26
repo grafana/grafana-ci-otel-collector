@@ -91,7 +91,7 @@ func (m *metricBuildsNumber) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string) {
+func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string, repoNameAttributeValue string, repoBranchAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -100,6 +100,8 @@ func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("build.status", buildStatusAttributeValue)
+	dp.Attributes().PutStr("repo.name", repoNameAttributeValue)
+	dp.Attributes().PutStr("repo.branch", repoBranchAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -283,8 +285,8 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 }
 
 // RecordBuildsNumberDataPoint adds a data point to builds_number metric.
-func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus) {
-	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String())
+func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus, repoNameAttributeValue string, repoBranchAttributeValue string) {
+	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String(), repoNameAttributeValue, repoBranchAttributeValue)
 }
 
 // RecordRestartsTotalDataPoint adds a data point to restarts_total metric.
