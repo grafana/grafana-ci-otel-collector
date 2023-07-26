@@ -32,6 +32,12 @@ attributes:
         unknown,
       ]
     type: string
+  repo.name:
+    description: Repository name
+    type: string
+  repo.branch:
+    description: Branch name
+    type: string
 
 metrics:
   builds_number:
@@ -46,7 +52,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation: cumulative
-    attributes: [build.status]
+    attributes: [build.status, repo.name, repo.branch]
   restarts_total:
     enabled: true
     description: Total number build restarts.

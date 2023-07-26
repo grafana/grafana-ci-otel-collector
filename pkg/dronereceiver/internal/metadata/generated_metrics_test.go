@@ -56,7 +56,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatus(1))
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatus(1), "attr-val", "attr-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -104,6 +104,12 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("build.status")
 					assert.True(t, ok)
 					assert.Equal(t, "pending", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("repo.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "attr-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("repo.branch")
+					assert.True(t, ok)
+					assert.EqualValues(t, "attr-val", attrVal.Str())
 				case "restarts_total":
 					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
 					validatedMetrics["restarts_total"] = true

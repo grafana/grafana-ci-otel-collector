@@ -98,7 +98,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	resourceAttrs.PutStr(conventions.AttributeServiceName, "drone")
 	resourceAttrs.PutInt("build.number", build.Number)
 	resourceAttrs.PutInt("build.id", build.ID)
-	resourceAttrs.PutStr("repo.name", repo.Name)
+	resourceAttrs.PutStr("repo.name", repo.Slug)
 	resourceAttrs.PutStr("repo.branch", repo.Branch)
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
