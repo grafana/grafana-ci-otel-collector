@@ -42,7 +42,7 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 	}
 	err := godotenv.Load()
 	if err != nil {
-		r.settings.Logger.Fatal("Error loading .env file")
+		r.settings.Logger.Warn("Error loading .env file, variables will be taken from the host environment")
 	}
 	postgresUser := os.Getenv("POSTGRES_USER")
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
