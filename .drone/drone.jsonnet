@@ -55,6 +55,7 @@ local verifyGenTrigger = {
       'make build',
     ]),
     step.new('test', image=goImage)
+    + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver',
     ]),
@@ -68,6 +69,7 @@ local verifyGenTrigger = {
       'make build',
     ]),
     step.new('test', image=goImage)
+    + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver',
     ]),
@@ -85,6 +87,7 @@ local verifyGenTrigger = {
       'make build',
     ]),
     step.new('test', image=goImage)
+    + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver',
     ]),
