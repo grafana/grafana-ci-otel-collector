@@ -94,7 +94,7 @@ steps:
         "repo_name": "deployment_tools",
         "update_jsonnet_attribute_configs": [
           {
-            "file_path": "ksonnet/lib/grafana-ci-otel-collector/image.libsonnet",
+            "file_path": "ksonnet/lib/grafana-ci-otel-collector/images.libsonnet",
             "jsonnet_key": "collector",
             "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
           }
