@@ -77,6 +77,8 @@ steps:
   volumes:
   - name: dockerDind
     path: /var/run
+  - name: docker
+    path: /var/run/docker.sock
 - depends_on:
   - publish-to-gcr
   image: us.gcr.io/kubernetes-dev/drone/plugins/updater
