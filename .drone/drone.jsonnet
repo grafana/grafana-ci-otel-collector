@@ -88,7 +88,22 @@ local verifyGenTrigger = {
     + step.withCommands([
       'go test ./pkg/dronereceiver',
     ]),
-    step.new('build-docker', image=dockerDINDImage)
+step.new('build-docker-image', image=dockerDINDImage)
+    + step.withCommands([
+        'docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT} .',
+    ])
+    + step.withVolumes([
+        {
+            name: 'dockerDind',
+            path: '/var/run',
+        },
+        {
+            name: 'docker',
+            path: '/var/run/docker.sock',
+        },
+    ]),
+    step.new('publish-to-gcr', image=dockerDINDImage)
+    + step.withDependsOn(['build-docker-image'])
     + step.withCommands([
         'echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io',
         'docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}',

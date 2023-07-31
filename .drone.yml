@@ -49,13 +49,25 @@ steps:
   image: golang:1.20.4
   name: test
 - commands:
+  - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
+    .
+  image: docker:dind
+  name: build-docker-image
+  volumes:
+  - name: dockerDind
+    path: /var/run
+  - name: docker
+    path: /var/run/docker.sock
+- commands:
   - echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io
   - docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
+  depends_on:
+  - build-docker-image
   environment:
     GCR_CREDENTIALS:
       from_secret: gcr_credentials
   image: docker:dind
-  name: build-docker
+  name: publish-to-gcr
   volumes:
   - name: dockerDind
     path: /var/run
