@@ -139,8 +139,8 @@ step.new('build-docker-image', image=dockerDINDImage)
           "repo_name": "deployment_tools",
           "update_jsonnet_attribute_configs": [
             {
-              "file_path": "ksonnet/environments/grafana-ci-otel-collector/waves.libsonnet",
-              "jsonnet_key": "collectorImage",
+              "file_path": "ksonnet/lib/grafana-ci-otel-collector/image.libsonnet",
+              "jsonnet_key": "collector",
               "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
             }
           ]
