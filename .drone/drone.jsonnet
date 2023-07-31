@@ -121,6 +121,10 @@ step.new('build-docker-image', image=dockerDINDImage)
             name: 'dockerDind',
             path: '/var/run',
         },
+        {
+            name: 'docker',
+            path: '/var/run/docker.sock',
+        },
     ]),
     step.new('update-deployment-tools', image='us.gcr.io/kubernetes-dev/drone/plugins/updater')
     + step.withDependsOn(['publish-to-gcr'])
