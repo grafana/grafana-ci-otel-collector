@@ -156,13 +156,22 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 			now := pcommon.NewTimestampFromTime(time.Now())
 
+			prevLineTimestamp := int64(0)
+			delta := int64(0)
 			for _, line := range lines {
+				if line.Timestamp == prevLineTimestamp {
+					delta++
+				} else {
+					delta = 0
+					prevLineTimestamp = line.Timestamp
+				}
+
 				record := logScope.LogRecords().AppendEmpty()
 				record.SetTraceID(traceId)
 				record.SetSpanID(stepSpanId)
 
 				record.SetObservedTimestamp(now)
-				record.SetTimestamp(pcommon.Timestamp((step.Started + line.Timestamp) * 1000000000))
+				record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
 				record.Attributes().PutStr(CI_STAGE, stage.Name)
 				record.Attributes().PutStr(CI_STEP, step.Name)
 				record.Body().SetStr(line.Message)
