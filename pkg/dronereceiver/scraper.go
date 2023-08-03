@@ -3,9 +3,10 @@ package dronereceiver // import "github.com/open-telemetry/opentelemetry-collect
 import (
 	"context"
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 
 	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
 	"github.com/jackc/pgx/v5"
@@ -82,18 +83,26 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		SELECT 
 			count(*),
 			build_status,
-			r.repo_slug,
-			build_source 
+			CASE 
+				WHEN repo_slug IN ('grafana/gracie', 'grafana/grafana', 'grafana/grafana-ci-otel-collector') THEN repo_slug
+				ELSE 'other'
+			END AS slug,
+			CASE 
+				WHEN repo_slug = 'grafana/gracie' AND build_source IN ('main') THEN build_source
+				WHEN repo_slug = 'grafana/grafana-ci-otel-collector' AND build_source IN ('main') THEN build_source
+				WHEN repo_slug = 'grafana/grafana' AND build_source IN ('main', 'v10.0.x',  'v10.1.x') THEN build_source
+				ELSE 'other'
+			END AS source
 		FROM 
 			builds 
 		LEFT JOIN
-			repos r 
+			repos r
 		ON 
 			build_repo_id = r.repo_id  
 		GROUP BY 
 			build_status,
-			r.repo_slug,
-			build_source
+			slug,
+			source
 	`)
 
 	if err != nil {
