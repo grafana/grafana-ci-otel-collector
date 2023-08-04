@@ -56,13 +56,15 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatus(1), "attr-val", "attr-val")
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatusPending, "repo.name-val", "repo.branch-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordRestartsTotalDataPoint(ts, 1)
 
-			metrics := mb.Emit()
+			res := pcommon.NewResource()
+			res.Attributes().PutStr("k1", "v1")
+			metrics := mb.Emit(WithResource(res))
 
 			if test.configSet == testSetNone {
 				assert.Equal(t, 0, metrics.ResourceMetrics().Len())
@@ -71,11 +73,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			assert.Equal(t, 1, metrics.ResourceMetrics().Len())
 			rm := metrics.ResourceMetrics().At(0)
-			attrCount := 0
-			enabledAttrCount := 0
-			assert.Equal(t, enabledAttrCount, rm.Resource().Attributes().Len())
-			assert.Equal(t, attrCount, 0)
-
+			assert.Equal(t, res, rm.Resource())
 			assert.Equal(t, 1, rm.ScopeMetrics().Len())
 			ms := rm.ScopeMetrics().At(0).Metrics()
 			if test.configSet == testSetDefault {
@@ -103,13 +101,13 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("build.status")
 					assert.True(t, ok)
-					assert.Equal(t, "pending", attrVal.Str())
+					assert.EqualValues(t, "pending", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("repo.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "attr-val", attrVal.Str())
+					assert.EqualValues(t, "repo.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("repo.branch")
 					assert.True(t, ok)
-					assert.EqualValues(t, "attr-val", attrVal.Str())
+					assert.EqualValues(t, "repo.branch-val", attrVal.Str())
 				case "restarts_total":
 					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
 					validatedMetrics["restarts_total"] = true
