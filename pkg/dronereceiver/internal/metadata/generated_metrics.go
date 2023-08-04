@@ -17,22 +17,29 @@ type AttributeBuildStatus int
 
 const (
 	_ AttributeBuildStatus = iota
+	AttributeBuildStatusSkipped
+	AttributeBuildStatusBlocked
+	AttributeBuildStatusDeclined
+	AttributeBuildStatusWaitingOnDependencies
 	AttributeBuildStatusPending
 	AttributeBuildStatusRunning
 	AttributeBuildStatusSuccess
 	AttributeBuildStatusFailure
-	AttributeBuildStatusSkipped
-	AttributeBuildStatusError
 	AttributeBuildStatusKilled
-	AttributeBuildStatusBlocked
-	AttributeBuildStatusPaused
-	AttributeBuildStatusWaitingOnDependencies
-	AttributeBuildStatusUnknown
+	AttributeBuildStatusError
 )
 
 // String returns the string representation of the AttributeBuildStatus.
 func (av AttributeBuildStatus) String() string {
 	switch av {
+	case AttributeBuildStatusSkipped:
+		return "skipped"
+	case AttributeBuildStatusBlocked:
+		return "blocked"
+	case AttributeBuildStatusDeclined:
+		return "declined"
+	case AttributeBuildStatusWaitingOnDependencies:
+		return "waiting_on_dependencies"
 	case AttributeBuildStatusPending:
 		return "pending"
 	case AttributeBuildStatusRunning:
@@ -41,37 +48,26 @@ func (av AttributeBuildStatus) String() string {
 		return "success"
 	case AttributeBuildStatusFailure:
 		return "failure"
-	case AttributeBuildStatusSkipped:
-		return "skipped"
-	case AttributeBuildStatusError:
-		return "error"
 	case AttributeBuildStatusKilled:
 		return "killed"
-	case AttributeBuildStatusBlocked:
-		return "blocked"
-	case AttributeBuildStatusPaused:
-		return "paused"
-	case AttributeBuildStatusWaitingOnDependencies:
-		return "waiting_on_dependencies"
-	case AttributeBuildStatusUnknown:
-		return "unknown"
+	case AttributeBuildStatusError:
+		return "error"
 	}
 	return ""
 }
 
 // MapAttributeBuildStatus is a helper map of string to AttributeBuildStatus attribute value.
 var MapAttributeBuildStatus = map[string]AttributeBuildStatus{
+	"skipped":                 AttributeBuildStatusSkipped,
+	"blocked":                 AttributeBuildStatusBlocked,
+	"declined":                AttributeBuildStatusDeclined,
+	"waiting_on_dependencies": AttributeBuildStatusWaitingOnDependencies,
 	"pending":                 AttributeBuildStatusPending,
 	"running":                 AttributeBuildStatusRunning,
 	"success":                 AttributeBuildStatusSuccess,
 	"failure":                 AttributeBuildStatusFailure,
-	"skipped":                 AttributeBuildStatusSkipped,
-	"error":                   AttributeBuildStatusError,
 	"killed":                  AttributeBuildStatusKilled,
-	"blocked":                 AttributeBuildStatusBlocked,
-	"paused":                  AttributeBuildStatusPaused,
-	"waiting_on_dependencies": AttributeBuildStatusWaitingOnDependencies,
-	"unknown":                 AttributeBuildStatusUnknown,
+	"error":                   AttributeBuildStatusError,
 }
 
 type metricBuildsNumber struct {
