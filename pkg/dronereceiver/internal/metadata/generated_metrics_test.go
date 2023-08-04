@@ -56,7 +56,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatusPending, "repo.name-val", "repo.branch-val")
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatusSkipped, "repo.name-val", "repo.branch-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -101,7 +101,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("build.status")
 					assert.True(t, ok)
-					assert.EqualValues(t, "pending", attrVal.Str())
+					assert.EqualValues(t, "skipped", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("repo.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "repo.name-val", attrVal.Str())

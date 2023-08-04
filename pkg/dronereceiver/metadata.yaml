@@ -16,20 +16,18 @@ resource_attributes:
 attributes:
   build.status:
     description: Build status
-    # TODO: double check if the following list is correct
     enum:
       [
+        skipped,
+        blocked,
+        declined,
+        waiting_on_dependencies,
         pending,
         running,
         success,
         failure,
-        skipped,
-        error,
         killed,
-        blocked,
-        paused,
-        waiting_on_dependencies,
-        unknown,
+        error,
       ]
     type: string
   repo.name:

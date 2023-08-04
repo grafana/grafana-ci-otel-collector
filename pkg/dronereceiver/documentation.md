@@ -26,7 +26,7 @@ Currently there's no way to differentiate between restarted builds and manually 
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| build.status | Build status | Str: ``pending``, ``running``, ``success``, ``failure``, ``skipped``, ``error``, ``killed``, ``blocked``, ``paused``, ``waiting_on_dependencies``, ``unknown`` |
+| build.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
 | repo.name | Repository name | Any Str |
 | repo.branch | Branch name | Any Str |
 
