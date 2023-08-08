@@ -4,7 +4,7 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"time"
@@ -37,16 +37,23 @@ const CI_KIND = "ci.kind"
 const CI_STAGE = "ci.stage"
 const CI_STEP = "ci.step"
 
+func setStatus(status string, span ptrace.Span) {
+	span.Attributes().PutStr("ci.status", status)
+}
+
 func getOtelExitCode(code string) ptrace.StatusCode {
-	if code == "success" {
-		return ptrace.StatusCodeOk
-	}
-
-	if code == "failure" {
+	switch code {
+	case "failure":
+		fallthrough
+	case "error":
 		return ptrace.StatusCodeError
-	}
 
-	return ptrace.StatusCodeUnset
+	case "success":
+		return ptrace.StatusCodeOk
+
+	default:
+		return ptrace.StatusCodeUnset
+	}
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
@@ -56,7 +63,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		// TODO: handle this
 		return
@@ -106,6 +113,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 	buildSpan.Attributes().PutStr(CI_KIND, "build")
+	setStatus(build.Status, buildSpan)
 	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
@@ -119,6 +127,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
 		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
 
+		setStatus(stage.Status, stageSpan)
 		stageSpan.Status().SetCode(getOtelExitCode(stage.Status))
 		stageSpan.SetName(stage.Name)
 		stageSpan.SetTraceID(traceId)
@@ -138,6 +147,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.Attributes().PutStr(CI_KIND, "step")
 			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
 
+			setStatus(step.Status, stepSpan)
 			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
 
 			stepSpan.SetName(step.Name)
