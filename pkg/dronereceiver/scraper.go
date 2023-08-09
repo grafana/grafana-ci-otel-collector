@@ -38,19 +38,21 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 	networkHost := localhost
 	if networkHostEnv, ok := os.LookupEnv("NETWORK_HOST"); ok {
 		networkHost = networkHostEnv
+	} else if droneEndpoint, ok := os.LookupEnv("DRONE_ENDPOINT"); ok {
+		networkHost = droneEndpoint
 	} else {
-		r.settings.Logger.Info("NETWORK_HOST env var is missing, defaulting to localhost")
+		r.settings.Logger.Info("NETWORK_HOST and DRONE_DB env vars are missing, defaulting to localhost")
 	}
 	err := godotenv.Load()
 	if err != nil {
 		r.settings.Logger.Warn("Error loading .env file, variables will be taken from the host environment")
 	}
-	postgresUser := os.Getenv("POSTGRES_USER")
-	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
-	postgresDB := os.Getenv("POSTGRES_DB")
+	droneDBUsername := os.Getenv("DRONE_DB_USERNAME")
+	droneDBPassword := os.Getenv("DRONE_DB_PASSWORD")
+	droneDBName := os.Getenv("DRONE_DB")
 
 	r.settings.Logger.Info("Starting the drone scraper")
-	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", postgresUser, postgresPassword, networkHost, postgresDB))
+	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", droneDBUsername, droneDBPassword, networkHost, droneDBName))
 
 	if err != nil {
 		return err
