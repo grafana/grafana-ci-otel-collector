@@ -125,6 +125,61 @@ func newMetricBuildsNumber(cfg MetricConfig) metricBuildsNumber {
 	return m
 }
 
+type metricRepoInfo struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills repo_info metric with initial data.
+func (m *metricRepoInfo) init() {
+	m.data.SetName("repo_info")
+	m.data.SetDescription("Repo status.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricRepoInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string, repoNameAttributeValue string, repoBranchAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("build.status", buildStatusAttributeValue)
+	dp.Attributes().PutStr("repo.name", repoNameAttributeValue)
+	dp.Attributes().PutStr("repo.branch", repoBranchAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricRepoInfo) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricRepoInfo) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricRepoInfo(cfg MetricConfig) metricRepoInfo {
+	m := metricRepoInfo{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricRestartsTotal struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -184,6 +239,7 @@ type MetricsBuilder struct {
 	metricsBuffer       pmetric.Metrics     // accumulates metrics data before emitting.
 	buildInfo           component.BuildInfo // contains version information
 	metricBuildsNumber  metricBuildsNumber
+	metricRepoInfo      metricRepoInfo
 	metricRestartsTotal metricRestartsTotal
 }
 
@@ -203,6 +259,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSetting
 		metricsBuffer:       pmetric.NewMetrics(),
 		buildInfo:           settings.BuildInfo,
 		metricBuildsNumber:  newMetricBuildsNumber(mbc.Metrics.BuildsNumber),
+		metricRepoInfo:      newMetricRepoInfo(mbc.Metrics.RepoInfo),
 		metricRestartsTotal: newMetricRestartsTotal(mbc.Metrics.RestartsTotal),
 	}
 	for _, op := range options {
@@ -262,6 +319,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricBuildsNumber.emit(ils.Metrics())
+	mb.metricRepoInfo.emit(ils.Metrics())
 	mb.metricRestartsTotal.emit(ils.Metrics())
 
 	for _, op := range rmo {
@@ -286,6 +344,11 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 // RecordBuildsNumberDataPoint adds a data point to builds_number metric.
 func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus, repoNameAttributeValue string, repoBranchAttributeValue string) {
 	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String(), repoNameAttributeValue, repoBranchAttributeValue)
+}
+
+// RecordRepoInfoDataPoint adds a data point to repo_info metric.
+func (mb *MetricsBuilder) RecordRepoInfoDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus, repoNameAttributeValue string, repoBranchAttributeValue string) {
+	mb.metricRepoInfo.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String(), repoNameAttributeValue, repoBranchAttributeValue)
 }
 
 // RecordRestartsTotalDataPoint adds a data point to restarts_total metric.

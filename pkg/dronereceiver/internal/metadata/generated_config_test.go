@@ -27,6 +27,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
 					BuildsNumber:  MetricConfig{Enabled: true},
+					RepoInfo:      MetricConfig{Enabled: true},
 					RestartsTotal: MetricConfig{Enabled: true},
 				},
 			},
@@ -36,6 +37,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
 					BuildsNumber:  MetricConfig{Enabled: false},
+					RepoInfo:      MetricConfig{Enabled: false},
 					RestartsTotal: MetricConfig{Enabled: false},
 				},
 			},
