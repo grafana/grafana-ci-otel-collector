@@ -157,7 +157,7 @@ NETWORK_HOST=localhost && make metadata && make build && make run
 Build the Docker image:
 
 ```bash
-make docker-build
+make docker-build-local
 ```
 
 Run the Docker image:
