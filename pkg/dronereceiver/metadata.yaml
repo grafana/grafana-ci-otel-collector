@@ -51,6 +51,15 @@ metrics:
       monotonic: false
       aggregation: cumulative
     attributes: [build.status, repo.name, repo.branch]
+  repo_info:
+    enabled: true
+    description: Repo status.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation: cumulative
+    attributes: [build.status, repo.name, repo.branch]
   restarts_total:
     enabled: true
     description: Total number build restarts.

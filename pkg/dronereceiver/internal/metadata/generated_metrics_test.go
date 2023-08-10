@@ -60,6 +60,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordRepoInfoDataPoint(ts, 1, AttributeBuildStatusSkipped, "repo.name-val", "repo.branch-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordRestartsTotalDataPoint(ts, 1)
 
 			res := pcommon.NewResource()
@@ -91,6 +95,29 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
 					assert.Equal(t, "Number of builds.", ms.At(i).Description())
+					assert.Equal(t, "1", ms.At(i).Unit())
+					assert.Equal(t, false, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("build.status")
+					assert.True(t, ok)
+					assert.EqualValues(t, "skipped", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("repo.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "repo.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("repo.branch")
+					assert.True(t, ok)
+					assert.EqualValues(t, "repo.branch-val", attrVal.Str())
+				case "repo_info":
+					assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
+					validatedMetrics["repo_info"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Repo status.", ms.At(i).Description())
 					assert.Equal(t, "1", ms.At(i).Unit())
 					assert.Equal(t, false, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())

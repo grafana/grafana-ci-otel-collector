@@ -71,6 +71,7 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 
 	r.scrapeBuilds(ctx, now, errs)
 	r.scrapeRestartedBuilds(ctx, now, errs)
+	r.scrapeInfo(ctx, now, errs)
 
 	return r.mb.Emit(), errs.Combine()
 }
@@ -158,4 +159,48 @@ func (r *droneScraper) scrapeRestartedBuilds(ctx context.Context, now pcommon.Ti
 		errs.Add(err)
 	}
 	r.mb.RecordRestartsTotalDataPoint(now, count)
+}
+
+func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
+	rows, err := r.db.Query(ctx, `
+		SELECT build_status, r.repo_slug, build_source FROM builds
+		LEFT JOIN
+			repos r
+		ON 
+			build_repo_id = r.repo_id 
+		WHERE build_id IN (
+		Select MAX(build_id) 
+			from 
+				builds 
+			JOIN 
+				repos r 
+			ON 
+				build_repo_id = r.repo_id
+			WHERE 
+				build_status not in ('running','waiting_on_dependencies','pending') 
+				AND (
+					(repo_slug = 'grafana/gracie' and build_source in ('main')) OR
+					(repo_slug = 'grafana/grafana-ci-otel-collector' and build_source in ('main')) OR
+					(repo_slug = 'grafana/grafana' and build_source in ('main', 'v10.0.x', 'v10.1.x'))
+				)
+			Group by build_repo_id, build_source
+		)
+	`)
+
+	if err != nil {
+		errs.Add(err)
+	}
+
+	for rows.Next() {
+		var status string
+		var slug string
+		var source string
+		err := rows.Scan(&status, &slug, &source)
+		if err != nil {
+			errs.Add(err)
+			continue
+		}
+
+		r.mb.RecordRepoInfoDataPoint(now, 1, metadata.MapAttributeBuildStatus[status], slug, source)
+	}
 }

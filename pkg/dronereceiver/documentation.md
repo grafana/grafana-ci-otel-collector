@@ -30,6 +30,22 @@ Currently there's no way to differentiate between restarted builds and manually 
 | repo.name | Repository name | Any Str |
 | repo.branch | Branch name | Any Str |
 
+### repo_info
+
+Repo status.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| 1 | Sum | Int | Cumulative | false |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| build.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
+| repo.name | Repository name | Any Str |
+| repo.branch | Branch name | Any Str |
+
 ### restarts_total
 
 Total number build restarts.
