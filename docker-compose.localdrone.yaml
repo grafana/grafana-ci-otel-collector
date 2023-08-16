@@ -76,9 +76,9 @@ services:
   db:
     image: postgres
     environment:
-      - DRONE_DB_USERNAME=${DRONE_DB_USERNAME}
-      - DRONE_DB_PASSWORD=${DRONE_DB_PASSWORD}
-      - DRONE_DB=${DRONE_DB}
+      - POSTGRES_USER=${DRONE_DB_USERNAME}
+      - POSTGRES_PASSWORD=${DRONE_DB_PASSWORD}
+      - POSTGRES_DB=${DRONE_DB}
     ports:
       - "5432:5432"
     healthcheck:
