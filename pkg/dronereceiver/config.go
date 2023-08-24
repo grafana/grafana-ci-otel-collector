@@ -12,13 +12,18 @@ type DroneConfig struct {
 	Host  string `mapstructure:"host"`
 }
 
+type WebhookConfig struct {
+	Endpoint string `mapstructure:"endpoint"`
+	Port     int    `mapstructure:"port"`
+	Secret   string `mapstructure:"secret"`
+}
+
 // Config defines configuration for dronereceiver receiver.
 type Config struct {
 	scraperhelper.ScraperControllerSettings `mapstructure:",squash"`
 	metadata.MetricsBuilderConfig           `mapstructure:",squash"`
-	Endpoint                                string      `mapstructure:"endpoint"`
-	Port                                    int         `mapstructure:"port"`
-	DroneConfig                             DroneConfig `mapstructure:"drone"`
+	WebhookConfig                           WebhookConfig `mapstructure:"webhook"`
+	DroneConfig                             DroneConfig   `mapstructure:"drone"`
 }
 
 // Validate checks if the receiver configuration is valid
@@ -28,6 +33,9 @@ func (cfg *Config) Validate() error {
 	}
 	if cfg.DroneConfig.Token == "" {
 		return fmt.Errorf("token must be defined")
+	}
+	if cfg.WebhookConfig.Secret == "" {
+		return fmt.Errorf("webhook secret must be defined")
 	}
 	return nil
 }

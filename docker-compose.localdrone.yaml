@@ -56,7 +56,7 @@ services:
       - DRONE_DATABASE_DATASOURCE=postgres://postgres:postgres@db:5432/drone?sslmode=disable
       - DRONE_REDIS_CONNECTION=redis://redis-server:6379
       - DRONE_WEBHOOK_ENDPOINT=http://host.docker.internal:3333/drone/webhook
-      - DRONE_WEBHOOK_SECRET=bea26a2221fd8090ea38720fc445eca6
+      - DRONE_WEBHOOK_SECRET=${DRONE_WEBHOOK_SECRET}
       - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
       - DRONE_STATUS_NAME=continuous-integration/drone-local-${GH_HANDLE}
   runner:
