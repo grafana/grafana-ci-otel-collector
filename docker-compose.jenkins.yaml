@@ -1,3 +1,4 @@
+version: "3"
 services:
   tempo:
     image: grafana/tempo:latest
@@ -17,7 +18,6 @@ services:
       - '--web.enable-lifecycle'
       - '--web.enable-remote-write-receiver'
       - '--config.file=/etc/prometheus/prometheus.yml'
-
   loki:
     image: grafana/loki:latest
     command: -config.file=/etc/loki/loki-config.yaml
@@ -30,3 +30,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    privileged: true
+    user: root
+    ports:
+      - 8080:8080
+      - 50000:50000
+    container_name: jenkins
+    volumes:
+      - ./config/jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+  agent:
+    image: jenkins/ssh-agent:jdk11
+    privileged: true
+    user: root
+    container_name: agent
+    expose:
+      - 22
