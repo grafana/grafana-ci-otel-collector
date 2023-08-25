@@ -49,7 +49,7 @@ metrics:
     sum:
       value_type: int
       monotonic: false
-      aggregation: cumulative
+      aggregation_temporality: cumulative
     attributes: [build.status, repo.name, repo.branch]
   repo_info:
     enabled: true
@@ -58,7 +58,7 @@ metrics:
     sum:
       value_type: int
       monotonic: false
-      aggregation: cumulative
+      aggregation_temporality: cumulative
     attributes: [build.status, repo.name, repo.branch]
   restarts_total:
     enabled: true
@@ -67,4 +67,4 @@ metrics:
     sum:
       value_type: int
       monotonic: true
-      aggregation: cumulative
+      aggregation_temporality: cumulative

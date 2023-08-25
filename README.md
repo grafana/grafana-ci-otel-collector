@@ -167,13 +167,15 @@ make docker-run
 ```
 
 Do both at once:
+
 ```bash
 make docker
 ```
 
-**NOTES:** 
-* When building/running the Docker image, we are specifying `$NETWORK_HOST` var to be `host.docker.internal`.
-* We are forwarding the 3333 port (`-p 3333:3333`) so the `curl` test command in [Generating Traces](#generating-graces) can work.
+**NOTES:**
+
+- When building/running the Docker image, we are specifying `$NETWORK_HOST` var to be `host.docker.internal`.
+- We are forwarding the 3333 port (`-p 3333:3333`) so the `curl` test command in [Generating Traces](#generating-graces) can work.
 
 ## Spin up Grafana as a Docker image locally
 
@@ -206,3 +208,7 @@ dashboard!
 ## Make CI/CD changes
 
 See [Make CI/CD changes](.drone/README.md)
+
+## Update package level binaries
+
+See [Package Level Binaries](./PACKAGE_LEVEL_BINARIES.md)
