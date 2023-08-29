@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/99designs/httpsignatures-go"
 	drone "github.com/drone/drone-go/drone"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -39,17 +40,20 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 	)
 	droneClient := drone.NewClient(cfg.DroneConfig.Host, httpClient)
 
-	httpMux := http.NewServeMux()
-
 	handler := droneWebhookHandler{
 		droneClient: droneClient,
 		logger:      set.Logger.Named("handler"),
 	}
 
-	httpMux.HandleFunc(cfg.Endpoint, func(resp http.ResponseWriter, req *http.Request) {
-		// TODO: write the handler for the webhook endpoint
-		// Maybe route based on the X-Drone-Event header?
-		set.Logger.Info("Got request")
+	httpMux := http.NewServeMux()
+	httpMux.HandleFunc(cfg.WebhookConfig.Endpoint, func(resp http.ResponseWriter, req *http.Request) {
+		//TODO:  Maybe route based on the X-Drone-Event header?
+		err := verifySignature(resp, req, cfg.WebhookConfig.Secret)
+		if err != nil {
+			set.Logger.Info("couldn't verify request signature", zap.Error(err))
+			return
+		}
+
 		resp.WriteHeader(http.StatusOK)
 		handler.handler(resp, req)
 	})
@@ -59,9 +63,8 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 	}
 
 	receiver := &droneReceiver{
-		cfg: cfg,
-		set: set,
-
+		cfg:        cfg,
+		set:        set,
 		httpServer: httpServer,
 		handler:    &handler,
 	}
@@ -69,16 +72,31 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 	return receiver, nil
 }
 
+func verifySignature(resp http.ResponseWriter, req *http.Request, secret string) error {
+	sig, err := httpsignatures.FromRequest(req)
+	if err != nil {
+		resp.WriteHeader(http.StatusBadRequest)
+		return fmt.Errorf("error parsing signature: %w", err)
+	}
+
+	if !sig.IsValid(secret, req) {
+		resp.WriteHeader(http.StatusForbidden)
+		return fmt.Errorf("signature is not valid")
+	}
+
+	return nil
+}
+
 func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 	r.set.Logger.Info("starting Drone receiver")
 
 	go func() {
 		r.set.Logger.Info("starting http server",
-			zap.String("endpoint", r.cfg.Endpoint),
-			zap.Int("port", r.cfg.Port),
+			zap.String("endpoint", r.cfg.WebhookConfig.Endpoint),
+			zap.Int("port", r.cfg.WebhookConfig.Port),
 		)
 
-		listener, err := net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.Port))
+		listener, err := net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.WebhookConfig.Port))
 		if err != nil {
 			r.set.Logger.Error("error creating listener",
 				zap.String("error", err.Error()),

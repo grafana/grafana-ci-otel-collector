@@ -31,18 +31,6 @@ Then you can start the collector with:
 NETWORK_HOST=localhost && make run
 ```
 
-## Drone
-
-### Generating traces
-
-The receiver listens for Drone webhooks and generates trace data based on the information in the webhook payload.
-
-Until a more complete data generator is available, you can simulate a webhook call you can manually send a request to the receiver:
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d @./dronereceiver/testdata/build-completed.json http://localhost:3333/drone/webhook
-```
-
 ## Local Drone instance
 
 It is possible to use a local Drone instance for easier development.
@@ -58,6 +46,7 @@ The `docker-compose.localdrone.yml` file expects the following environment varia
 DRONE_SERVER_PROXY_HOST=
 DRONE_GITHUB_CLIENT_ID=
 DRONE_GITHUB_CLIENT_SECRET=
+DRONE_WEBHOOK_SECRET=
 GH_HANDLE=
 DRONE_DB_USERNAME=
 DRONE_DB_PASSWORD=
@@ -116,6 +105,16 @@ After the application is registered, generate a `Client secret`.
 
 Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
 
+### Genereate a webhook secret
+
+Generate a webhook secret to verify the authenticity of the webhook requests.
+
+```bash
+openssl rand -hex 16
+```
+
+Take note of the generated secret and use it to configure the `DRONE_WEBHOOK_SECRET` environment variable in the `.env` file.
+
 ### Run Drone
 
 You can now start Drone with:
@@ -133,7 +132,7 @@ If you filled in the `GH_HANDLE` environment variable in the `.env` file, your u
 
 ### Configure the collector
 
-Update the `dronereceiver` receiver in the `config.yaml` file to use the ngrok forwarding url as follows (example using the URL from above):
+Update the `dronereceiver` receiver in the `config.yaml` file to use the [webhook secret](#genereate-a-webhook-secret) and the [drone token](#get-your-drone-token) from above:
 
 ```yaml
 receivers:
@@ -141,9 +140,11 @@ receivers:
     collection_interval: 15s
     drone:
       token: <YOUR TOKEN>
-      host: http://localhost:8080
-    endpoint: /drone/webhook
-    port: 3333
+      host: http://${NETWORK_HOST}:8080
+    webhook:
+      endpoint: /drone/webhook
+      port: 3333
+      secret: <DRONE_WEBHOOK_SECRET>
 ```
 
 ### Start the collector

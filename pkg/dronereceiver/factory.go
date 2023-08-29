@@ -18,8 +18,10 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ScraperControllerSettings: cfg,
 		MetricsBuilderConfig:      metadata.DefaultMetricsBuilderConfig(),
-		Endpoint:                  "/drone/webhook",
-		Port:                      3333,
+		WebhookConfig: WebhookConfig{
+			Endpoint: "/drone/webhook",
+			Port:     3333,
+		},
 	}
 }
 
