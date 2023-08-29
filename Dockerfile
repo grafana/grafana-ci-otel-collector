@@ -6,10 +6,9 @@ ENV NETWORK_HOST $network_host
 
 COPY . .
 
-RUN go install github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen@v0.79.0
-RUN go install go.opentelemetry.io/collector/cmd/builder@v0.79.0
+RUN apk add --no-cache make
 
-RUN mdatagen ./pkg/dronereceiver/metadata.yaml
-RUN builder --config config/builder-config.yml
+RUN make metadata
+RUN make build
 
 ENTRYPOINT ["./collector/grafana-ci-otelcol"]
