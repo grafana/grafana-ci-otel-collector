@@ -209,3 +209,7 @@ dashboard!
 ## Make CI/CD changes
 
 See [Make CI/CD changes](.drone/README.md)
+
+## Update package level binaries
+
+See [Package Level Binaries](./PACKAGE_LEVEL_BINARIES.md)
