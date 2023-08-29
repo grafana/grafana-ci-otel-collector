@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 type DroneCompletedBuild struct {
@@ -28,6 +29,8 @@ type DroneCompletedBuild struct {
 type droneWebhookHandler struct {
 	droneClient drone.Client
 	logger      *zap.Logger
+
+	reposConfig map[string][]string
 
 	nextLogsConsumer  consumer.Logs
 	nextTraceConsumer consumer.Traces
@@ -59,9 +62,6 @@ func getOtelExitCode(code string) ptrace.StatusCode {
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
 	d.logger.Info("Got request")
 
-	traces := ptrace.NewTraces()
-	logs := plog.NewLogs()
-
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		// TODO: handle this
@@ -81,6 +81,20 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	if build.Finished == 0 {
 		return
 	}
+
+	// Skip traces for repos that are not configured
+	allowedBranches, ok := d.reposConfig[repo.Slug]
+	if !ok {
+		return
+	}
+
+	// Skip traces for branches that are not configured
+	if slices.Contains[string](allowedBranches, repo.Branch) {
+		return
+	}
+
+	traces := ptrace.NewTraces()
+	logs := plog.NewLogs()
 
 	traceId := NewTraceID()
 	buildId := NewSpanID()
