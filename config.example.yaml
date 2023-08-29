@@ -3,7 +3,12 @@ receivers:
     collection_interval: 10s
     drone:
       token: <DRONE_TOKEN>
-      host: http://${NETWORK_HOST}:8080
+      host: http://localhost:8080
+      database:
+        host: localhost
+        db: drone
+        username: postgres
+        password: postgres
     webhook:
       endpoint: /drone/webhook
       port: 3333
@@ -22,16 +27,16 @@ exporters:
   logging:
     verbosity: detailed
   otlp:
-    endpoint: '${NETWORK_HOST}:4317'
+    endpoint: localhost:4317
     tls:
       insecure: true
   prometheusremotewrite:
-    endpoint: 'http://${NETWORK_HOST}:9090/api/v1/write'
+    endpoint: 'http://localhost:9090/api/v1/write'
     namespace: ci
     resource_to_telemetry_conversion:
       enabled: true
   loki:
-    endpoint: http://${NETWORK_HOST}:3100/loki/api/v1/push
+    endpoint: http://localhost:3100/loki/api/v1/push
 
 service:
   pipelines:

@@ -13,16 +13,12 @@ docker-build:
 	@echo "building docker container grafana-ci-otel-collector"
 	docker build -t grafana-ci-otel-collector .
 
-docker-build-local:
-	@echo "building docker container grafana-ci-otel-collector"
-	docker build -t grafana-ci-otel-collector --build-arg network_host=host.docker.internal .
-
 docker-run:
 	@echo "running docker container"
 	docker run -it -v $$PWD:/tmp -e NETWORK_HOST=host.docker.internal -p 3333:3333 \
  		grafana-ci-otel-collector:latest --config /tmp/config.yaml
 
-docker: docker-build-local docker-run
+docker: docker-build docker-run
 
 drone:
 	jsonnet -J .drone/vendor/ .drone/drone.jsonnet > jsonnetfile

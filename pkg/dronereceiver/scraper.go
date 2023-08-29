@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
 	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
@@ -20,8 +19,7 @@ import (
 )
 
 const (
-	localhost = "localhost"
-	timeout   = 120
+	timeout = 120
 )
 
 type droneScraper struct {
@@ -40,21 +38,6 @@ func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *droneScrape
 }
 
 func (r *droneScraper) start(_ context.Context, host component.Host) error {
-	connectionHost := localhost
-	if networkHostEnv := os.Getenv("NETWORK_HOST"); networkHostEnv != "" {
-		connectionHost = networkHostEnv
-	}
-	if droneEndpoint := os.Getenv("DRONE_ENDPOINT"); droneEndpoint != "" {
-		connectionHost = droneEndpoint
-	}
-	err := godotenv.Load()
-	if err != nil {
-		r.settings.Logger.Warn("Error loading .env file, variables will be taken from the host environment")
-	}
-	droneDBUsername := os.Getenv("DRONE_DB_USERNAME")
-	droneDBPassword := os.Getenv("DRONE_DB_PASSWORD")
-	droneDBName := os.Getenv("DRONE_DB")
-
 	r.settings.Logger.Info("Starting the drone scraper")
 
 	ticker := time.NewTicker(1 * time.Second)
@@ -69,8 +52,8 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 			os.Exit(1)
 
 		case <-ticker.C:
-			connString := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", droneDBUsername, droneDBPassword, connectionHost, droneDBName)
-			err = r.dbConnect(connString)
+			connString := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", r.cfg.DroneConfig.Database.Username, r.cfg.DroneConfig.Database.Password, r.cfg.DroneConfig.Database.Host, r.cfg.DroneConfig.Database.DB)
+			err := r.dbConnect(connString)
 			if err == nil {
 				success = true
 				break
