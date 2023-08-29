@@ -4,8 +4,10 @@ receivers:
     drone:
       token: <DRONE_TOKEN>
       host: http://${NETWORK_HOST}:8080
-    endpoint: /drone/webhook
-    port: 3333
+    webhook:
+      endpoint: /drone/webhook
+      port: 3333
+      secret: <DRONE_WEBHOOK_SECRET>
 
 processors:
 

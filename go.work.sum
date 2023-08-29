@@ -129,7 +129,6 @@ cloud.google.com/go/workflows v1.10.0 h1:FfGp9w0cYnaKZJhUOMqCOJCYT/WlvYBfTQhFWV3
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 h1:VpgP7xuJadIUuKccphEpTJnWhS2jkQyMt6Y7pJCD7fY=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6 h1:K72hopUosKG3ntOPNG4OzzbuhxGuVf06fa2la1/H/Ho=
 git.sr.ht/~sbinet/gg v0.3.1 h1:LNhjNn8DerC8f9DHLz6lS0YYul/b602DUxDgGkd/Aik=
-github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e h1:rl2Aq4ZODqTDkeSqQBy+fzpZPamacO1Srp8zq7jf2Sc=
 github.com/Azure/azure-sdk-for-go v65.0.0+incompatible h1:HzKLt3kIwMm4KeJYTdx9EbjRYTySD/t8i1Ee/W5EGXw=
 github.com/Azure/azure-sdk-for-go v65.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
@@ -384,6 +383,8 @@ github.com/kr/fs v0.1.0 h1:Jskdu9ieNAYnjxsi0LbQp1ulIKZV1LAFgK1tWhpZgl8=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 h1:T+h1c/A9Gawja4Y9mFVWj2vyii2bbUNDw3kt9VxK2EY=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/pty v1.1.1 h1:VkoXIwSboBpnk99O/KFauAEILuNHv5DVFKZMBN/gUgw=
+github.com/lightstep/go-expohisto v1.0.0 h1:UPtTS1rGdtehbbAF7o/dhkWLTDI73UifG8LbfQI7cA4=
+github.com/lightstep/go-expohisto v1.0.0/go.mod h1:xDXD0++Mu2FOaItXtdDfksfgxfV0z1TMPa+e/EUd0cs=
 github.com/linode/linodego v1.14.1 h1:uGxQyy0BidoEpLGdvfi4cPgEW+0YUFsEGrLEhcTfjNc=
 github.com/linode/linodego v1.14.1/go.mod h1:NJlzvlNtdMRRkXb0oN6UWzUkj6t+IBsyveHgZ5Ppjyk=
 github.com/lyft/protoc-gen-star v0.6.1 h1:erE0rdztuaDq3bpGifD95wfoPrSZc95nGA6tbiNYh6M=
@@ -422,6 +423,8 @@ github.com/npillmayer/nestext v0.1.3 h1:2dkbzJ5xMcyJW5b8wwrX+nnRNvf/Nn1KwGhIauGy
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.82.0 h1:WMjRjnbz7wJ4T0E+yTp6GRDjdkJ3kYYjhRuIhLhl7Gc=
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.82.0/go.mod h1:bcaAmq0FkJYIK1/tww+4vyiqUI+Iq2o/s3QxUzCbmEY=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.79.0/go.mod h1:QB5U5gmjH9AGe7p565KJ8UId2t2O5vf/Om89a5z2tnM=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.82.0/go.mod h1:5VGtCES+3CySFeCO8hFzrxVgeMI8L6cINAlqr0vrv/A=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.79.0/go.mod h1:BFqnTfM5Neh5A5gYtsxh2615yp/t39vUj7oRUcjevFU=
@@ -477,6 +480,8 @@ github.com/testcontainers/testcontainers-go v0.20.1 h1:mK15UPJ8c5P+NsQKmkqzs/jMd
 github.com/testcontainers/testcontainers-go v0.20.1/go.mod h1:zb+NOlCQBkZ7RQp4QI+YMIHyO2CQ/qsXzNF5eLJ24SY=
 github.com/testcontainers/testcontainers-go v0.21.0 h1:syePAxdeTzfkap+RrJaQZpJQ/s/fsUgn11xIvHrOE9U=
 github.com/testcontainers/testcontainers-go v0.21.0/go.mod h1:c1ez3WVRHq7T/Aj+X3TIipFBwkBaNT5iNCY8+1b83Ng=
+github.com/tilinna/clock v1.1.0 h1:6IQQQCo6KoBxVudv6gwtY8o4eDfhHo8ojA5dP0MfhSs=
+github.com/tilinna/clock v1.1.0/go.mod h1:ZsP7BcY7sEEz7ktc0IVy8Us6boDrK8VradlKRUGfOao=
 github.com/vultr/govultr/v2 v2.17.2 h1:gej/rwr91Puc/tgh+j33p/BLR16UrIPnSr+AIwYWZQs=
 github.com/vultr/govultr/v2 v2.17.2/go.mod h1:ZFOKGWmgjytfyjeyAdhQlSWwTjh2ig+X49cAp50dzXI=
 github.com/xhit/go-str2duration/v2 v2.1.0 h1:lxklc02Drh6ynqX+DdPyp5pCKLUQpRT8bp8Ydu2Bstc=
