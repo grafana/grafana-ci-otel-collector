@@ -41,6 +41,7 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 	droneClient := drone.NewClient(cfg.DroneConfig.Host, httpClient)
 
 	handler := droneWebhookHandler{
+		reposConfig: cfg.ReposConfig,
 		droneClient: droneClient,
 		logger:      set.Logger.Named("handler"),
 	}

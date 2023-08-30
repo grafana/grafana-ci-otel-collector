@@ -78,18 +78,21 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	build := completedBuild.Build
 	repo := completedBuild.Repo
 
+	// Skip unfinished builds (i.e. builds that are still running)
 	if build.Finished == 0 {
 		return
 	}
 
-	// Skip traces for repos that are not configured
+	// Skip traces for repos that are not enabled
 	allowedBranches, ok := d.reposConfig[repo.Slug]
 	if !ok {
+		d.logger.Info("repo not enabled", zap.String("repo", repo.Slug))
 		return
 	}
 
 	// Skip traces for branches that are not configured
-	if slices.Contains[string](allowedBranches, repo.Branch) {
+	if !slices.Contains[string](allowedBranches, repo.Branch) {
+		d.logger.Info("branch not enabled", zap.String("branch", repo.Branch))
 		return
 	}
 
@@ -101,7 +104,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 	d.logger.Debug("generating trace",
 		zap.String("traceId", traceId.String()),
-		zap.Int64("build.id", build.Number),
+		zap.Int64("build.id", build.ID),
+		zap.Int64("build.number", build.Number),
 		zap.Int64("build.Created", build.Created*1000000000),
 		zap.Int64("build.Finished", build.Finished*1000000000),
 		zap.Int("build.Stages", len(build.Stages)),
