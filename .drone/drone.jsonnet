@@ -59,6 +59,10 @@ local verifyGenTrigger = {
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
     ]),
+    step.new('build-docker-image', image=dockerDINDImage)
+    + step.withCommands([
+        'docker build .',
+    ])
   ]),
   pl.new('custom')
   + pl.withImagePullSecrets(['dockerconfigjson'])
@@ -91,7 +95,7 @@ local verifyGenTrigger = {
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
     ]),
-step.new('build-docker-image', image=dockerDINDImage)
+    step.new('build-docker-image', image=dockerDINDImage)
     + step.withCommands([
         'docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT} .',
     ])
@@ -126,7 +130,7 @@ step.new('build-docker-image', image=dockerDINDImage)
             path: '/var/run/docker.sock',
         },
     ]),
-    step.new('update-deployment-tools', image='us.gcr.io/kubernetes-dev/drone/plugins/updater')
+    step.new('update-deployment-tools', image=updaterImage)
     + step.withDependsOn(['publish-to-gcr'])
     + step.withSettings({
       config_json: |||
