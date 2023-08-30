@@ -1,4 +1,4 @@
-package dronereceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/apachereceiver"
+package dronereceiver
 
 import (
 	"context"

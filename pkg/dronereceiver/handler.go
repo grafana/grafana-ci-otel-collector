@@ -79,6 +79,10 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	repo := completedBuild.Repo
 
 	// Skip unfinished builds (i.e. builds that are still running)
+	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
+	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
+	// so, we check if build.Finished is set to a non-zero value to determine if the build is finished.
+	// However this appears to be sent twice in some cases.
 	if build.Finished == 0 {
 		return
 	}
