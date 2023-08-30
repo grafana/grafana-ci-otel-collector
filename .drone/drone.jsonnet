@@ -49,6 +49,9 @@ local verifyGenTrigger = {
   pl.new('pr')
   + pl.withImagePullSecrets(['dockerconfigjson'])
   + pl.withTrigger(prTrigger)
+  + pl.withVolumes([
+    dockerVolume,
+  ])
   + pl.withSteps([
     step.new('build', image=goImage)
     + step.withCommands([

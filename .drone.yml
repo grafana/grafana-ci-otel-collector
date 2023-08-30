@@ -25,6 +25,10 @@ trigger:
   event:
   - pull_request
 type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
 ---
 image_pull_secrets:
 - dockerconfigjson
