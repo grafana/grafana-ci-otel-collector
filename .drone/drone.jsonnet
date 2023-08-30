@@ -63,6 +63,12 @@ local verifyGenTrigger = {
     + step.withCommands([
         'docker build .',
     ])
+    + step.withVolumes([
+        {
+            name: 'docker',
+            path: '/var/run/docker.sock',
+        },
+    ]),
   ]),
   pl.new('custom')
   + pl.withImagePullSecrets(['dockerconfigjson'])

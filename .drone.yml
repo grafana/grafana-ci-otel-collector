@@ -18,6 +18,9 @@ steps:
   - docker build .
   image: docker:dind
   name: build-docker-image
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 trigger:
   event:
   - pull_request
