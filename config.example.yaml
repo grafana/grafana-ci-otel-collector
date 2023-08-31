@@ -8,6 +8,13 @@ receivers:
       endpoint: /drone/webhook
       port: 3333
       secret: <DRONE_WEBHOOK_SECRET>
+    repos:
+      grafana/grafana:
+        - main
+      grafana/gracie:
+        - main
+      grafana/grafana-ci-otel-collector:
+        - main
 
 processors:
 

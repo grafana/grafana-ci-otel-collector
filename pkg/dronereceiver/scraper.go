@@ -1,9 +1,10 @@
-package dronereceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/apachereceiver"
+package dronereceiver
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -25,10 +26,12 @@ type droneScraper struct {
 	settings component.TelemetrySettings
 	db       *pgx.Conn
 	mb       *metadata.MetricsBuilder
+	cfg      *Config
 }
 
 func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *droneScraper {
 	return &droneScraper{
+		cfg:      cfg,
 		settings: settings.TelemetrySettings,
 		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
 	}
@@ -81,18 +84,24 @@ type Builds map[string]map[string]map[metadata.AttributeBuildStatus]int64
 
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
 	var buildCount int64
-	rows, err := r.db.Query(ctx, `
+
+	conditions := make([]string, 0)
+	repoSlugs := make([]string, 0)
+	for repoSlug, buildSources := range r.cfg.ReposConfig {
+		repoSlugs = append(repoSlugs, repoSlug)
+		conditions = append(conditions, fmt.Sprintf("WHEN repo_slug = '%s' AND build_source IN ('%s') THEN build_source", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
+	}
+
+	rows, err := r.db.Query(ctx, fmt.Sprintf(`
 		SELECT 
 			count(*),
 			build_status,
 			CASE 
-				WHEN repo_slug IN ('grafana/gracie', 'grafana/grafana', 'grafana/grafana-ci-otel-collector') THEN repo_slug
+				WHEN repo_slug IN ('%s') THEN repo_slug
 				ELSE 'other'
 			END AS slug,
 			CASE 
-				WHEN repo_slug = 'grafana/gracie' AND build_source IN ('main') THEN build_source
-				WHEN repo_slug = 'grafana/grafana-ci-otel-collector' AND build_source IN ('main') THEN build_source
-				WHEN repo_slug = 'grafana/grafana' AND build_source IN ('main', 'v10.0.x',  'v10.1.x') THEN build_source
+				%s
 				ELSE 'other'
 			END AS source
 		FROM 
@@ -105,7 +114,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 			build_status,
 			slug,
 			source
-	`)
+	`, strings.Join(repoSlugs, "', '"), strings.Join(conditions, " ")))
 
 	if err != nil {
 		errs.Add(err)
@@ -162,30 +171,32 @@ func (r *droneScraper) scrapeRestartedBuilds(ctx context.Context, now pcommon.Ti
 }
 
 func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
-	rows, err := r.db.Query(ctx, `
+
+	conditions := make([]string, 0)
+	for repoSlug, buildSources := range r.cfg.ReposConfig {
+		conditions = append(conditions, fmt.Sprintf("repo_slug = '%s' AND build_source IN ('%s')", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
+	}
+
+	rows, err := r.db.Query(ctx, fmt.Sprintf(`
 		SELECT build_status, r.repo_slug, build_source FROM builds
 		LEFT JOIN
 			repos r
 		ON 
 			build_repo_id = r.repo_id 
 		WHERE build_id IN (
-		Select MAX(build_id) 
-			from 
+			SELECT MAX(build_id) 
+			FROM 
 				builds 
 			JOIN 
 				repos r 
 			ON 
 				build_repo_id = r.repo_id
 			WHERE 
-				build_status not in ('running','waiting_on_dependencies','pending') 
-				AND (
-					(repo_slug = 'grafana/gracie' and build_source in ('main')) OR
-					(repo_slug = 'grafana/grafana-ci-otel-collector' and build_source in ('main')) OR
-					(repo_slug = 'grafana/grafana' and build_source in ('main', 'v10.0.x', 'v10.1.x'))
-				)
-			Group by build_repo_id, build_source
+				build_status NOT IN ('running','waiting_on_dependencies','pending') 
+				AND (%s)
+			GROUP BY build_repo_id, build_source
 		)
-	`)
+	`, strings.Join(conditions, " OR ")))
 
 	if err != nil {
 		errs.Add(err)

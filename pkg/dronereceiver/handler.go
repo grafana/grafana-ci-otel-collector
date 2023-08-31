@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 type DroneCompletedBuild struct {
@@ -28,6 +29,8 @@ type DroneCompletedBuild struct {
 type droneWebhookHandler struct {
 	droneClient drone.Client
 	logger      *zap.Logger
+
+	reposConfig map[string][]string
 
 	nextLogsConsumer  consumer.Logs
 	nextTraceConsumer consumer.Traces
@@ -59,9 +62,6 @@ func getOtelExitCode(code string) ptrace.StatusCode {
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
 	d.logger.Info("Got request")
 
-	traces := ptrace.NewTraces()
-	logs := plog.NewLogs()
-
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		// TODO: handle this
@@ -78,16 +78,38 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	build := completedBuild.Build
 	repo := completedBuild.Repo
 
+	// Skip unfinished builds (i.e. builds that are still running)
+	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
+	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
+	// so, we check if build.Finished is set to a non-zero value to determine if the build is finished.
+	// However this appears to be sent twice in some cases.
 	if build.Finished == 0 {
 		return
 	}
+
+	// Skip traces for repos that are not enabled
+	allowedBranches, ok := d.reposConfig[repo.Slug]
+	if !ok {
+		d.logger.Info("repo not enabled", zap.String("repo", repo.Slug))
+		return
+	}
+
+	// Skip traces for branches that are not configured
+	if !slices.Contains[string](allowedBranches, repo.Branch) {
+		d.logger.Info("branch not enabled", zap.String("branch", repo.Branch))
+		return
+	}
+
+	traces := ptrace.NewTraces()
+	logs := plog.NewLogs()
 
 	traceId := NewTraceID()
 	buildId := NewSpanID()
 
 	d.logger.Debug("generating trace",
 		zap.String("traceId", traceId.String()),
-		zap.Int64("build.id", build.Number),
+		zap.Int64("build.id", build.ID),
+		zap.Int64("build.number", build.Number),
 		zap.Int64("build.Created", build.Created*1000000000),
 		zap.Int64("build.Finished", build.Finished*1000000000),
 		zap.Int("build.Stages", len(build.Stages)),
