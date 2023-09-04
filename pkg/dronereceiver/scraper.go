@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 
 	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -20,11 +21,12 @@ import (
 
 const (
 	localhost = "localhost"
+	timeout   = 120
 )
 
 type droneScraper struct {
 	settings component.TelemetrySettings
-	db       *pgx.Conn
+	dbPool   *pgxpool.Pool
 	mb       *metadata.MetricsBuilder
 	cfg      *Config
 }
@@ -54,13 +56,28 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 	droneDBName := os.Getenv("DRONE_DB")
 
 	r.settings.Logger.Info("Starting the drone scraper")
-	conn, err := pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", droneDBUsername, droneDBPassword, connectionHost, droneDBName))
 
-	if err != nil {
-		return err
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	timeoutExceeded := time.After(timeout * time.Second)
+	success := false
+	for !success {
+		select {
+		case <-timeoutExceeded:
+			r.settings.Logger.Error("db connection failed after %d second(s) timeout", zap.Int64("timeout", timeout))
+			os.Exit(1)
+
+		case <-ticker.C:
+			connString := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", droneDBUsername, droneDBPassword, connectionHost, droneDBName)
+			err = r.dbConnect(connString)
+			if err == nil {
+				success = true
+				break
+			}
+			r.settings.Logger.Error("failed attempt to connect to db %w", zap.Error(err))
+		}
 	}
-
-	r.db = conn
 
 	return nil
 }
@@ -92,7 +109,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		conditions = append(conditions, fmt.Sprintf("WHEN repo_slug = '%s' AND build_source IN ('%s') THEN build_source", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
 	}
 
-	rows, err := r.db.Query(ctx, fmt.Sprintf(`
+	rows, err := r.dbPool.Query(ctx, fmt.Sprintf(`
 		SELECT 
 			count(*),
 			build_status,
@@ -162,7 +179,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 
 func (r *droneScraper) scrapeRestartedBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
 	var count int64
-	builds := r.db.QueryRow(ctx, "SELECT COALESCE(SUM(occurrence_count - 1), 0) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
+	builds := r.dbPool.QueryRow(ctx, "SELECT COALESCE(SUM(occurrence_count - 1), 0) AS total_occurrence_count FROM ( SELECT count(*) AS occurrence_count FROM builds GROUP BY build_after, build_source HAVING COUNT(*) > 1) subquery")
 	err := builds.Scan(&count)
 	if err != nil {
 		errs.Add(err)
@@ -177,7 +194,7 @@ func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, er
 		conditions = append(conditions, fmt.Sprintf("repo_slug = '%s' AND build_source IN ('%s')", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
 	}
 
-	rows, err := r.db.Query(ctx, fmt.Sprintf(`
+	rows, err := r.dbPool.Query(ctx, fmt.Sprintf(`
 		SELECT build_status, r.repo_slug, build_source FROM builds
 		LEFT JOIN
 			repos r
@@ -214,4 +231,14 @@ func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, er
 
 		r.mb.RecordRepoInfoDataPoint(now, 1, metadata.MapAttributeBuildStatus[status], slug, source)
 	}
+}
+
+func (r *droneScraper) dbConnect(connString string) error {
+	pool, err := pgxpool.New(context.Background(), connString)
+	if err != nil {
+		return err
+	}
+	r.settings.Logger.Info("successfully connected to db!")
+	r.dbPool = pool
+	return nil
 }
