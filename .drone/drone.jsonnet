@@ -145,7 +145,7 @@ local verifyGenTrigger = {
       config_json: |||
         {
           "destination_branch": "master",
-          "pull_request_branch_prefix": "grafana-ci-otel-collector/",
+          "pull_request_branch_prefix": "auto-merge/grafana-ci-otel-collector/",
           "pull_request_enabled": false,
           "pull_request_team_reviewers": [],
           "pull_request_title": "Update grafana-ci-otel-collector",
