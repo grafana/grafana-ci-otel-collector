@@ -139,7 +139,37 @@ local verifyGenTrigger = {
             path: '/var/run/docker.sock',
         },
     ]),
-    step.new('update-deployment-tools', image=updaterImage)
+    step.new('update-deployment-tools-dev', image=updaterImage)
+    + step.withDependsOn(['publish-to-gcr'])
+    + step.withSettings({
+      config_json: |||
+        {
+          "destination_branch": "master",
+          "pull_request_branch_prefix": "grafana-ci-otel-collector/",
+          "pull_request_enabled": false,
+          "pull_request_team_reviewers": [],
+          "pull_request_title": "Update grafana-ci-otel-collector",
+          "repo_name": "deployment_tools",
+          "update_jsonnet_attribute_configs": [
+            {
+              "file_path": "ksonnet/environments/grafana-ci-otel-collector/images.libsonnet",
+              "jsonnet_key": "dev",
+              "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
+            }
+          ]
+        }
+      |||,
+      github_app_id: {
+        from_secret: 'gh_app_id',
+      },
+      github_app_installation_id: {
+        from_secret: 'gh_app_installation_id',
+      },
+      github_app_private_key: {
+        from_secret: 'gh_app_private_key',
+      },
+    }),
+    step.new('update-deployment-tools-ops', image=updaterImage)
     + step.withDependsOn(['publish-to-gcr'])
     + step.withSettings({
       config_json: |||
@@ -153,7 +183,7 @@ local verifyGenTrigger = {
           "update_jsonnet_attribute_configs": [
             {
               "file_path": "ksonnet/environments/grafana-ci-otel-collector/images.libsonnet",
-              "jsonnet_key": "collector",
+              "jsonnet_key": "ops",
               "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
             }
           ]
