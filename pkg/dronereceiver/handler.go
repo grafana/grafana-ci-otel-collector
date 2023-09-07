@@ -83,7 +83,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
 	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
 	// so, we check if build.Finished is set to a non-zero value to determine if the build is finished.
-	// However this appears to be sent when a build completes; The structure owever  changes slightly as in
+	// However this appears to be sent when a build completes; The structure however changes slightly as in
 	// the `repo.build` seems to be absent in the first one.
 	// TODO: Revisit this, we may not need the Finished check.
 	if evt.Repo.Build == nil || evt.Repo.Build.Finished == 0 {
