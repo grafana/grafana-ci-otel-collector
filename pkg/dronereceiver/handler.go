@@ -20,10 +20,14 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type DroneCompletedBuild struct {
-	Action string      `json:"action"`
-	Repo   drone.Repo  `json:"repo"`
-	Build  drone.Build `json:"build"`
+type RepoEvt struct {
+	drone.Repo
+	Build *drone.Build `json:"build"`
+}
+
+type WebhookEvent struct {
+	Action string   `json:"action"`
+	Repo   *RepoEvt `json:"repo"`
 }
 
 type droneWebhookHandler struct {
@@ -68,29 +72,31 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	var completedBuild DroneCompletedBuild
-	err = json.Unmarshal(body, &completedBuild)
+	var evt WebhookEvent
+	err = json.Unmarshal(body, &evt)
 	if err != nil {
 		// TODO: handle this
 		return
 	}
 
-	build := completedBuild.Build
-	repo := completedBuild.Repo
-
 	// Skip unfinished builds (i.e. builds that are still running)
 	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
 	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
 	// so, we check if build.Finished is set to a non-zero value to determine if the build is finished.
-	// However this appears to be sent twice in some cases.
-	if build.Finished == 0 {
+	// However this appears to be sent when a build completes; The structure however changes slightly as in
+	// the `repo.build` seems to be absent in the first one.
+	// TODO: Revisit this, we may not need the Finished check.
+	if evt.Repo.Build == nil || evt.Repo.Build.Finished == 0 {
 		return
 	}
 
+	repo := evt.Repo
+	build := evt.Repo.Build
+
 	// Skip traces for repos that are not enabled
-	allowedBranches, ok := d.reposConfig[repo.Slug]
+	allowedBranches, ok := d.reposConfig[evt.Repo.Slug]
 	if !ok {
-		d.logger.Info("repo not enabled", zap.String("repo", repo.Slug))
+		d.logger.Info("repo not enabled", zap.String("repo", evt.Repo.Slug))
 		return
 	}
 
@@ -124,8 +130,6 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	resourceAttrs := resourceSpan.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
 	resourceAttrs.PutStr(conventions.AttributeServiceName, "drone")
-	resourceAttrs.PutInt("build.number", build.Number)
-	resourceAttrs.PutInt("build.id", build.ID)
 	resourceAttrs.PutStr("repo.name", repo.Slug)
 	resourceAttrs.PutStr("repo.branch", repo.Branch)
 
@@ -134,6 +138,10 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 	buildSpan.Attributes().PutStr(CI_KIND, "build")
+
+	buildSpan.Attributes().PutInt("build.number", build.Number)
+	buildSpan.Attributes().PutInt("build.id", build.ID)
+
 	setStatus(build.Status, buildSpan)
 	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
 
@@ -176,36 +184,38 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
 
-			lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
-			if err != nil {
-				d.logger.Error("error retrieving logs", zap.Error(err))
-				continue
-			}
-
-			log := logs.ResourceLogs().AppendEmpty()
-			logScope := log.ScopeLogs().AppendEmpty()
-
-			now := pcommon.NewTimestampFromTime(time.Now())
-
-			prevLineTimestamp := int64(0)
-			delta := int64(0)
-			for _, line := range lines {
-				if line.Timestamp == prevLineTimestamp {
-					delta++
-				} else {
-					delta = 0
-					prevLineTimestamp = line.Timestamp
+			if step.Status != "skipped" {
+				lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
+				if err != nil {
+					d.logger.Error("error retrieving logs", zap.Error(err))
+					continue
 				}
 
-				record := logScope.LogRecords().AppendEmpty()
-				record.SetTraceID(traceId)
-				record.SetSpanID(stepSpanId)
+				log := logs.ResourceLogs().AppendEmpty()
+				logScope := log.ScopeLogs().AppendEmpty()
 
-				record.SetObservedTimestamp(now)
-				record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
-				record.Attributes().PutStr(CI_STAGE, stage.Name)
-				record.Attributes().PutStr(CI_STEP, step.Name)
-				record.Body().SetStr(line.Message)
+				now := pcommon.NewTimestampFromTime(time.Now())
+
+				prevLineTimestamp := int64(0)
+				delta := int64(0)
+				for _, line := range lines {
+					if line.Timestamp == prevLineTimestamp {
+						delta++
+					} else {
+						delta = 0
+						prevLineTimestamp = line.Timestamp
+					}
+
+					record := logScope.LogRecords().AppendEmpty()
+					record.SetTraceID(traceId)
+					record.SetSpanID(stepSpanId)
+
+					record.SetObservedTimestamp(now)
+					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
+					record.Attributes().PutStr(CI_STAGE, stage.Name)
+					record.Attributes().PutStr(CI_STEP, step.Name)
+					record.Body().SetStr(line.Message)
+				}
 			}
 		}
 	}

@@ -701,6 +701,7 @@ github.com/zeebo/xxh3 v1.0.2 h1:xZmwmqxHZA8AI603jOQ0tMqmBr9lPeFwGg6d+xy9DC0=
 go.mongodb.org/mongo-driver v1.11.3 h1:Ql6K6qYHEzB6xvu4+AU0BoRoqf9vFPcc4o7MUIdPW8Y=
 go.mongodb.org/mongo-driver v1.11.3/go.mod h1:PTSz5yu21bkT/wXpkS7WR5f0ddqw5quethTUn9WM+2g=
 go.opentelemetry.io/collector/extension/zpagesextension v0.83.0/go.mod h1:oJBN3N0uusy36qMo7FeWCUv2F9S6JCYw1omvtMtUQ4o=
+go.opentelemetry.io/collector/extension/zpagesextension v0.84.0/go.mod h1:R6tfHCmRP1FUFKmsUqMTNPN+6LA54DaZLjai90ijMtc=
 go.opentelemetry.io/contrib/zpages v0.42.0/go.mod h1:qRJBEfB0iwRKrYImq5qfwTolmY8HXvZBRucvhuTVQZw=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0 h1:TKf2uAs2ueguzLaxOCBXNpHxfO/aC7PAdDsSH0IbeRQ=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0/go.mod h1:HrbCVv40OOLTABmOn1ZWty6CHXkU8DK/Urc43tHug70=
