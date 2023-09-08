@@ -64,7 +64,7 @@ func getOtelExitCode(code string) ptrace.StatusCode {
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
-	d.logger.Info("Got request")
+	d.logger.Debug("Got request")
 
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
