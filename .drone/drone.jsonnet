@@ -152,7 +152,7 @@ local verifyGenTrigger = {
           "repo_name": "deployment_tools",
           "update_jsonnet_attribute_configs": [
             {
-              "file_path": "ksonnet/environments/grafana-ci-otel-collector/images.libsonnet",
+              "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev.libsonnet",
               "jsonnet_key": "dev",
               "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
             }
@@ -182,7 +182,7 @@ local verifyGenTrigger = {
           "repo_name": "deployment_tools",
           "update_jsonnet_attribute_configs": [
             {
-              "file_path": "ksonnet/environments/grafana-ci-otel-collector/images.libsonnet",
+              "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-ops.libsonnet",
               "jsonnet_key": "ops",
               "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
             }
