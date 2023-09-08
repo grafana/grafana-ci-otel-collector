@@ -83,7 +83,7 @@ func (r *droneScraper) start(_ context.Context, host component.Host) error {
 }
 
 func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
-	r.settings.Logger.Info("Scraping...")
+	r.settings.Logger.Debug("Scraping...")
 
 	errs := &scrapererror.ScrapeErrors{}
 
