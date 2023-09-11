@@ -79,6 +79,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	// glc_eyJvIjoiNTAwMCIsIm4iOiJzdGFjay01NTQ2ODYtaG0tZ3JhY2llLXByb20iLCJrIjoidHRpNDUxaDFZYzIyOE94N3dkN29tN0Z5IiwibSI6eyJyIjoidXMifX0
 	// Skip unfinished builds (i.e. builds that are still running)
 	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
 	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
@@ -191,10 +192,12 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 					continue
 				}
 
-				log := logs.ResourceLogs().AppendEmpty()
-				logScope := log.ScopeLogs().AppendEmpty()
+				generateMetadata(logs, *repo, *build, *step)
 
 				now := pcommon.NewTimestampFromTime(time.Now())
+
+				log := logs.ResourceLogs().AppendEmpty()
+				logScope := log.ScopeLogs().AppendEmpty()
 
 				prevLineTimestamp := int64(0)
 				delta := int64(0)
@@ -242,4 +245,42 @@ func NewSpanID() pcommon.SpanID {
 	spanID := pcommon.SpanID(sid)
 
 	return spanID
+}
+
+type LogMessage struct {
+	Start  int64  `json:"start"`
+	End    int64  `json:"end"`
+	Source string `json:"source"`
+	Target string `json:"target"`
+}
+
+func generateMetadata(logs plog.Logs, repo RepoEvt, build drone.Build, step drone.Step) {
+
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	// Metadata
+	logMetaData := logs.ResourceLogs().AppendEmpty()
+	logMetaData.Resource().Attributes().PutStr("repo.name", repo.Slug)
+	logMetaData.Resource().Attributes().PutStr("status", step.Status)
+
+	// logMetaData.Resource().Attributes().PutStr("repo.branch", repo.Build.Source)
+	// logMetaData.Resource().Attributes().PutStr("repo.branch", repo.Build.Source)
+
+	logMetadataScope := logMetaData.ScopeLogs().AppendEmpty()
+
+	metadataRecord := logMetadataScope.LogRecords().AppendEmpty()
+
+	metadataRecord.SetObservedTimestamp(now)
+
+	msg := LogMessage{
+		Start:  step.Started,
+		End:    step.Stopped,
+		Source: build.Source,
+		Target: build.Target,
+	}
+
+	msgStr, _ := json.Marshal(msg)
+	metadataRecord.Body().SetStr(string(msgStr))
+	// END metadata
+
 }
