@@ -40,9 +40,9 @@ type droneWebhookHandler struct {
 	nextTraceConsumer consumer.Traces
 }
 
-const CI_KIND = "ci.kind"
-const CI_STAGE = "ci.stage"
-const CI_STEP = "ci.step"
+const CIKind = "ci.kind"
+const CIStage = "ci.stage"
+const CIStep = "ci.step"
 
 func setStatus(status string, span ptrace.Span) {
 	span.Attributes().PutStr("ci.status", status)
@@ -79,7 +79,6 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	// glc_eyJvIjoiNTAwMCIsIm4iOiJzdGFjay01NTQ2ODYtaG0tZ3JhY2llLXByb20iLCJrIjoidHRpNDUxaDFZYzIyOE94N3dkN29tN0Z5IiwibSI6eyJyIjoidXMifX0
 	// Skip unfinished builds (i.e. builds that are still running)
 	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
 	// However, in practice, it seems that build.Action is always "updated" as per https://github.com/harness/drone/issues/2977.
@@ -138,7 +137,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
-	buildSpan.Attributes().PutStr(CI_KIND, "build")
+	buildSpan.Attributes().PutStr(CIKind, "build")
 
 	buildSpan.Attributes().PutInt("build.number", build.Number)
 	buildSpan.Attributes().PutInt("build.id", build.ID)
@@ -163,7 +162,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.SetTraceID(traceId)
 		stageSpan.SetSpanID(stageId)
 		stageSpan.SetParentSpanID(buildId)
-		stageSpan.Attributes().PutStr(CI_KIND, "stage")
+		stageSpan.Attributes().PutStr(CIKind, "stage")
 
 		stageSpan.SetStartTimestamp(pcommon.Timestamp(stage.Started * 1000000000))
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
@@ -174,8 +173,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetTraceID(traceId)
 			stepSpan.SetParentSpanID(stageId)
 			stepSpan.SetSpanID(stepSpanId)
-			stepSpan.Attributes().PutStr(CI_KIND, "step")
-			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
+			stepSpan.Attributes().PutStr(CIKind, "step")
+			stepSpan.Attributes().PutStr(CIStage, stage.Name)
 
 			setStatus(step.Status, stepSpan)
 			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
@@ -192,7 +191,10 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 					continue
 				}
 
-				generateMetadata(logs, *repo, *build, *step)
+				err = generateMetadata(logs, *repo, *build, *step)
+				if err != nil {
+					d.logger.Error("failed to generate metadata ", zap.Error(err))
+				}
 
 				now := pcommon.NewTimestampFromTime(time.Now())
 
@@ -215,8 +217,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 					record.SetObservedTimestamp(now)
 					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
-					record.Attributes().PutStr(CI_STAGE, stage.Name)
-					record.Attributes().PutStr(CI_STEP, step.Name)
+					record.Attributes().PutStr(CIStage, stage.Name)
+					record.Attributes().PutStr(CIStep, step.Name)
 					record.Body().SetStr(line.Message)
 				}
 			}
@@ -254,17 +256,13 @@ type LogMessage struct {
 	Target string `json:"target"`
 }
 
-func generateMetadata(logs plog.Logs, repo RepoEvt, build drone.Build, step drone.Step) {
-
+func generateMetadata(logs plog.Logs, repo RepoEvt, build drone.Build, step drone.Step) error {
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	// Metadata
 	logMetaData := logs.ResourceLogs().AppendEmpty()
 	logMetaData.Resource().Attributes().PutStr("repo.name", repo.Slug)
 	logMetaData.Resource().Attributes().PutStr("status", step.Status)
-
-	// logMetaData.Resource().Attributes().PutStr("repo.branch", repo.Build.Source)
-	// logMetaData.Resource().Attributes().PutStr("repo.branch", repo.Build.Source)
 
 	logMetadataScope := logMetaData.ScopeLogs().AppendEmpty()
 
@@ -279,8 +277,11 @@ func generateMetadata(logs plog.Logs, repo RepoEvt, build drone.Build, step dron
 		Target: build.Target,
 	}
 
-	msgStr, _ := json.Marshal(msg)
+	msgStr, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
 	metadataRecord.Body().SetStr(string(msgStr))
-	// END metadata
 
+	return nil
 }
