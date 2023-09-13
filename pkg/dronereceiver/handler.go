@@ -175,6 +175,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetSpanID(stepSpanId)
 			stepSpan.Attributes().PutStr(CI_KIND, "step")
 			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
+			stepSpan.Attributes().PutInt("step.number", int64(step.Number))
 
 			setStatus(step.Status, stepSpan)
 			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
@@ -214,6 +215,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
 					record.Attributes().PutStr(CI_STAGE, stage.Name)
 					record.Attributes().PutStr(CI_STEP, step.Name)
+					record.Attributes().PutInt("build.number", build.Number)
 					record.Body().SetStr(line.Message)
 				}
 			}
