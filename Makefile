@@ -23,3 +23,11 @@ docker-run:
  		grafana-ci-otel-collector:latest --config /tmp/config.yaml
 
 docker: docker-build-local docker-run
+
+drone:
+	jsonnet -J .drone/vendor/ .drone/drone.jsonnet > jsonnetfile
+	drone jsonnet --stream \
+		--format \
+		--source jsonnetfile \
+		--target .drone.yml
+	rm jsonnetfile
