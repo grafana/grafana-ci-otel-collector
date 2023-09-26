@@ -148,7 +148,7 @@ local verifyGenTrigger = {
           "pull_request_branch_prefix": "auto-merge/grafana-ci-otel-collector/",
           "pull_request_enabled": true,
           "pull_request_team_reviewers": [],
-          "pull_request_title": "Update grafana-ci-otel-collector",
+          "pull_request_title": "Dev: Update grafana-ci-otel-collector",
           "repo_name": "deployment_tools",
           "update_jsonnet_attribute_configs": [
             {
@@ -178,7 +178,7 @@ local verifyGenTrigger = {
           "pull_request_branch_prefix": "grafana-ci-otel-collector/",
           "pull_request_enabled": true,
           "pull_request_team_reviewers": [],
-          "pull_request_title": "Update grafana-ci-otel-collector",
+          "pull_request_title": "Ops: Update grafana-ci-otel-collector ",
           "repo_name": "deployment_tools",
           "update_jsonnet_attribute_configs": [
             {
