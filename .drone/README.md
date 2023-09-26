@@ -27,6 +27,12 @@ documentation to get more options about your CI/CD needs.
 After you are happy with the changes you've made in `.drone/drone.jsonnet` from your root project directory, run:
 
 ```bash
+make drone
+```
+
+or
+
+```bash
 drone jsonnet --stream \
               --format \
               --source <(jsonnet -J .drone/vendor/ .drone/drone.jsonnet) \
