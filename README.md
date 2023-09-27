@@ -161,7 +161,7 @@ make docker
 
 **NOTES:**
 
-- When building/running the Docker image, we are specifying `$NETWORK_HOST` var to be `host.docker.internal`.
+- When building/running the collector via the Docker image, you need to change your `config.yaml` so that all hosts pointing to services exposed via docker-compose point to `host.docker.internal`.
 
 ## Spin up Grafana as a Docker image locally
 
