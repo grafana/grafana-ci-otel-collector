@@ -12,7 +12,7 @@ receivers:
     webhook:
       endpoint: /drone/webhook
       port: 3333
-      secret: <DRONE_WEBHOOK_SECRET>
+      secret: bea26a2221fd8090ea38720fc445eca6
     repos:
       grafana/grafana:
         - main
