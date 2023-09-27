@@ -9,6 +9,8 @@ build: $(BINGO) $(BUILDER)
 run: 
 	./collector/grafana-ci-otelcol --config config.yaml
 
+dev: metadata build run
+
 docker-build:
 	@echo "building docker container grafana-ci-otel-collector"
 	docker build -t grafana-ci-otel-collector .

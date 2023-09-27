@@ -136,7 +136,7 @@ receivers:
 ### Start the collector
 
 ```bash
-make metadata && make build && make run
+make dev
 ```
 
 ### Spin up the collector as a Docker image
@@ -144,7 +144,7 @@ make metadata && make build && make run
 Build the Docker image:
 
 ```bash
-make docker-build-local
+make docker-build
 ```
 
 Run the Docker image:
