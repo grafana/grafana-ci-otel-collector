@@ -7,9 +7,17 @@ import (
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
+type DBConfig struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	DB       string `mapstructure:"db"`
+	Host     string `mapstructure:"host"`
+}
+
 type DroneConfig struct {
-	Token string `mapstructure:"token"`
-	Host  string `mapstructure:"host"`
+	Token    string   `mapstructure:"token"`
+	Host     string   `mapstructure:"host"`
+	Database DBConfig `mapstructure:"database"`
 }
 
 type WebhookConfig struct {

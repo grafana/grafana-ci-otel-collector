@@ -14,7 +14,7 @@ cp config.example.yaml config.yaml
 ### Building
 
 ```bash
-NETWORK_HOST=localhost && make metadata && make build
+make metadata && make build
 ```
 
 ### Running
@@ -28,7 +28,7 @@ docker-compose up -d
 Then you can start the collector with:
 
 ```bash
-NETWORK_HOST=localhost && make run
+make run
 ```
 
 ## Local Drone instance
@@ -46,11 +46,7 @@ The `docker-compose.localdrone.yml` file expects the following environment varia
 DRONE_SERVER_PROXY_HOST=
 DRONE_GITHUB_CLIENT_ID=
 DRONE_GITHUB_CLIENT_SECRET=
-DRONE_WEBHOOK_SECRET=
 GH_HANDLE=
-DRONE_DB_USERNAME=
-DRONE_DB_PASSWORD=
-DRONE_DB=
 ```
 
 you can copy the example env vars file and replace the values:
@@ -105,16 +101,6 @@ After the application is registered, generate a `Client secret`.
 
 Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
 
-### Genereate a webhook secret
-
-Generate a webhook secret to verify the authenticity of the webhook requests.
-
-```bash
-openssl rand -hex 16
-```
-
-Take note of the generated secret and use it to configure the `DRONE_WEBHOOK_SECRET` environment variable in the `.env` file.
-
 ### Run Drone
 
 You can now start Drone with:
@@ -132,7 +118,7 @@ If you filled in the `GH_HANDLE` environment variable in the `.env` file, your u
 
 ### Configure the collector
 
-Update the `dronereceiver` receiver in the `config.yaml` file to use the [webhook secret](#genereate-a-webhook-secret) and the [drone token](#get-your-drone-token) from above:
+Update the `dronereceiver` receiver in the `config.yaml` file to use the [drone token](#get-your-drone-token) from above:
 
 ```yaml
 receivers:
@@ -144,13 +130,13 @@ receivers:
     webhook:
       endpoint: /drone/webhook
       port: 3333
-      secret: <DRONE_WEBHOOK_SECRET>
+      secret: bea26a2221fd8090ea38720fc445eca6
 ```
 
 ### Start the collector
 
 ```bash
-NETWORK_HOST=localhost && make metadata && make build && make run
+make dev
 ```
 
 ### Spin up the collector as a Docker image
@@ -158,7 +144,7 @@ NETWORK_HOST=localhost && make metadata && make build && make run
 Build the Docker image:
 
 ```bash
-make docker-build-local
+make docker-build
 ```
 
 Run the Docker image:
@@ -175,8 +161,7 @@ make docker
 
 **NOTES:**
 
-- When building/running the Docker image, we are specifying `$NETWORK_HOST` var to be `host.docker.internal`.
-- We are forwarding the 3333 port (`-p 3333:3333`) so the `curl` test command in [Generating Traces](#generating-graces) can work.
+- When building/running the collector via the Docker image, you need to change your `config.yaml` so that all hosts pointing to services exposed via docker-compose point to `host.docker.internal`.
 
 ## Spin up Grafana as a Docker image locally
 
