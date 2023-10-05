@@ -14,10 +14,12 @@ exporters:
 
 connectors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.83.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.83.0
 
 processors:
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.83.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.83.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.83.0
 
 extensions:
   # Used for basic auth in production deployments for grafana cloud.
