@@ -214,6 +214,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
 					record.Attributes().PutStr(CI_STAGE, stage.Name)
 					record.Attributes().PutStr(CI_STEP, step.Name)
+
+					record.Attributes().PutStr("repo.name", repo.Slug)
 					record.Body().SetStr(line.Message)
 				}
 			}
