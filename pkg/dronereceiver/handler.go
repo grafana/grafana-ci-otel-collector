@@ -1,16 +1,13 @@
 package dronereceiver
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"encoding/json"
 	"io"
-	"math/rand"
 	"net/http"
 	"time"
 
 	drone "github.com/drone/drone-go/drone"
-	"github.com/google/uuid"
+	"github.com/grafana/grafana-ci-otel-collector/traceutils"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -43,25 +40,6 @@ type droneWebhookHandler struct {
 const CI_KIND = "ci.kind"
 const CI_STAGE = "ci.stage"
 const CI_STEP = "ci.step"
-
-func setStatus(status string, span ptrace.Span) {
-	span.Attributes().PutStr("ci.status", status)
-}
-
-func getOtelExitCode(code string) ptrace.StatusCode {
-	switch code {
-	case "failure":
-		fallthrough
-	case "error":
-		return ptrace.StatusCodeError
-
-	case "success":
-		return ptrace.StatusCodeOk
-
-	default:
-		return ptrace.StatusCodeUnset
-	}
-}
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
 	d.logger.Debug("Got request")
@@ -109,8 +87,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
 
-	traceId := NewTraceID()
-	buildId := NewSpanID()
+	traceId := traceutils.NewTraceID()
+	buildId := traceutils.NewSpanID()
 
 	d.logger.Debug("generating trace",
 		zap.String("traceId", traceId.String()),
@@ -122,10 +100,10 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	)
 
 	resourceSpan := traces.ResourceSpans().AppendEmpty()
-	scopeSpans := resourceSpan.ScopeSpans().AppendEmpty()
+	scopeSpan := resourceSpan.ScopeSpans().AppendEmpty()
 
-	scopeSpans.Scope().SetName("dronereceiver")
-	scopeSpans.Scope().SetVersion("0.1.0")
+	scopeSpan.Scope().SetName("dronereceiver")
+	scopeSpan.Scope().SetVersion("0.1.0")
 
 	resourceAttrs := resourceSpan.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
@@ -133,7 +111,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	resourceAttrs.PutStr("repo.name", repo.Slug)
 	resourceAttrs.PutStr("repo.branch", repo.Branch)
 
-	buildSpan := scopeSpans.Spans().AppendEmpty()
+	buildSpan := scopeSpan.Spans().AppendEmpty()
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
@@ -142,22 +120,34 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.Attributes().PutInt("build.number", build.Number)
 	buildSpan.Attributes().PutInt("build.id", build.ID)
 
-	setStatus(build.Status, buildSpan)
-	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
+	// TODO: the trigger seems to be the username, should we keep it?
+	buildSpan.Attributes().PutStr("build.trigger", build.Trigger)
+
+	// Set build title and message
+	// The root span name will be the build title if it is set, otherwise it will be the build message.
+	buildSpan.Attributes().PutStr("build.title", build.Title)
+	buildSpan.Attributes().PutStr("build.message", build.Message)
+
+	if build.Title != "" {
+		buildSpan.SetName(build.Title)
+	} else {
+		buildSpan.SetName(build.Message)
+	}
+
+	traceutils.SetStatus(build.Status, buildSpan)
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
 
 	for _, stage := range build.Stages {
-		stageId := NewSpanID()
+		stageId := traceutils.NewSpanID()
 		stageSpans := resourceSpan.ScopeSpans().AppendEmpty()
 		stageSpan := stageSpans.Spans().AppendEmpty()
 
 		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
 		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
 
-		setStatus(stage.Status, stageSpan)
-		stageSpan.Status().SetCode(getOtelExitCode(stage.Status))
+		traceutils.SetStatus(stage.Status, stageSpan)
 		stageSpan.SetName(stage.Name)
 		stageSpan.SetTraceID(traceId)
 		stageSpan.SetSpanID(stageId)
@@ -168,7 +158,11 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
 
 		for _, step := range stage.Steps {
-			stepSpanId := NewSpanID()
+			if step.Status == "skipped" {
+				continue
+			}
+
+			stepSpanId := traceutils.NewSpanID()
 			stepSpan := stageSpans.Spans().AppendEmpty()
 			stepSpan.SetTraceID(traceId)
 			stepSpan.SetParentSpanID(stageId)
@@ -177,48 +171,20 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
 			stepSpan.Attributes().PutInt("step.number", int64(step.Number))
 
-			setStatus(step.Status, stepSpan)
-			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
+			traceutils.SetStatus(step.Status, stepSpan)
 
 			stepSpan.SetName(step.Name)
 
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
 
-			if step.Status != "skipped" {
-				lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
-				if err != nil {
-					d.logger.Error("error retrieving logs", zap.Error(err))
-					continue
-				}
-
-				log := logs.ResourceLogs().AppendEmpty()
-				logScope := log.ScopeLogs().AppendEmpty()
-
-				now := pcommon.NewTimestampFromTime(time.Now())
-
-				prevLineTimestamp := int64(0)
-				delta := int64(0)
-				for _, line := range lines {
-					if line.Timestamp == prevLineTimestamp {
-						delta++
-					} else {
-						delta = 0
-						prevLineTimestamp = line.Timestamp
-					}
-
-					record := logScope.LogRecords().AppendEmpty()
-					record.SetTraceID(traceId)
-					record.SetSpanID(stepSpanId)
-
-					record.SetObservedTimestamp(now)
-					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
-					record.Attributes().PutStr(CI_STAGE, stage.Name)
-					record.Attributes().PutStr(CI_STEP, step.Name)
-					record.Attributes().PutInt("build.number", build.Number)
-					record.Body().SetStr(line.Message)
-				}
+			newLogs, err := generateLogs(d.droneClient, repo.Repo, *build, *stage, *step, traceId, stepSpanId)
+			if err != nil {
+				d.logger.Error("error retrieving logs", zap.Error(err))
+				continue
 			}
+
+			newLogs.ResourceLogs().MoveAndAppendTo(logs.ResourceLogs())
 		}
 	}
 
@@ -230,18 +196,41 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 }
 
-func NewTraceID() pcommon.TraceID {
-	return pcommon.TraceID(uuid.New())
-}
+func generateLogs(drone drone.Client, repo drone.Repo, build drone.Build, stage drone.Stage, step drone.Step, traceId pcommon.TraceID, stepSpanId pcommon.SpanID) (plog.Logs, error) {
+	logs := plog.NewLogs()
 
-func NewSpanID() pcommon.SpanID {
-	var rngSeed int64
-	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed))
+	lines, err := drone.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
+	if err != nil {
+		return logs, err
+	}
 
-	var sid [8]byte
-	randSource.Read(sid[:])
-	spanID := pcommon.SpanID(sid)
+	log := logs.ResourceLogs().AppendEmpty()
+	logScope := log.ScopeLogs().AppendEmpty()
 
-	return spanID
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	prevLineTimestamp := int64(0)
+	delta := int64(0)
+	for _, line := range lines {
+		if line.Timestamp == prevLineTimestamp {
+			delta++
+		} else {
+			delta = 0
+			prevLineTimestamp = line.Timestamp
+		}
+
+		record := logScope.LogRecords().AppendEmpty()
+		record.SetTraceID(traceId)
+		record.SetSpanID(stepSpanId)
+
+		record.SetObservedTimestamp(now)
+		record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
+		record.Attributes().PutStr(CI_STAGE, stage.Name)
+		record.Attributes().PutStr(CI_STEP, step.Name)
+		record.Attributes().PutInt("build.number", build.Number)
+		record.Body().SetStr(line.Message)
+	}
+
+	return logs, nil
+
 }

@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
+	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
