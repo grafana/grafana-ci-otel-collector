@@ -26,13 +26,13 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.83.0
 
 receivers:
-  - gomod: 'github.com/grafana/grafana-collector/dronereceiver v0.1.0'
-    import: 'github.com/grafana/grafana-collector/dronereceiver'
+  - gomod: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver v0.1.0'
+    import: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver'
     name: 'dronereceiver'
     path: './pkg/dronereceiver'
 
 replaces:
-  - github.com/grafana/grafana-collector/dronereceiver => ../pkg/dronereceiver
+  - github.com/grafana/grafana-ci-otel-collector/dronereceiver => ../pkg/dronereceiver
 
 excludes:
   - github.com/knadh/koanf v1.5.0
