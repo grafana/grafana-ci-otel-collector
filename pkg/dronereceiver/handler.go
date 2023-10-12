@@ -2,8 +2,10 @@ package dronereceiver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	drone "github.com/drone/drone-go/drone"
@@ -49,6 +51,8 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		// TODO: handle this
 		return
 	}
+
+	fmt.Println(string(body))
 
 	var evt WebhookEvent
 	err = json.Unmarshal(body, &evt)
@@ -99,34 +103,72 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		zap.Int("build.Stages", len(build.Stages)),
 	)
 
-	resourceSpan := traces.ResourceSpans().AppendEmpty()
-	scopeSpan := resourceSpan.ScopeSpans().AppendEmpty()
+	resourceSpans := traces.ResourceSpans().AppendEmpty()
+	scopeSpans := resourceSpans.ScopeSpans().AppendEmpty()
 
-	scopeSpan.Scope().SetName("dronereceiver")
-	scopeSpan.Scope().SetVersion("0.1.0")
+	scopeSpans.Scope().SetName("dronereceiver")
+	scopeSpans.Scope().SetVersion("0.1.0")
 
-	resourceAttrs := resourceSpan.Resource().Attributes()
+	resourceAttrs := resourceSpans.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
 	resourceAttrs.PutStr(conventions.AttributeServiceName, "drone")
 	resourceAttrs.PutStr("repo.name", repo.Slug)
 	resourceAttrs.PutStr("repo.branch", repo.Branch)
 
-	buildSpan := scopeSpan.Spans().AppendEmpty()
+	buildSpan := scopeSpans.Spans().AppendEmpty()
+	buildAttributes := buildSpan.Attributes()
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
-	buildSpan.Attributes().PutStr(CI_KIND, "build")
+	buildAttributes.PutStr(CI_KIND, "build")
 
-	buildSpan.Attributes().PutInt("build.number", build.Number)
-	buildSpan.Attributes().PutInt("build.id", build.ID)
+	buildAttributes.PutInt("build.number", build.Number)
+	buildAttributes.PutInt("build.id", build.ID)
 
-	// TODO: the trigger seems to be the username, should we keep it?
-	buildSpan.Attributes().PutStr("build.trigger", build.Trigger)
+	// --- VCS Info
+	// !FIXME: the scm property seems to always be empty
+	if repo.SCM != "" {
+		buildAttributes.PutStr("vcs.scm", repo.SCM)
+	} else {
+		buildAttributes.PutStr("vcs.scm", "git")
+	}
+
+	buildAttributes.PutStr("vcs.git.http_url", repo.HTTPURL)
+	buildAttributes.PutStr("vcs.git.ssh_url", repo.SSHURL)
+	buildAttributes.PutStr("vcs.git.link", repo.Link)
+	// --- END VCS Info
+
+	// --- Author Info
+	buildAttributes.PutStr("author.name", repo.Build.AuthorName)
+	buildAttributes.PutStr("author.email", repo.Build.AuthorEmail)
+	buildAttributes.PutStr("author.avatar", repo.Build.AuthorAvatar)
+	buildAttributes.PutStr("author.login", repo.Build.Author)
+	// --- END Author Info
 
 	// Set build title and message
 	// The root span name will be the build title if it is set, otherwise it will be the build message.
-	buildSpan.Attributes().PutStr("build.title", build.Title)
-	buildSpan.Attributes().PutStr("build.message", build.Message)
+	buildAttributes.PutStr("build.title", build.Title)
+	buildAttributes.PutStr("build.message", build.Message)
+
+	// UNKNOWN
+	buildAttributes.PutStr("build.action", build.Action)
+	buildAttributes.PutStr("build.after", build.After)
+	buildAttributes.PutStr("build.before", build.Before)
+	buildAttributes.PutStr("build.deploy", build.Deploy)
+	buildAttributes.PutStr("build.error", build.Error)
+	buildAttributes.PutStr("build.event", build.Event)
+	buildAttributes.PutStr("build.fork", build.Fork)
+	buildAttributes.PutStr("build.link", build.Link)
+	buildAttributes.PutStr("build.message", build.Message)
+	buildAttributes.PutStr("build.ref", build.Ref)
+	buildAttributes.PutStr("build.sender", build.Sender)
+	buildAttributes.PutStr("build.source", build.Source)
+	buildAttributes.PutStr("build.status", build.Status)
+	buildAttributes.PutStr("build.target", build.Target)
+	buildAttributes.PutStr("build.title", build.Title)
+	buildAttributes.PutStr("build.trigger", build.Trigger)
+	buildAttributes.PutInt("build.deployID", build.DeployID)
+	buildAttributes.PutInt("build.parent", build.Parent)
 
 	if build.Title != "" {
 		buildSpan.SetName(build.Title)
@@ -141,18 +183,25 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 	for _, stage := range build.Stages {
 		stageId := traceutils.NewSpanID()
-		stageSpans := resourceSpan.ScopeSpans().AppendEmpty()
+		stageSpans := resourceSpans.ScopeSpans().AppendEmpty()
 		stageSpan := stageSpans.Spans().AppendEmpty()
+		stageAttributes := stageSpan.Attributes()
 
-		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
-		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
-
-		traceutils.SetStatus(stage.Status, stageSpan)
-		stageSpan.SetName(stage.Name)
-		stageSpan.SetTraceID(traceId)
+		stageAttributes.PutStr(CI_KIND, "stage")
+		stageSpan.SetTraceID(buildSpan.TraceID())
 		stageSpan.SetSpanID(stageId)
 		stageSpan.SetParentSpanID(buildId)
-		stageSpan.Attributes().PutStr(CI_KIND, "stage")
+
+		stageSpan.SetName(stage.Name)
+		stageAttributes.PutStr(conventions.AttributeServiceName, stage.Name)
+
+		traceutils.SetStatus(stage.Status, stageSpan)
+
+		stageAttributes.PutInt("stage.number", int64(stage.Number))
+
+		// TODO: is it the host arch?
+		stageAttributes.PutStr(conventions.AttributeHostArch, stage.Arch)
+		stageAttributes.PutStr(conventions.AttributeOSName, stage.OS)
 
 		stageSpan.SetStartTimestamp(pcommon.Timestamp(stage.Started * 1000000000))
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
@@ -164,15 +213,22 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 
 			stepSpanId := traceutils.NewSpanID()
 			stepSpan := stageSpans.Spans().AppendEmpty()
-			stepSpan.SetTraceID(traceId)
+			stepSpan.SetTraceID(stageSpan.TraceID())
 			stepSpan.SetParentSpanID(stageId)
 			stepSpan.SetSpanID(stepSpanId)
-			stepSpan.Attributes().PutStr(CI_KIND, "step")
-			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
-			stepSpan.Attributes().PutInt("step.number", int64(step.Number))
+
+			stepAttributes := stepSpan.Attributes()
+
+			stepAttributes.PutStr(CI_KIND, "step")
+			stepAttributes.PutStr(CI_STAGE, stage.Name)
+			stepAttributes.PutInt("step.number", int64(step.Number))
+
+			// Set step's image name and tag
+			image := strings.Split(step.Image, ":")
+			stepAttributes.PutStr(conventions.AttributeContainerImageName, image[0])
+			stepAttributes.PutStr(conventions.AttributeContainerImageTag, image[1])
 
 			traceutils.SetStatus(step.Status, stepSpan)
-
 			stepSpan.SetName(step.Name)
 
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
