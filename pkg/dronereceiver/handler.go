@@ -11,6 +11,7 @@ import (
 
 	drone "github.com/drone/drone-go/drone"
 	"github.com/google/uuid"
+	semconv "github.com/grafana/grafana-ci-otel-collector/semconv"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -137,16 +138,33 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(buildId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
-	buildSpan.Attributes().PutStr(CI_KIND, "build")
+	buildAttributes := buildSpan.Attributes()
 
-	buildSpan.Attributes().PutInt("build.number", build.Number)
-	buildSpan.Attributes().PutInt("build.id", build.ID)
+	buildAttributes.PutStr(CI_KIND, "build")
+
+	buildAttributes.PutInt("build.number", build.Number)
+	buildAttributes.PutInt("build.id", build.ID)
 
 	setStatus(build.Status, buildSpan)
 	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
+
+	// --- VCS Info
+	// !FIXME: the scm property seems to always be empty, we fallback to GIT for now
+	vcsType := semconv.AttributeVCSTypeGit
+	if repo.SCM != "" {
+		vcsType = repo.SCM
+	}
+	buildAttributes.PutStr(semconv.AttributeVCSType, vcsType)
+
+	if vcsType == semconv.AttributeVCSTypeGit {
+		buildAttributes.PutStr(semconv.AttributeGitHTTPURL, repo.HTTPURL)
+		buildAttributes.PutStr(semconv.AttributeGitSSHURL, repo.SSHURL)
+		buildAttributes.PutStr(semconv.AttributeGitWWWURL, repo.Link)
+	}
+	// --- END VCS Info
 
 	for _, stage := range build.Stages {
 		stageId := NewSpanID()
