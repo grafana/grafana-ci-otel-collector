@@ -3,4 +3,6 @@ go 1.19
 use (
 	./collector // Generated collector
 	./pkg/dronereceiver
+	./pkg/semconv
+	./pkg/traceutils
 )

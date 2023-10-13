@@ -34,6 +34,7 @@ receivers:
 replaces:
   - github.com/grafana/grafana-ci-otel-collector/dronereceiver => ../pkg/dronereceiver
   - github.com/grafana/grafana-ci-otel-collector/semconv => ../pkg/semconv
+  - github.com/grafana/grafana-ci-otel-collector/traceutils => ../pkg/traceutils
 
 excludes:
   - github.com/knadh/koanf v1.5.0
