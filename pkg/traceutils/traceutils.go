@@ -31,7 +31,7 @@ func NewSpanID() pcommon.SpanID {
 func getOtelExitCode(code string) ptrace.StatusCode {
 	switch code {
 	case "failure":
-		fallthrough
+		return ptrace.StatusCodeError
 	case "error":
 		return ptrace.StatusCodeError
 	case "success":
