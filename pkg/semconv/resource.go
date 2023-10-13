@@ -82,6 +82,15 @@ const (
 	// Required: No
 	// Stability: alpha
 	AttributeDroneBuildMessage = "ci.drone.build.message"
+
+	// Experimental attributes
+	AttributesDroneBuildBefore = "ci.drone.build.before"
+	AttributesDroneBuildAfter  = "ci.drone.build.after"
+	AttributesDroneBuildSource = "ci.drone.build.source"
+	AttributesDroneBuildTarget = "ci.drone.build.target"
+	AttributesDroneBuildRef    = "ci.drone.build.ref"
+	AttributesDroneBuildLink   = "ci.drone.build.link"
+	AttributesDroneBuildParent = "ci.drone.build.parent"
 )
 
 // Drone stage info

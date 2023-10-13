@@ -144,6 +144,16 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 	// --- END VCS Info
 
+	// --- Experimental attributes
+	buildAttributes.PutStr(semconv.AttributesDroneBuildAfter, build.After)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildBefore, build.Before)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildLink, build.Link)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildRef, build.Ref)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildSource, build.Source)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildTarget, build.Target)
+	buildAttributes.PutInt(semconv.AttributesDroneBuildParent, build.Parent)
+	// --- UNKNOWN INFO
+
 	for _, stage := range build.Stages {
 		stageSpans := resourceSpans.ScopeSpans().AppendEmpty()
 		stageSpan := stageSpans.Spans().AppendEmpty()
