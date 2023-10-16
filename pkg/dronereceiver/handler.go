@@ -114,12 +114,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	// The root span name will be the build title if it is set, otherwise it will be the build message.
 	buildAttributes.PutStr(semconv.AttributeDroneWorkflowTitle, build.Title)
 	buildAttributes.PutStr(semconv.AttributeDroneBuildMessage, build.Message)
-
-	if build.Title != "" {
-		buildSpan.SetName(build.Title)
-	} else {
-		buildSpan.SetName(build.Message)
-	}
+	buildSpan.SetName(build.Title)
 
 	traceutils.SetStatus(build.Status, buildSpan)
 
