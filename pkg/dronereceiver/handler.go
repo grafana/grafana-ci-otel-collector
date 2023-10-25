@@ -1,16 +1,14 @@
 package dronereceiver
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"encoding/json"
 	"io"
-	"math/rand"
 	"net/http"
 	"time"
 
 	drone "github.com/drone/drone-go/drone"
-	"github.com/google/uuid"
+	semconv "github.com/grafana/grafana-ci-otel-collector/semconv"
+	"github.com/grafana/grafana-ci-otel-collector/traceutils"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -26,8 +24,9 @@ type RepoEvt struct {
 }
 
 type WebhookEvent struct {
-	Action string   `json:"action"`
-	Repo   *RepoEvt `json:"repo"`
+	Action       string   `json:"action"`
+	Repo         *RepoEvt `json:"repo"`
+	drone.System `json:"system"`
 }
 
 type droneWebhookHandler struct {
@@ -38,29 +37,6 @@ type droneWebhookHandler struct {
 
 	nextLogsConsumer  consumer.Logs
 	nextTraceConsumer consumer.Traces
-}
-
-const CI_KIND = "ci.kind"
-const CI_STAGE = "ci.stage"
-const CI_STEP = "ci.step"
-
-func setStatus(status string, span ptrace.Span) {
-	span.Attributes().PutStr("ci.status", status)
-}
-
-func getOtelExitCode(code string) ptrace.StatusCode {
-	switch code {
-	case "failure":
-		fallthrough
-	case "error":
-		return ptrace.StatusCodeError
-
-	case "success":
-		return ptrace.StatusCodeOk
-
-	default:
-		return ptrace.StatusCodeUnset
-	}
 }
 
 func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
@@ -109,116 +85,125 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
 
-	traceId := NewTraceID()
-	buildId := NewSpanID()
-
-	d.logger.Debug("generating trace",
-		zap.String("traceId", traceId.String()),
-		zap.Int64("build.id", build.ID),
-		zap.Int64("build.number", build.Number),
-		zap.Int64("build.Created", build.Created*1000000000),
-		zap.Int64("build.Finished", build.Finished*1000000000),
-		zap.Int("build.Stages", len(build.Stages)),
-	)
-
-	resourceSpan := traces.ResourceSpans().AppendEmpty()
-	scopeSpans := resourceSpan.ScopeSpans().AppendEmpty()
+	resourceSpans := traces.ResourceSpans().AppendEmpty()
+	scopeSpans := resourceSpans.ScopeSpans().AppendEmpty()
 
 	scopeSpans.Scope().SetName("dronereceiver")
 	scopeSpans.Scope().SetVersion("0.1.0")
 
-	resourceAttrs := resourceSpan.Resource().Attributes()
+	resourceAttrs := resourceSpans.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
 	resourceAttrs.PutStr(conventions.AttributeServiceName, "drone")
-	resourceAttrs.PutStr("repo.name", repo.Slug)
-	resourceAttrs.PutStr("repo.branch", repo.Branch)
+	resourceAttrs.PutStr(semconv.AttributeGitRepoName, repo.Slug)
+	resourceAttrs.PutStr(semconv.AttributeGitBranchName, repo.Branch)
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
-	buildSpan.SetTraceID(traceId)
-	buildSpan.SetSpanID(buildId)
+	buildSpan.SetTraceID(traceutils.NewTraceID())
+	buildSpan.SetSpanID(traceutils.NewSpanID())
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
-	buildSpan.Attributes().PutStr(CI_KIND, "build")
+	buildAttributes := buildSpan.Attributes()
 
-	buildSpan.Attributes().PutInt("build.number", build.Number)
-	buildSpan.Attributes().PutInt("build.id", build.ID)
+	buildAttributes.PutStr(semconv.AttributeDroneWorkflowItemKind, semconv.AttributeDroneWorkflowItemKindBuild)
 
-	setStatus(build.Status, buildSpan)
-	buildSpan.Status().SetCode(getOtelExitCode(build.Status))
+	buildAttributes.PutStr(semconv.AttributeDroneWorkflowEvent, build.Event)
+
+	buildAttributes.PutInt(semconv.AttributeDroneBuildNumber, build.Number)
+	buildAttributes.PutInt(semconv.AttributeDroneBuildID, build.ID)
+
+	// Set build title and message
+	// The root span name will be the build title if it is set, otherwise it will be the build message.
+	buildAttributes.PutStr(semconv.AttributeDroneWorkflowTitle, build.Title)
+	buildAttributes.PutStr(semconv.AttributeDroneBuildMessage, build.Message)
+	buildSpan.SetName(build.Title)
+
+	traceutils.SetStatus(build.Status, buildSpan)
 
 	buildSpan.SetStartTimestamp(pcommon.Timestamp(build.Created * 1000000000))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
 
+	buildAttributes.PutStr(semconv.AttributeCIVendor, semconv.AttributeCIVendorDrone)
+	buildAttributes.PutStr(semconv.AttributeCIVersion, evt.System.Version)
+
+	// --- VCS Info
+	// !FIXME: the scm property seems to always be empty, we fallback to GIT for now
+	vcsType := semconv.AttributeVCSTypeGit
+	if repo.SCM != "" {
+		vcsType = repo.SCM
+	}
+	buildAttributes.PutStr(semconv.AttributeVCSType, vcsType)
+
+	if vcsType == semconv.AttributeVCSTypeGit {
+		buildAttributes.PutStr(semconv.AttributeGitHTTPURL, repo.HTTPURL)
+		buildAttributes.PutStr(semconv.AttributeGitSSHURL, repo.SSHURL)
+		buildAttributes.PutStr(semconv.AttributeGitWWWURL, repo.Link)
+	}
+	// --- END VCS Info
+
+	// --- Experimental attributes
+	buildAttributes.PutStr(semconv.AttributesDroneBuildAfter, build.After)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildBefore, build.Before)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildLink, build.Link)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildRef, build.Ref)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildSource, build.Source)
+	buildAttributes.PutStr(semconv.AttributesDroneBuildTarget, build.Target)
+	buildAttributes.PutInt(semconv.AttributesDroneBuildParent, build.Parent)
+	// --- UNKNOWN INFO
+
 	for _, stage := range build.Stages {
-		stageId := NewSpanID()
-		stageSpans := resourceSpan.ScopeSpans().AppendEmpty()
+		stageSpans := resourceSpans.ScopeSpans().AppendEmpty()
 		stageSpan := stageSpans.Spans().AppendEmpty()
+		stageAttributes := stageSpan.Attributes()
 
-		stageSpan.Attributes().PutStr(conventions.AttributeServiceName, stage.Name)
-		stageSpan.Attributes().PutInt("stage.number", int64(stage.Number))
+		stageAttributes.PutStr(semconv.AttributeDroneWorkflowItemKind, semconv.AttributeDroneWorkflowItemKindStage)
+		stageSpan.SetTraceID(buildSpan.TraceID())
+		stageSpan.SetSpanID(traceutils.NewSpanID())
+		stageSpan.SetParentSpanID(buildSpan.SpanID())
 
-		setStatus(stage.Status, stageSpan)
-		stageSpan.Status().SetCode(getOtelExitCode(stage.Status))
 		stageSpan.SetName(stage.Name)
-		stageSpan.SetTraceID(traceId)
-		stageSpan.SetSpanID(stageId)
-		stageSpan.SetParentSpanID(buildId)
-		stageSpan.Attributes().PutStr(CI_KIND, "stage")
+		stageAttributes.PutStr(conventions.AttributeServiceName, stage.Name)
+
+		traceutils.SetStatus(stage.Status, stageSpan)
+
+		stageAttributes.PutInt(semconv.AttributeDroneStageNumber, int64(stage.Number))
+		stageAttributes.PutInt(semconv.AttributeDroneStageID, stage.ID)
+		stageAttributes.PutStr(semconv.AttributeDroneStageName, stage.Name)
 
 		stageSpan.SetStartTimestamp(pcommon.Timestamp(stage.Started * 1000000000))
 		stageSpan.SetEndTimestamp(pcommon.Timestamp(stage.Stopped * 1000000000))
 
 		for _, step := range stage.Steps {
-			stepSpanId := NewSpanID()
+			if step.Status == "skipped" {
+				continue
+			}
+
 			stepSpan := stageSpans.Spans().AppendEmpty()
-			stepSpan.SetTraceID(traceId)
-			stepSpan.SetParentSpanID(stageId)
-			stepSpan.SetSpanID(stepSpanId)
-			stepSpan.Attributes().PutStr(CI_KIND, "step")
-			stepSpan.Attributes().PutStr(CI_STAGE, stage.Name)
+			stepSpan.SetTraceID(stageSpan.TraceID())
+			stepSpan.SetParentSpanID(stageSpan.SpanID())
+			stepSpan.SetSpanID(traceutils.NewSpanID())
 
-			setStatus(step.Status, stepSpan)
-			stepSpan.Status().SetCode(getOtelExitCode(step.Status))
+			stepAttributes := stepSpan.Attributes()
 
+			stepAttributes.PutStr(semconv.AttributeDroneWorkflowItemKind, semconv.AttributeDroneWorkflowItemKindStep)
+			stepAttributes.PutStr(semconv.AttributeDroneStageName, stage.Name)
+			stepAttributes.PutInt(semconv.AttributeDroneStageID, int64(step.StageID))
+
+			stepAttributes.PutStr(semconv.AttributeDroneStepName, step.Name)
+			stepAttributes.PutInt(semconv.AttributeDroneStepID, step.ID)
+			stepAttributes.PutInt(semconv.AttributeDroneStepNumber, int64(step.Number))
+
+			traceutils.SetStatus(step.Status, stepSpan)
 			stepSpan.SetName(step.Name)
 
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
 
-			if step.Status != "skipped" {
-				lines, err := d.droneClient.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
-				if err != nil {
-					d.logger.Error("error retrieving logs", zap.Error(err))
-					continue
-				}
-
-				log := logs.ResourceLogs().AppendEmpty()
-				logScope := log.ScopeLogs().AppendEmpty()
-
-				now := pcommon.NewTimestampFromTime(time.Now())
-
-				prevLineTimestamp := int64(0)
-				delta := int64(0)
-				for _, line := range lines {
-					if line.Timestamp == prevLineTimestamp {
-						delta++
-					} else {
-						delta = 0
-						prevLineTimestamp = line.Timestamp
-					}
-
-					record := logScope.LogRecords().AppendEmpty()
-					record.SetTraceID(traceId)
-					record.SetSpanID(stepSpanId)
-
-					record.SetObservedTimestamp(now)
-					record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
-					record.Attributes().PutStr(CI_STAGE, stage.Name)
-					record.Attributes().PutStr(CI_STEP, step.Name)
-
-					record.Attributes().PutStr("repo.name", repo.Slug)
-					record.Body().SetStr(line.Message)
-				}
+			newLogs, err := generateLogs(d.droneClient, repo.Repo, *build, *stage, *step, buildSpan.TraceID(), stepSpan.SpanID())
+			if err != nil {
+				d.logger.Error("error retrieving logs", zap.Error(err))
+				continue
 			}
+
+			newLogs.ResourceLogs().MoveAndAppendTo(logs.ResourceLogs())
 		}
 	}
 
@@ -230,18 +215,41 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 }
 
-func NewTraceID() pcommon.TraceID {
-	return pcommon.TraceID(uuid.New())
-}
+func generateLogs(drone drone.Client, repo drone.Repo, build drone.Build, stage drone.Stage, step drone.Step, traceId pcommon.TraceID, stepSpanId pcommon.SpanID) (plog.Logs, error) {
+	logs := plog.NewLogs()
 
-func NewSpanID() pcommon.SpanID {
-	var rngSeed int64
-	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed))
+	lines, err := drone.Logs(repo.Namespace, repo.Name, int(build.Number), stage.Number, step.Number)
+	if err != nil {
+		return logs, err
+	}
 
-	var sid [8]byte
-	randSource.Read(sid[:])
-	spanID := pcommon.SpanID(sid)
+	log := logs.ResourceLogs().AppendEmpty()
+	logScope := log.ScopeLogs().AppendEmpty()
 
-	return spanID
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	prevLineTimestamp := int64(0)
+	delta := int64(0)
+	for _, line := range lines {
+		if line.Timestamp == prevLineTimestamp {
+			delta++
+		} else {
+			delta = 0
+			prevLineTimestamp = line.Timestamp
+		}
+
+		record := logScope.LogRecords().AppendEmpty()
+		record.SetTraceID(traceId)
+		record.SetSpanID(stepSpanId)
+
+		record.SetObservedTimestamp(now)
+		record.SetTimestamp(pcommon.Timestamp((step.Started+line.Timestamp)*1000000000 + delta))
+		record.Attributes().PutStr(semconv.AttributeDroneStageName, stage.Name)
+		record.Attributes().PutStr(semconv.AttributeDroneStepName, step.Name)
+		record.Attributes().PutInt(semconv.AttributeDroneBuildNumber, build.Number)
+		record.Body().SetStr(line.Message)
+	}
+
+	return logs, nil
+
 }

@@ -3,7 +3,7 @@ package dronereceiver
 import (
 	"fmt"
 
-	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
+	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 

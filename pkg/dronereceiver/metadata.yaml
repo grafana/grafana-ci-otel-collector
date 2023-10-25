@@ -14,7 +14,7 @@ status:
 resource_attributes:
 
 attributes:
-  build.status:
+  ci.workflow_item.status:
     description: Build status
     enum:
       [
@@ -30,10 +30,10 @@ attributes:
         error,
       ]
     type: string
-  repo.name:
+  git.repo.name:
     description: Repository name
     type: string
-  repo.branch:
+  git.branch.name:
     description: Branch name
     type: string
 
@@ -50,7 +50,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [build.status, repo.name, repo.branch]
+    attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
   repo_info:
     enabled: true
     description: Repo status.
@@ -59,7 +59,7 @@ metrics:
       value_type: int
       monotonic: false
       aggregation_temporality: cumulative
-    attributes: [build.status, repo.name, repo.branch]
+    attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
   restarts_total:
     enabled: true
     description: Total number build restarts.

@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/grafana/grafana-collector/dronereceiver/internal/metadata"
+	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -80,7 +80,7 @@ func (r *droneScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
 }
 
 // repo_slug, build_source, build_status
-type Builds map[string]map[string]map[metadata.AttributeBuildStatus]int64
+type Builds map[string]map[string]map[metadata.AttributeCiWorkflowItemStatus]int64
 
 func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, errs *scrapererror.ScrapeErrors) {
 	var buildCount int64
@@ -132,14 +132,14 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 		}
 
 		if _, ok := values[slug]; !ok {
-			values[slug] = make(map[string]map[metadata.AttributeBuildStatus]int64)
+			values[slug] = make(map[string]map[metadata.AttributeCiWorkflowItemStatus]int64)
 		}
 
 		if _, ok := values[slug][source]; !ok {
-			values[slug][source] = make(map[metadata.AttributeBuildStatus]int64)
+			values[slug][source] = make(map[metadata.AttributeCiWorkflowItemStatus]int64)
 		}
 
-		if key, ok := metadata.MapAttributeBuildStatus[status]; ok {
+		if key, ok := metadata.MapAttributeCiWorkflowItemStatus[status]; ok {
 			values[slug][source][key] = buildCount
 		} else {
 			values[slug][source][key] += buildCount
@@ -148,7 +148,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 
 	for slug, repo := range values {
 		for branch, source := range repo {
-			for _, statusAttr := range metadata.MapAttributeBuildStatus {
+			for _, statusAttr := range metadata.MapAttributeCiWorkflowItemStatus {
 				if val, ok := source[statusAttr]; ok {
 					r.mb.RecordBuildsNumberDataPoint(now, val, statusAttr, slug, branch)
 				} else {
@@ -212,7 +212,7 @@ func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, er
 			continue
 		}
 
-		r.mb.RecordRepoInfoDataPoint(now, 1, metadata.MapAttributeBuildStatus[status], slug, source)
+		r.mb.RecordRepoInfoDataPoint(now, 1, metadata.MapAttributeCiWorkflowItemStatus[status], slug, source)
 	}
 }
 
