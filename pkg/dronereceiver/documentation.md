@@ -26,9 +26,9 @@ Currently there's no way to differentiate between restarted builds and manually 
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| build.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
-| repo.name | Repository name | Any Str |
-| repo.branch | Branch name | Any Str |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
+| git.repo.name | Repository name | Any Str |
+| git.branch.name | Branch name | Any Str |
 
 ### repo_info
 
@@ -42,9 +42,9 @@ Repo status.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| build.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
-| repo.name | Repository name | Any Str |
-| repo.branch | Branch name | Any Str |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
+| git.repo.name | Repository name | Any Str |
+| git.branch.name | Branch name | Any Str |
 
 ### restarts_total
 

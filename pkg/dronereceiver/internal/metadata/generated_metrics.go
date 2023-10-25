@@ -12,62 +12,62 @@ import (
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 )
 
-// AttributeBuildStatus specifies the a value build.status attribute.
-type AttributeBuildStatus int
+// AttributeCiWorkflowItemStatus specifies the a value ci.workflow_item.status attribute.
+type AttributeCiWorkflowItemStatus int
 
 const (
-	_ AttributeBuildStatus = iota
-	AttributeBuildStatusSkipped
-	AttributeBuildStatusBlocked
-	AttributeBuildStatusDeclined
-	AttributeBuildStatusWaitingOnDependencies
-	AttributeBuildStatusPending
-	AttributeBuildStatusRunning
-	AttributeBuildStatusSuccess
-	AttributeBuildStatusFailure
-	AttributeBuildStatusKilled
-	AttributeBuildStatusError
+	_ AttributeCiWorkflowItemStatus = iota
+	AttributeCiWorkflowItemStatusSkipped
+	AttributeCiWorkflowItemStatusBlocked
+	AttributeCiWorkflowItemStatusDeclined
+	AttributeCiWorkflowItemStatusWaitingOnDependencies
+	AttributeCiWorkflowItemStatusPending
+	AttributeCiWorkflowItemStatusRunning
+	AttributeCiWorkflowItemStatusSuccess
+	AttributeCiWorkflowItemStatusFailure
+	AttributeCiWorkflowItemStatusKilled
+	AttributeCiWorkflowItemStatusError
 )
 
-// String returns the string representation of the AttributeBuildStatus.
-func (av AttributeBuildStatus) String() string {
+// String returns the string representation of the AttributeCiWorkflowItemStatus.
+func (av AttributeCiWorkflowItemStatus) String() string {
 	switch av {
-	case AttributeBuildStatusSkipped:
+	case AttributeCiWorkflowItemStatusSkipped:
 		return "skipped"
-	case AttributeBuildStatusBlocked:
+	case AttributeCiWorkflowItemStatusBlocked:
 		return "blocked"
-	case AttributeBuildStatusDeclined:
+	case AttributeCiWorkflowItemStatusDeclined:
 		return "declined"
-	case AttributeBuildStatusWaitingOnDependencies:
+	case AttributeCiWorkflowItemStatusWaitingOnDependencies:
 		return "waiting_on_dependencies"
-	case AttributeBuildStatusPending:
+	case AttributeCiWorkflowItemStatusPending:
 		return "pending"
-	case AttributeBuildStatusRunning:
+	case AttributeCiWorkflowItemStatusRunning:
 		return "running"
-	case AttributeBuildStatusSuccess:
+	case AttributeCiWorkflowItemStatusSuccess:
 		return "success"
-	case AttributeBuildStatusFailure:
+	case AttributeCiWorkflowItemStatusFailure:
 		return "failure"
-	case AttributeBuildStatusKilled:
+	case AttributeCiWorkflowItemStatusKilled:
 		return "killed"
-	case AttributeBuildStatusError:
+	case AttributeCiWorkflowItemStatusError:
 		return "error"
 	}
 	return ""
 }
 
-// MapAttributeBuildStatus is a helper map of string to AttributeBuildStatus attribute value.
-var MapAttributeBuildStatus = map[string]AttributeBuildStatus{
-	"skipped":                 AttributeBuildStatusSkipped,
-	"blocked":                 AttributeBuildStatusBlocked,
-	"declined":                AttributeBuildStatusDeclined,
-	"waiting_on_dependencies": AttributeBuildStatusWaitingOnDependencies,
-	"pending":                 AttributeBuildStatusPending,
-	"running":                 AttributeBuildStatusRunning,
-	"success":                 AttributeBuildStatusSuccess,
-	"failure":                 AttributeBuildStatusFailure,
-	"killed":                  AttributeBuildStatusKilled,
-	"error":                   AttributeBuildStatusError,
+// MapAttributeCiWorkflowItemStatus is a helper map of string to AttributeCiWorkflowItemStatus attribute value.
+var MapAttributeCiWorkflowItemStatus = map[string]AttributeCiWorkflowItemStatus{
+	"skipped":                 AttributeCiWorkflowItemStatusSkipped,
+	"blocked":                 AttributeCiWorkflowItemStatusBlocked,
+	"declined":                AttributeCiWorkflowItemStatusDeclined,
+	"waiting_on_dependencies": AttributeCiWorkflowItemStatusWaitingOnDependencies,
+	"pending":                 AttributeCiWorkflowItemStatusPending,
+	"running":                 AttributeCiWorkflowItemStatusRunning,
+	"success":                 AttributeCiWorkflowItemStatusSuccess,
+	"failure":                 AttributeCiWorkflowItemStatusFailure,
+	"killed":                  AttributeCiWorkflowItemStatusKilled,
+	"error":                   AttributeCiWorkflowItemStatusError,
 }
 
 type metricBuildsNumber struct {
@@ -87,7 +87,7 @@ func (m *metricBuildsNumber) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string, repoNameAttributeValue string, repoBranchAttributeValue string) {
+func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue string, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -95,9 +95,9 @@ func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("build.status", buildStatusAttributeValue)
-	dp.Attributes().PutStr("repo.name", repoNameAttributeValue)
-	dp.Attributes().PutStr("repo.branch", repoBranchAttributeValue)
+	dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
+	dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
+	dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -142,7 +142,7 @@ func (m *metricRepoInfo) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricRepoInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, buildStatusAttributeValue string, repoNameAttributeValue string, repoBranchAttributeValue string) {
+func (m *metricRepoInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue string, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -150,9 +150,9 @@ func (m *metricRepoInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Tim
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("build.status", buildStatusAttributeValue)
-	dp.Attributes().PutStr("repo.name", repoNameAttributeValue)
-	dp.Attributes().PutStr("repo.branch", repoBranchAttributeValue)
+	dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
+	dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
+	dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -344,13 +344,13 @@ func (mb *MetricsBuilder) Emit(rmo ...ResourceMetricsOption) pmetric.Metrics {
 }
 
 // RecordBuildsNumberDataPoint adds a data point to builds_number metric.
-func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus, repoNameAttributeValue string, repoBranchAttributeValue string) {
-	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String(), repoNameAttributeValue, repoBranchAttributeValue)
+func (mb *MetricsBuilder) RecordBuildsNumberDataPoint(ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue AttributeCiWorkflowItemStatus, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
+	mb.metricBuildsNumber.recordDataPoint(mb.startTime, ts, val, ciWorkflowItemStatusAttributeValue.String(), gitRepoNameAttributeValue, gitBranchNameAttributeValue)
 }
 
 // RecordRepoInfoDataPoint adds a data point to repo_info metric.
-func (mb *MetricsBuilder) RecordRepoInfoDataPoint(ts pcommon.Timestamp, val int64, buildStatusAttributeValue AttributeBuildStatus, repoNameAttributeValue string, repoBranchAttributeValue string) {
-	mb.metricRepoInfo.recordDataPoint(mb.startTime, ts, val, buildStatusAttributeValue.String(), repoNameAttributeValue, repoBranchAttributeValue)
+func (mb *MetricsBuilder) RecordRepoInfoDataPoint(ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue AttributeCiWorkflowItemStatus, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
+	mb.metricRepoInfo.recordDataPoint(mb.startTime, ts, val, ciWorkflowItemStatusAttributeValue.String(), gitRepoNameAttributeValue, gitBranchNameAttributeValue)
 }
 
 // RecordRestartsTotalDataPoint adds a data point to restarts_total metric.

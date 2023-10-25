@@ -23,6 +23,23 @@ receivers:
 
 processors:
 
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [30s, 1m, 5m, 10m, 30m, 1h]
+    dimensions:
+      - name: git.repo.name
+      - name: git.branch.name
+      - name: ci.drone.workflow_item.kind
+      - name: ci.drone.stage.name
+    exclude_dimensions:
+      - service.version
+      - service.name
+      - span.kind
+    dimensions_cache_size: 1000
+    aggregation_temporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE'
+
 exporters:
   logging:
     verbosity: detailed
@@ -43,13 +60,13 @@ service:
     traces:
       receivers: [dronereceiver]
       processors: []
-      exporters: [otlp, logging]
+      exporters: [otlp, logging, spanmetrics]
     logs:
       receivers: [dronereceiver]
       processors: []
       exporters: [loki, logging]
     metrics:
-      receivers: [dronereceiver]
+      receivers: [dronereceiver, spanmetrics]
       processors: []
       exporters: [prometheusremotewrite, logging]
 

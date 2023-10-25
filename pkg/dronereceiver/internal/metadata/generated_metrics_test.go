@@ -56,11 +56,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeBuildStatusSkipped, "repo.name-val", "repo.branch-val")
+			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeCiWorkflowItemStatusSkipped, "git.repo.name-val", "git.branch.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordRepoInfoDataPoint(ts, 1, AttributeBuildStatusSkipped, "repo.name-val", "repo.branch-val")
+			mb.RecordRepoInfoDataPoint(ts, 1, AttributeCiWorkflowItemStatusSkipped, "git.repo.name-val", "git.branch.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -102,15 +102,15 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("build.status")
+					attrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
 					assert.True(t, ok)
 					assert.EqualValues(t, "skipped", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("repo.name")
+					attrVal, ok = dp.Attributes().Get("git.repo.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "repo.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("repo.branch")
+					assert.EqualValues(t, "git.repo.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("git.branch.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "repo.branch-val", attrVal.Str())
+					assert.EqualValues(t, "git.branch.name-val", attrVal.Str())
 				case "repo_info":
 					assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
 					validatedMetrics["repo_info"] = true
@@ -125,15 +125,15 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("build.status")
+					attrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
 					assert.True(t, ok)
 					assert.EqualValues(t, "skipped", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("repo.name")
+					attrVal, ok = dp.Attributes().Get("git.repo.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "repo.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("repo.branch")
+					assert.EqualValues(t, "git.repo.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("git.branch.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "repo.branch-val", attrVal.Str())
+					assert.EqualValues(t, "git.branch.name-val", attrVal.Str())
 				case "restarts_total":
 					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
 					validatedMetrics["restarts_total"] = true
