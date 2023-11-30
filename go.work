@@ -3,6 +3,7 @@ go 1.20
 use (
 	./collector // Generated collector
 	./pkg/dronereceiver
+	./pkg/githubactionsreceiver
 	./pkg/semconv
 	./pkg/traceutils
 )
