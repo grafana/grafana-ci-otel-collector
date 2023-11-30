@@ -77,7 +77,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Skip traces for branches that are not configured
-	if !slices.Contains[string](allowedBranches, repo.Branch) {
+	if !slices.Contains[[]string, string](allowedBranches, repo.Branch) {
 		d.logger.Info("branch not enabled", zap.String("branch", repo.Branch))
 		return
 	}

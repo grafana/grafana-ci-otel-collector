@@ -8,4 +8,4 @@ retract (
 	v0.65.0
 )
 
-require github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen v0.83.0
+require github.com/open-telemetry/opentelemetry-collector-contrib/cmd/mdatagen v0.90.0
