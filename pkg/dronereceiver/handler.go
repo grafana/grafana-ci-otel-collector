@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	drone "github.com/drone/drone-go/drone"
-	semconv "github.com/grafana/grafana-ci-otel-collector/semconv"
+	"github.com/drone/drone-go/drone"
+	"github.com/grafana/grafana-ci-otel-collector/semconv"
 	"github.com/grafana/grafana-ci-otel-collector/traceutils"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -77,7 +77,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 
 	// Skip traces for branches that are not configured
-	if !slices.Contains[string](allowedBranches, repo.Branch) {
+	if !slices.Contains(allowedBranches, repo.Branch) {
 		d.logger.Info("branch not enabled", zap.String("branch", repo.Branch))
 		return
 	}
