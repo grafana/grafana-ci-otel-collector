@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/99designs/httpsignatures-go"
-	drone "github.com/drone/drone-go/drone"
+	"github.com/drone/drone-go/drone"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -17,13 +17,10 @@ import (
 )
 
 type droneReceiver struct {
-	cfg *Config
-	set receiver.CreateSettings
-
-	cancel context.CancelFunc
-
-	handler *droneWebhookHandler
-
+	cfg        *Config
+	set        receiver.CreateSettings
+	cancel     context.CancelFunc
+	handler    *droneWebhookHandler
 	httpServer *http.Server
 }
 
@@ -63,14 +60,14 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 		Handler: httpMux,
 	}
 
-	receiver := &droneReceiver{
+	rcvr := &droneReceiver{
 		cfg:        cfg,
 		set:        set,
 		httpServer: httpServer,
 		handler:    &handler,
 	}
 
-	return receiver, nil
+	return rcvr, nil
 }
 
 func verifySignature(resp http.ResponseWriter, req *http.Request, secret string) error {
@@ -117,7 +114,10 @@ func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 }
 
 func (r *droneReceiver) Shutdown(_ context.Context) error {
-	r.httpServer.Shutdown(context.Background())
+	err := r.httpServer.Shutdown(context.Background())
+	if err != nil {
+		return err
+	}
 	if r.cancel != nil {
 		r.cancel()
 	}
