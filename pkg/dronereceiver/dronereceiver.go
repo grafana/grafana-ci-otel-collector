@@ -53,7 +53,10 @@ func newDroneReceiver(cfg *Config, set receiver.CreateSettings) (*droneReceiver,
 		}
 
 		resp.WriteHeader(http.StatusOK)
-		handler.handler(resp, req)
+		if err := handler.handler(resp, req); err != nil {
+			set.Logger.Info("error handling the request", zap.Error(err))
+			return
+		}
 	})
 
 	httpServer := &http.Server{

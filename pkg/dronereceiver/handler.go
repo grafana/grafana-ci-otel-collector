@@ -2,6 +2,7 @@ package dronereceiver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -29,8 +30,12 @@ type WebhookEvent struct {
 	drone.System `json:"system"`
 }
 
+type droneClient interface {
+	drone.Client
+}
+
 type droneWebhookHandler struct {
-	droneClient drone.Client
+	droneClient droneClient
 	logger      *zap.Logger
 
 	reposConfig map[string][]string
@@ -39,20 +44,20 @@ type droneWebhookHandler struct {
 	nextTraceConsumer consumer.Traces
 }
 
-func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) {
+func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) error {
 	d.logger.Debug("Got request")
 
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		// TODO: handle this
-		return
+		return fmt.Errorf("error reading the request body: %v", err)
 	}
 
 	var evt WebhookEvent
 	err = json.Unmarshal(body, &evt)
 	if err != nil {
 		// TODO: handle this
-		return
+		return fmt.Errorf("error unmarshalling the request body: %v", err)
 	}
 
 	// Skip unfinished builds (i.e. builds that are still running)
@@ -63,7 +68,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	// the `repo.build` seems to be absent in the first one.
 	// TODO: Revisit this, we may not need the Finished check.
 	if evt.Repo.Build == nil || evt.Repo.Build.Finished == 0 {
-		return
+		return fmt.Errorf("no build info provided from the webhook event: %v", err)
 	}
 
 	repo := evt.Repo
@@ -72,14 +77,14 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	// Skip traces for repos that are not enabled
 	allowedBranches, ok := d.reposConfig[evt.Repo.Slug]
 	if !ok {
-		d.logger.Info("repo not enabled", zap.String("repo", evt.Repo.Slug))
-		return
+		d.logger.Warn("repo not enabled", zap.String("repo", evt.Repo.Slug))
+		return nil
 	}
 
 	// Skip traces for branches that are not configured
 	if !slices.Contains(allowedBranches, repo.Branch) {
-		d.logger.Info("branch not enabled", zap.String("branch", repo.Branch))
-		return
+		d.logger.Warn("branch not enabled", zap.String("branch", repo.Branch))
+		return nil
 	}
 
 	traces := ptrace.NewTraces()
@@ -196,6 +201,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetStartTimestamp(pcommon.Timestamp(step.Started * 1000000000))
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
 
+			// TODO: Handle the error in logs retrieval better
 			newLogs, err := generateLogs(d.droneClient, repo.Repo, *build, *stage, *step, buildSpan.TraceID(), stepSpan.SpanID())
 			if err != nil {
 				d.logger.Error("error retrieving logs", zap.Error(err))
@@ -207,11 +213,18 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	}
 
 	if d.nextTraceConsumer != nil {
-		d.nextTraceConsumer.ConsumeTraces(req.Context(), traces)
+		err := d.nextTraceConsumer.ConsumeTraces(req.Context(), traces)
+		if err != nil {
+			return fmt.Errorf("cannot consume traces: %v", err)
+		}
 	}
 	if d.nextLogsConsumer != nil {
-		d.nextLogsConsumer.ConsumeLogs(req.Context(), logs)
+		err := d.nextLogsConsumer.ConsumeLogs(req.Context(), logs)
+		if err != nil {
+			return fmt.Errorf("cannot consume logs: %v", err)
+		}
 	}
+	return nil
 }
 
 func generateLogs(drone drone.Client, repo drone.Repo, build drone.Build, stage drone.Stage, step drone.Step, traceId pcommon.TraceID, stepSpanId pcommon.SpanID) (plog.Logs, error) {
