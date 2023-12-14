@@ -2,28 +2,28 @@ dist:
   name: grafana-ci-otelcol
   description: Grafana's OTel Collector distribution for CI/CD observability
   output_path: ./collector
-  otelcol_version: 0.83.0
+  otelcol_version: 0.91.0
   version: 0.1.0
 
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/loggingexporter v0.83.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.83.0
+  - gomod: go.opentelemetry.io/collector/exporter/loggingexporter v0.91.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.91.0
 
 connectors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.83.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.91.0
 
 processors:
-  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.83.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.83.0
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.91.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.91.0
 
 extensions:
   # Used for basic auth in production deployments for grafana cloud.
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.83.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.91.0
 
 receivers:
   - gomod: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver v0.1.0'
