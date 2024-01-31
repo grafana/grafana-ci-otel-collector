@@ -28,4 +28,5 @@ drone:
 		--format \
 		--source jsonnetfile \
 		--target .drone.yml
+	drone --server https://drone.grafana.net sign --save grafana/grafana-ci-otel-collector
 	rm jsonnetfile
