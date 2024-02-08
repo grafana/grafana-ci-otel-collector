@@ -1,0 +1,17 @@
+default:
+all_set:
+  metrics:
+    builds_number:
+      enabled: true
+    repo_info:
+      enabled: true
+    restarts_total:
+      enabled: true
+none_set:
+  metrics:
+    builds_number:
+      enabled: false
+    repo_info:
+      enabled: false
+    restarts_total:
+      enabled: false

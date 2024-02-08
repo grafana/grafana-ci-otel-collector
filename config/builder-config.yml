@@ -30,9 +30,14 @@ receivers:
     import: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver'
     name: 'dronereceiver'
     path: './pkg/dronereceiver'
+  - gomod: 'github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver v0.1.0'
+    import: 'github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver'
+    name: 'githubactionsreceiver'
+    path: './pkg/githubactionsreceiver'
 
 replaces:
   - github.com/grafana/grafana-ci-otel-collector/dronereceiver => ../pkg/dronereceiver
+  - github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver => ../pkg/githubactionsreceiver
   - github.com/grafana/grafana-ci-otel-collector/semconv => ../pkg/semconv
   - github.com/grafana/grafana-ci-otel-collector/traceutils => ../pkg/traceutils
 
