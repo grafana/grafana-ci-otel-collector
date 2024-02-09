@@ -1,33 +1,33 @@
-version: "3"
+version: '3'
 services:
   tempo:
     image: grafana/tempo:latest
-    command: ["-config.file=/etc/tempo.yaml"]
+    command: ['-config.file=/etc/tempo.yaml']
     volumes:
-      - ./config/tempo.yaml:/etc/tempo.yaml
+      - ../config/tempo.yaml:/etc/tempo.yaml
     ports:
-      - "3200:3200" # tempo
-      - "4317:4317" # otlp grpc
+      - '3200:3200' # tempo
+      - '4317:4317' # otlp grpc
   prometheus:
     image: prom/prometheus:latest
     ports:
       - 9090:9090
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
-      - "--web.enable-lifecycle"
-      - "--web.enable-remote-write-receiver"
-      - "--config.file=/etc/prometheus/prometheus.yml"
+      - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
+      - '--config.file=/etc/prometheus/prometheus.yml'
 
   loki:
     image: grafana/loki:latest
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
-      - ./config/loki.yml:/etc/loki/loki-config.yaml
+      - ../config/loki.yml:/etc/loki/loki-config.yaml
     ports:
-      - "3100:3100"
+      - '3100:3100'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:3100/ready"]
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:3100/ready']
       interval: 30s
       timeout: 10s
       retries: 5
@@ -39,7 +39,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8080:80"
+      - '8080:80'
     environment:
       - DRONE_SERVER_HOST=localhost
       - DRONE_SERVER_PROTO=http
@@ -60,7 +60,7 @@ services:
       - DRONE_USER_CREATE=username:${GH_HANDLE},admin:true
       - DRONE_STATUS_NAME=continuous-integration/drone-local-${GH_HANDLE}
   runner:
-    platform: "linux/amd64"
+    platform: 'linux/amd64'
     image: drone/drone-runner-docker:linux-amd64
     environment:
       - DRONE_RPC_HOST=drone
@@ -80,9 +80,9 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=drone
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5

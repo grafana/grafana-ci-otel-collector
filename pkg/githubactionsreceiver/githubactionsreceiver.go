@@ -8,79 +8,70 @@ import (
 	"net/http"
 
 	"github.com/99designs/httpsignatures-go"
-	"github.com/drone/drone-go/drone"
+	"github.com/cbrgm/githubevents/githubevents"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
+
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 )
 
 type githubactionsreceiver struct {
 	cfg        *Config
 	set        receiver.CreateSettings
 	cancel     context.CancelFunc
-	handler    *droneWebhookHandler
+	handler    *githubactionsWebhookHandler
 	httpServer *http.Server
 }
 
 func newgithubactionsreceiver(cfg *Config, set receiver.CreateSettings) (*githubactionsreceiver, error) {
-	set.Logger.Info("creating the drone receiver")
+	set.Logger.Info("creating githubactions receiver")
+	handle := githubevents.New("")
 
-	// Create a drone client
-	oauthConfig := new(oauth2.Config)
-	httpClient := oauthConfig.Client(
-		context.Background(),
-		&oauth2.Token{
-			AccessToken: cfg.DroneConfig.Token,
-		},
-	)
-	droneClient := drone.NewClient(cfg.DroneConfig.Host, httpClient)
-
-	handler := droneWebhookHandler{
-		reposConfig: cfg.ReposConfig,
-		droneClient: droneClient,
-		logger:      set.Logger.Named("handler"),
+	handler := githubactionsWebhookHandler{
+		logger: set.Logger.Named("handler"),
 	}
+
+	handle.OnWorkflowRunEventCompleted(handler.handler)
+
+	// handle.OnWorkflowRunEventCompleted(func(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
+
+	// 	return nil
+	// })
 
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc(cfg.WebhookConfig.Endpoint, func(resp http.ResponseWriter, req *http.Request) {
-		//TODO:  Maybe route based on the X-Drone-Event header?
-		err := verifySignature(resp, req, cfg.WebhookConfig.Secret)
-		if err != nil {
-			set.Logger.Info("couldn't verify request signature", zap.Error(err))
+		if err := handle.HandleEventRequest(req); err != nil {
+			set.Logger.Info("error handling the request", zap.Error(err))
 			return
 		}
 
 		resp.WriteHeader(http.StatusOK)
-		if err := handler.handler(resp, req); err != nil {
-			set.Logger.Info("error handling the request", zap.Error(err))
-			return
-		}
 	})
 
 	httpServer := &http.Server{
 		Handler: httpMux,
 	}
 
-	rcvr := &githubactionsreceiver{
+	receiver := &githubactionsreceiver{
 		cfg:        cfg,
 		set:        set,
 		httpServer: httpServer,
 		handler:    &handler,
 	}
 
-	return rcvr, nil
+	// receiver, becaause we don't pay for vowels
+	return receiver, nil
 }
 
 func verifySignature(resp http.ResponseWriter, req *http.Request, secret string) error {
-	sig, err := httpsignatures.FromRequest(req)
+	signature, err := httpsignatures.FromRequest(req)
 	if err != nil {
 		resp.WriteHeader(http.StatusBadRequest)
 		return fmt.Errorf("error parsing signature: %w", err)
 	}
 
-	if !sig.IsValid(secret, req) {
+	if !signature.IsValid(secret, req) {
 		resp.WriteHeader(http.StatusForbidden)
 		return fmt.Errorf("signature is not valid")
 	}

@@ -4,7 +4,7 @@ services:
     image: grafana/tempo:latest
     command: ['-config.file=/etc/tempo.yaml']
     volumes:
-      - ./config/tempo.yaml:/etc/tempo.yaml
+      - ../config/tempo.yaml:/etc/tempo.yaml
     ports:
       - '3200:3200' # tempo
       - '4317:4317' # otlp grpc
@@ -13,7 +13,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--web.enable-lifecycle'
       - '--web.enable-remote-write-receiver'
@@ -23,7 +23,7 @@ services:
     image: grafana/loki:latest
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
-      - ./config/loki.yml:/etc/loki/loki-config.yaml
+      - ../config/loki.yml:/etc/loki/loki-config.yaml
     ports:
       - '3100:3100'
     healthcheck:
