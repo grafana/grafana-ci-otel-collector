@@ -37,6 +37,8 @@ func (d *githubactionsWebhookHandler) handler(deliveryID, eventName string, even
 	resourceAttrs := resourceSpans.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
 	resourceAttrs.PutStr(conventions.AttributeServiceName, "githubactions")
+	resourceAttrs.PutStr(semconv.AttributeCIVendor, semconv.AttributeCIVendorGHA)
+
 	resourceAttrs.PutStr(semconv.AttributeGitRepoName, *event.Repo.Name)
 	resourceAttrs.PutStr(semconv.AttributeGitBranchName, *event.WorkflowRun.HeadBranch)
 
@@ -44,9 +46,7 @@ func (d *githubactionsWebhookHandler) handler(deliveryID, eventName string, even
 	buildSpan.SetTraceID(traceutils.NewTraceID())
 	buildSpan.SetSpanID(traceutils.NewSpanID())
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
-	buildAttributes := buildSpan.Attributes()
-
-	buildAttributes.PutStr(semconv.AttributeDroneWorkflowItemKind, semconv.AttributeDroneWorkflowItemKindBuild)
+	// buildAttributes := buildSpan.Attributes()
 
 	// buildAttributes.PutStr(semconv.AttributeDroneWorkflowEvent, build.Event)
 

@@ -23,6 +23,7 @@ const (
 // CI/CD system vendor enum
 const (
 	AttributeCIVendorDrone = "drone"
+	AttributeCIVendorGHA   = "gha"
 )
 
 const (
