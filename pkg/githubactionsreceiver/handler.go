@@ -23,7 +23,7 @@ type githubactionsWebhookHandler struct {
 	nextTraceConsumer consumer.Traces
 }
 
-func (d *githubactionsWebhookHandler) handler(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
+func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
 	d.logger.Debug("Got request")
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
@@ -31,12 +31,12 @@ func (d *githubactionsWebhookHandler) handler(deliveryID, eventName string, even
 	resourceSpans := traces.ResourceSpans().AppendEmpty()
 	scopeSpans := resourceSpans.ScopeSpans().AppendEmpty()
 
-	scopeSpans.Scope().SetName("dronereceiver")
+	scopeSpans.Scope().SetName("githubactions")
 	scopeSpans.Scope().SetVersion("0.1.0")
 
 	resourceAttrs := resourceSpans.Resource().Attributes()
 	resourceAttrs.PutStr(conventions.AttributeServiceVersion, "0.1.0")
-	resourceAttrs.PutStr(conventions.AttributeServiceName, "githubactions")
+	resourceAttrs.PutStr(conventions.AttributeServiceName, *event.Workflow.Name)
 	resourceAttrs.PutStr(semconv.AttributeCIVendor, semconv.AttributeCIVendorGHA)
 
 	resourceAttrs.PutStr(semconv.AttributeGitRepoName, *event.Repo.Name)

@@ -32,12 +32,7 @@ func newgithubactionsreceiver(cfg *Config, set receiver.CreateSettings) (*github
 		logger: set.Logger.Named("handler"),
 	}
 
-	handle.OnWorkflowRunEventCompleted(handler.handler)
-
-	// handle.OnWorkflowRunEventCompleted(func(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
-
-	// 	return nil
-	// })
+	handle.OnWorkflowRunEventCompleted(handler.onWorkflowRunCompleted)
 
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc(cfg.WebhookConfig.Endpoint, func(resp http.ResponseWriter, req *http.Request) {
