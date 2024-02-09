@@ -31,7 +31,7 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 	resourceSpans := traces.ResourceSpans().AppendEmpty()
 	scopeSpans := resourceSpans.ScopeSpans().AppendEmpty()
 
-	scopeSpans.Scope().SetName("githubactions")
+	scopeSpans.Scope().SetName("githubactionsreceiver")
 	scopeSpans.Scope().SetVersion("0.1.0")
 
 	resourceAttrs := resourceSpans.Resource().Attributes()
@@ -39,7 +39,9 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 	resourceAttrs.PutStr(conventions.AttributeServiceName, *event.Workflow.Name)
 	resourceAttrs.PutStr(semconv.AttributeCIVendor, semconv.AttributeCIVendorGHA)
 
-	resourceAttrs.PutStr(semconv.AttributeGitRepoName, *event.Repo.Name)
+	resourceAttrs.PutStr(semconv.AttributeGitRepoName, *event.Repo.FullName)
+	resourceAttrs.PutStr(semconv.AttributeGitHTTPURL, *event.Repo.HTMLURL)
+	resourceAttrs.PutStr(semconv.AttributeGitSSHURL, *event.Repo.SSHURL)
 	resourceAttrs.PutStr(semconv.AttributeGitBranchName, *event.WorkflowRun.HeadBranch)
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
