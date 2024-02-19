@@ -26,6 +26,7 @@ type githubactionsWebhookHandler struct {
 	nextTraceConsumer consumer.Traces
 }
 
+// This hould create the root span
 func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
 	d.logger.Debug("Got request", zap.String("deliveryID", deliveryID), zap.String("eventName", eventName))
 	traces := ptrace.NewTraces()
@@ -51,10 +52,15 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 	resourceAttrs.PutStr(semconv.AttributeGitBranchName, *event.WorkflowRun.HeadBranch)
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
-	traceId := deterministicTraceID(*event.Workflow.ID, *event.WorkflowRun.ID, int64(*event.WorkflowRun.RunAttempt))
+	traceId := deterministicTraceID(*event.WorkflowRun.ID, int64(*event.WorkflowRun.RunAttempt))
 	buildSpan.SetTraceID(traceId)
 
-	spanId := deterministicSpanID(*event.Workflow.ID, *event.WorkflowRun.ID, int64(*event.WorkflowRun.RunAttempt))
+	spanId := deterministicSpanID(*event.WorkflowRun.ID, int64(*event.WorkflowRun.RunAttempt))
+	d.logger.Debug("onWorkflowRunCompleted", zap.String("spanId", spanId.String()),
+		zap.Int64("workflowId", *event.Workflow.ID),
+		zap.Int64("workflowRunId", *event.WorkflowRun.ID),
+		zap.Int64("runAttempt", int64(*event.WorkflowRun.RunAttempt)),
+	)
 	buildSpan.SetSpanID(spanId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 
@@ -73,7 +79,8 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 	return nil
 }
 
-// This should create a span for every jon in the workflow. ParentSpanId should be generated based on the workflowId
+// This should create a span for every job in the workflow.
+// ParentSpanId should be generated based on the workflowId
 func (d *githubactionsWebhookHandler) onWorkflowJobCompleted(deliveryID, eventName string, event *github.WorkflowJobEvent) error {
 	d.logger.Debug("Got request", zap.String("deliveryID", deliveryID), zap.String("eventName", eventName))
 	traces := ptrace.NewTraces()
@@ -94,14 +101,19 @@ func (d *githubactionsWebhookHandler) onWorkflowJobCompleted(deliveryID, eventNa
 
 	buildSpan := scopeSpans.Spans().AppendEmpty()
 
-	traceId := deterministicTraceID(*event.WorkflowJob.ID, *event.WorkflowJob.RunID, *event.WorkflowJob.RunAttempt)
+	traceId := deterministicTraceID(*event.WorkflowJob.RunID, *event.WorkflowJob.RunAttempt)
 
 	buildSpan.SetTraceID(traceId)
 	buildSpan.SetSpanID(traceutils.NewSpanID())
 
 	// parentSpanId is based on the workflowId
-	spanId := deterministicSpanID(*event.WorkflowJob.ID, *event.WorkflowJob.RunID, *event.WorkflowJob.RunAttempt)
+	spanId := deterministicSpanID(*event.WorkflowJob.RunID, *event.WorkflowJob.RunAttempt)
 	buildSpan.SetParentSpanID(spanId)
+	d.logger.Debug("onWorkflowJobCompleted", zap.String("spanId", spanId.String()),
+		zap.Int64("workflowId", *event.WorkflowJob.ID),
+		zap.Int64("workflowRunId", *event.WorkflowJob.RunID),
+		zap.Int64("runAttempt", int64(*event.WorkflowJob.RunAttempt)),
+	)
 
 	event.WorkflowJob.GetStartedAt()
 
@@ -134,12 +146,9 @@ func generateLogs(traceId pcommon.TraceID, stepSpanId pcommon.SpanID) (plog.Logs
 	return logs, nil
 }
 
-func deterministicSpanID(workflowID, workflowRunID, attempt int64) pcommon.SpanID {
-	// calculate the MD5 hash of the
-	// combination of organisation
-	// and account reference
+func deterministicSpanID(workflowRunID, attempt int64) pcommon.SpanID {
 	md5hash := md5.New()
-	md5hash.Write([]byte(strconv.FormatInt(workflowID, 10) + "_" + strconv.FormatInt(workflowRunID, 10) + "_" + strconv.FormatInt(attempt, 10)))
+	md5hash.Write([]byte(strconv.FormatInt(workflowRunID, 10) + "_" + strconv.FormatInt(attempt, 10)))
 
 	// convert the hash value to a string
 	md5string := hex.EncodeToString(md5hash.Sum(nil))
@@ -147,11 +156,10 @@ func deterministicSpanID(workflowID, workflowRunID, attempt int64) pcommon.SpanI
 	return pcommon.SpanID([]byte(md5string[0:16]))
 }
 
-// TGenerates a unique trace id based on the workflowId, workflowRunId and attempt number
-func deterministicTraceID(workflowID, workflowRunID, attempt int64) pcommon.TraceID {
-
+// Generates a unique trace id based on the workflowId, workflowRunId and attempt number
+func deterministicTraceID(workflowRunID, attempt int64) pcommon.TraceID {
 	md5hash := md5.New()
-	md5hash.Write([]byte(strconv.FormatInt(workflowID, 10) + "_" + strconv.FormatInt(workflowRunID, 10) + "_" + strconv.FormatInt(attempt, 10)))
+	md5hash.Write([]byte(strconv.FormatInt(workflowRunID, 10) + "_" + strconv.FormatInt(attempt, 10)))
 
 	// convert the hash value to a string
 	md5string := hex.EncodeToString(md5hash.Sum(nil))
