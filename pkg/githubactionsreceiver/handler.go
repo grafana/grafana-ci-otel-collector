@@ -19,15 +19,16 @@ import (
 	"go.uber.org/zap"
 )
 
-type githubactionsWebhookHandler struct {
-	logger *zap.Logger
+type gitHubActionsWebhookHandler struct {
+	logger   *zap.Logger
+	ghClient *github.Client
 
 	nextLogsConsumer  consumer.Logs
 	nextTraceConsumer consumer.Traces
 }
 
 // This hould create the root span
-func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
+func (d *gitHubActionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventName string, event *github.WorkflowRunEvent) error {
 	d.logger.Debug("Got request", zap.String("deliveryID", deliveryID), zap.String("eventName", eventName))
 	traces := ptrace.NewTraces()
 
@@ -56,18 +57,13 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 	buildSpan.SetTraceID(traceId)
 
 	spanId := deterministicSpanID(*event.WorkflowRun.ID, int64(*event.WorkflowRun.RunAttempt))
-	d.logger.Debug("onWorkflowRunCompleted", zap.String("spanId", spanId.String()),
-		zap.Int64("workflowId", *event.Workflow.ID),
-		zap.Int64("workflowRunId", *event.WorkflowRun.ID),
-		zap.Int64("runAttempt", int64(*event.WorkflowRun.RunAttempt)),
-	)
 	buildSpan.SetSpanID(spanId)
 	buildSpan.SetParentSpanID(pcommon.NewSpanIDEmpty())
 
 	traceutils.SetStatus(*event.WorkflowRun.Conclusion, buildSpan)
 
-	buildSpan.SetStartTimestamp(pcommon.Timestamp(event.WorkflowRun.GetRunStartedAt().UnixNano()))
-	buildSpan.SetEndTimestamp(pcommon.Timestamp(event.WorkflowRun.GetUpdatedAt().UnixNano()))
+	buildSpan.SetStartTimestamp(pcommon.Timestamp(event.WorkflowRun.RunStartedAt.UnixNano()))
+	buildSpan.SetEndTimestamp(pcommon.Timestamp(event.WorkflowRun.UpdatedAt.UnixNano()))
 
 	if d.nextTraceConsumer != nil {
 		// TODO: To avoid needless work, traces should be prepared here
@@ -81,7 +77,7 @@ func (d *githubactionsWebhookHandler) onWorkflowRunCompleted(deliveryID, eventNa
 
 // This should create a span for every job in the workflow.
 // ParentSpanId should be generated based on the workflowId
-func (d *githubactionsWebhookHandler) onWorkflowJobCompleted(deliveryID, eventName string, event *github.WorkflowJobEvent) error {
+func (d *gitHubActionsWebhookHandler) onWorkflowJobCompleted(deliveryID, eventName string, event *github.WorkflowJobEvent) error {
 	d.logger.Debug("Got request", zap.String("deliveryID", deliveryID), zap.String("eventName", eventName))
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
@@ -109,19 +105,31 @@ func (d *githubactionsWebhookHandler) onWorkflowJobCompleted(deliveryID, eventNa
 	// parentSpanId is based on the workflowId
 	spanId := deterministicSpanID(*event.WorkflowJob.RunID, *event.WorkflowJob.RunAttempt)
 	buildSpan.SetParentSpanID(spanId)
-	d.logger.Debug("onWorkflowJobCompleted", zap.String("spanId", spanId.String()),
-		zap.Int64("workflowId", *event.WorkflowJob.ID),
-		zap.Int64("workflowRunId", *event.WorkflowJob.RunID),
-		zap.Int64("runAttempt", int64(*event.WorkflowJob.RunAttempt)),
-	)
 
-	event.WorkflowJob.GetStartedAt()
-
-	spanEvent := buildSpan.Events().AppendEmpty()
-	spanEvent.SetName("job_started")
-	spanEvent.SetTimestamp(pcommon.Timestamp(event.WorkflowJob.GetStartedAt().UnixNano()))
-	buildSpan.SetStartTimestamp(pcommon.Timestamp(event.WorkflowJob.CreatedAt.UnixNano()))
+	// The start time of each job is the time it was started, not queued.
+	// We could add an event when the the job was queued as follows, but that would fall outside of the span.
+	// spanEvent := buildSpan.Events().AppendEmpty()
+	// spanEvent.SetName("job_started")
+	// spanEvent.SetTimestamp(pcommon.Timestamp(event.WorkflowJob.CreatedAt.UnixNano()))
+	// TODO: solve this.
+	buildSpan.SetStartTimestamp(pcommon.Timestamp(event.WorkflowJob.StartedAt.UnixNano()))
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(event.WorkflowJob.CompletedAt.UnixNano()))
+
+	// url, a, b := d.ghClient.Actions.GetWorkflowRunAttemptLogs(context.Background(), *event.Repo.Organization.Name, *event.Repo.Name, *event.WorkflowJob.RunID, int(*event.WorkflowJob.RunAttempt), 1)
+	for _, step := range event.WorkflowJob.Steps {
+
+		stepSpan := scopeSpans.Spans().AppendEmpty()
+		stepSpan.SetSpanID(traceutils.NewSpanID())
+		stepSpan.SetTraceID(traceId)
+		stepSpan.SetParentSpanID(buildSpan.SpanID())
+
+		stepSpan.SetName(*step.Name)
+
+		// Add X nanoseconds to the start and end time to avoid having multiple spans with the same timestamp, preserving ordering in case their duration is 0.
+		// TODO: this may not be necessary
+		stepSpan.SetStartTimestamp(pcommon.Timestamp(step.StartedAt.UnixNano()))
+		stepSpan.SetEndTimestamp(pcommon.Timestamp(step.CompletedAt.UnixNano()))
+	}
 
 	if d.nextTraceConsumer != nil {
 		// TODO: To avoid needless work, traces should be prepared here

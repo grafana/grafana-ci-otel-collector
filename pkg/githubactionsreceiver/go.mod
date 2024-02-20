@@ -7,7 +7,6 @@ toolchain go1.21.6
 require (
 	github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e
 	github.com/cbrgm/githubevents v1.10.2
-	github.com/drone/drone-go v1.7.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v58 v58.0.0
 	github.com/stretchr/testify v1.8.4

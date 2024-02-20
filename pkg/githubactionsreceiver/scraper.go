@@ -20,7 +20,7 @@ type githubactionsScraper struct {
 	cfg      *Config
 }
 
-func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *githubactionsScraper {
+func newGitHubActionsScraper(settings receiver.CreateSettings, cfg *Config) *githubactionsScraper {
 	return &githubactionsScraper{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,
@@ -29,7 +29,7 @@ func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *githubactio
 }
 
 func (r *githubactionsScraper) start(_ context.Context, host component.Host) error {
-	r.settings.Logger.Info("Starting the drone scraper")
+	r.settings.Logger.Info("Starting GitHub Actions scraper")
 
 	return nil
 }

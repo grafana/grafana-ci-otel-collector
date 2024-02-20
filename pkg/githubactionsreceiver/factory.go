@@ -19,7 +19,7 @@ func createDefaultConfig() component.Config {
 		ScraperControllerSettings: cfg,
 		MetricsBuilderConfig:      metadata.DefaultMetricsBuilderConfig(),
 		WebhookConfig: WebhookConfig{
-			Endpoint: "/drone/webhook",
+			Endpoint: "/gha/webhook",
 			Port:     3333,
 		},
 	}
@@ -47,7 +47,7 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 
 func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
-	ns := newDroneScraper(set, cfg)
+	ns := newGitHubActionsScraper(set, cfg)
 	scraper, err := scraperhelper.NewScraper(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
@@ -73,7 +73,7 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*SharedComponent[*githubactionsreceiver], error) {
 	oCfg := cfg.(*Config)
 	r, err := receivers.GetOrAdd(set.ID, func() (*githubactionsreceiver, error) {
-		return newgithubactionsreceiver(oCfg, set)
+		return newGitHubActionsReceiver(oCfg, set)
 	})
 	if err != nil {
 		return nil, err

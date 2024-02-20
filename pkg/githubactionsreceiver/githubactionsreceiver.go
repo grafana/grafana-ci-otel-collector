@@ -7,8 +7,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/99designs/httpsignatures-go"
 	"github.com/cbrgm/githubevents/githubevents"
+	"github.com/google/go-github/v58/github"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -20,16 +20,21 @@ type githubactionsreceiver struct {
 	cfg        *Config
 	set        receiver.CreateSettings
 	cancel     context.CancelFunc
-	handler    *githubactionsWebhookHandler
+	handler    *gitHubActionsWebhookHandler
 	httpServer *http.Server
 }
 
-func newgithubactionsreceiver(cfg *Config, set receiver.CreateSettings) (*githubactionsreceiver, error) {
+func newGitHubActionsReceiver(cfg *Config, set receiver.CreateSettings) (*githubactionsreceiver, error) {
 	set.Logger.Info("creating githubactions receiver")
+	// TODO: both of the following need auth from config
+	// githubevents instantiates the same client under the hood, however it's not possible to acess it so we need to create a new one
+	// Alternatively, we could avoid using githubevents and use the client directly also fot the webhooks.
 	handle := githubevents.New("")
+	client := github.NewClient(nil)
 
-	handler := githubactionsWebhookHandler{
-		logger: set.Logger.Named("handler"),
+	handler := gitHubActionsWebhookHandler{
+		logger:   set.Logger.Named("handler"),
+		ghClient: client,
 	}
 
 	handle.OnWorkflowRunEventCompleted(handler.onWorkflowRunCompleted)
@@ -60,23 +65,8 @@ func newgithubactionsreceiver(cfg *Config, set receiver.CreateSettings) (*github
 	return receiver, nil
 }
 
-func verifySignature(resp http.ResponseWriter, req *http.Request, secret string) error {
-	signature, err := httpsignatures.FromRequest(req)
-	if err != nil {
-		resp.WriteHeader(http.StatusBadRequest)
-		return fmt.Errorf("error parsing signature: %w", err)
-	}
-
-	if !signature.IsValid(secret, req) {
-		resp.WriteHeader(http.StatusForbidden)
-		return fmt.Errorf("signature is not valid")
-	}
-
-	return nil
-}
-
 func (r *githubactionsreceiver) Start(_ context.Context, host component.Host) error {
-	r.set.Logger.Info("starting Drone receiver")
+	r.set.Logger.Info("starting GHActions receiver")
 
 	go func() {
 		r.set.Logger.Info("starting http server",
