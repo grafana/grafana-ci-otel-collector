@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/google/uuid v1.5.0
+	github.com/grafana/grafana-ci-otel-collector/semconv v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/collector/pdata v1.0.0
 )
@@ -28,3 +29,5 @@ require (
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/grafana/grafana-ci-otel-collector/semconv => ../semconv
