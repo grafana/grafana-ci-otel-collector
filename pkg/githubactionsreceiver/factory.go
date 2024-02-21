@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver/internal/metadata"
+	s "github.com/grafana/grafana-ci-otel-collector/sharedcomponent"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -70,7 +71,7 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 	return r, nil
 }
 
-func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*SharedComponent[*githubactionsreceiver], error) {
+func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*s.SharedComponent[*githubactionsreceiver], error) {
 	oCfg := cfg.(*Config)
 	r, err := receivers.GetOrAdd(set.ID, func() (*githubactionsreceiver, error) {
 		return newGitHubActionsReceiver(oCfg, set)
@@ -83,4 +84,4 @@ func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*Share
 }
 
 // the receiver is able to handle all types of data, we only create one instance per ID
-var receivers = NewSharedComponents[component.ID, *githubactionsreceiver]()
+var receivers = s.NewSharedComponents[component.ID, *githubactionsreceiver]()

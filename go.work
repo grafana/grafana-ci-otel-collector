@@ -7,5 +7,6 @@ use (
 	./pkg/dronereceiver
 	./pkg/githubactionsreceiver
 	./pkg/semconv
+	./pkg/sharedcomponent
 	./pkg/traceutils
 )

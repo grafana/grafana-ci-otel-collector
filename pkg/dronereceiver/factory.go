@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
+	s "github.com/grafana/grafana-ci-otel-collector/sharedcomponent"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -70,7 +71,7 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 	return r, nil
 }
 
-func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*SharedComponent[*droneReceiver], error) {
+func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*s.SharedComponent[*droneReceiver], error) {
 	oCfg := cfg.(*Config)
 	r, err := receivers.GetOrAdd(set.ID, func() (*droneReceiver, error) {
 		return newDroneReceiver(oCfg, set)
@@ -83,4 +84,4 @@ func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*Share
 }
 
 // the receiver is able to handle all types of data, we only create one instance per ID
-var receivers = NewSharedComponents[component.ID, *droneReceiver]()
+var receivers = s.NewSharedComponents[component.ID, *droneReceiver]()

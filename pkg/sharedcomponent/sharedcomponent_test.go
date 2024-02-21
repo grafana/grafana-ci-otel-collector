@@ -1,12 +1,13 @@
-package dronereceiver
+package sharedcomponent
 
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"testing"
 )
 
 type mockComponent struct {
@@ -33,7 +34,7 @@ func TestSharedComponents_GetOrAdd(t *testing.T) {
 
 	assert.NoError(t, got.Shutdown(context.Background()))
 	assert.Len(t, comps.comps, 0)
-	newGot, err := comps.GetOrAdd(key, createNop)
+	newGot, _ := comps.GetOrAdd(key, createNop)
 	assert.NotSame(t, got, newGot)
 }
 

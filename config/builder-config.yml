@@ -40,6 +40,7 @@ replaces:
   - github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver => ../pkg/githubactionsreceiver
   - github.com/grafana/grafana-ci-otel-collector/semconv => ../pkg/semconv
   - github.com/grafana/grafana-ci-otel-collector/traceutils => ../pkg/traceutils
+  - github.com/grafana/grafana-ci-otel-collector/sharedcomponent => ../pkg/sharedcomponent
 
 excludes:
   - github.com/knadh/koanf v1.5.0
