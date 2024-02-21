@@ -19,10 +19,10 @@ const (
 	AttributeCIVersion = "ci.version"
 )
 
-// AttributeCIVendorDrone
-// CI/CD system vendor enum
+// AttributeCIVendor enum
 const (
 	AttributeCIVendorDrone = "drone"
+	AttributeCIVendorGHA   = "gha"
 )
 
 const (

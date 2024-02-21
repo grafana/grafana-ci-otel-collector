@@ -1,8 +1,12 @@
-go 1.20
+go 1.21
+
+toolchain go1.21.6
 
 use (
 	./collector // Generated collector
 	./pkg/dronereceiver
+	./pkg/githubactionsreceiver
 	./pkg/semconv
+	./pkg/sharedcomponent
 	./pkg/traceutils
 )

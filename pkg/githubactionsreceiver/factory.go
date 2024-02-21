@@ -1,10 +1,10 @@
-package dronereceiver
+package githubactionsreceiver
 
 import (
 	"context"
 	"time"
 
-	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
+	"github.com/grafana/grafana-ci-otel-collector/githubactionsreceiver/internal/metadata"
 	s "github.com/grafana/grafana-ci-otel-collector/sharedcomponent"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -20,7 +20,7 @@ func createDefaultConfig() component.Config {
 		ScraperControllerSettings: cfg,
 		MetricsBuilderConfig:      metadata.DefaultMetricsBuilderConfig(),
 		WebhookConfig: WebhookConfig{
-			Endpoint: "/drone/webhook",
+			Endpoint: "/gha/webhook",
 			Port:     3333,
 		},
 	}
@@ -48,7 +48,7 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 
 func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
-	ns := newDroneScraper(set, cfg)
+	ns := newGitHubActionsScraper(set, cfg)
 	scraper, err := scraperhelper.NewScraper(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
@@ -71,10 +71,10 @@ func createLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg comp
 	return r, nil
 }
 
-func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*s.SharedComponent[*droneReceiver], error) {
+func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*s.SharedComponent[*githubactionsreceiver], error) {
 	oCfg := cfg.(*Config)
-	r, err := receivers.GetOrAdd(set.ID, func() (*droneReceiver, error) {
-		return newDroneReceiver(oCfg, set)
+	r, err := receivers.GetOrAdd(set.ID, func() (*githubactionsreceiver, error) {
+		return newGitHubActionsReceiver(oCfg, set)
 	})
 	if err != nil {
 		return nil, err
@@ -84,4 +84,4 @@ func getOrAddReceiver(set receiver.CreateSettings, cfg component.Config) (*s.Sha
 }
 
 // the receiver is able to handle all types of data, we only create one instance per ID
-var receivers = s.NewSharedComponents[component.ID, *droneReceiver]()
+var receivers = s.NewSharedComponents[component.ID, *githubactionsreceiver]()

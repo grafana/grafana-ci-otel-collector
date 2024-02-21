@@ -1,0 +1,18 @@
+# Refer to https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/main/cmd/mdatagen/metadata-schema.yaml
+# for the full schema
+type: githubactionsreceiver
+
+sem_conv_version: 1.9.0
+
+status:
+  class: receiver
+  stability:
+    development: [logs, traces, metrics]
+  warnings:
+    - Any additional information that should be brought to the consumer's attention
+
+resource_attributes:
+
+attributes:
+
+metrics:
