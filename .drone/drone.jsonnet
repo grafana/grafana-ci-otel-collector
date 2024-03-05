@@ -274,7 +274,7 @@ local verifyGenTrigger = {
             {
               "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev.libsonnet",
               "jsonnet_key": "hackathon_theodora",
-              "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-theodora:${DRONE_COMMIT}"
+              "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}"
             }
           ]
         }

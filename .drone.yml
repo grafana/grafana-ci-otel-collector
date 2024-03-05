@@ -213,7 +213,7 @@ steps:
           {
             "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev.libsonnet",
             "jsonnet_key": "hackathon_theodora",
-            "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-theodora:${DRONE_COMMIT}"
+            "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}"
           }
         ]
       }
@@ -283,6 +283,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: 86900903b693d3a0200b418557f4fbdf9cc37452ac5be8b2bfd476a256f62039
+hmac: ffe5526c0fe50867449345b751fb74056f7d10c3e8f680eb92eaa99fc66b4770
 
 ...
