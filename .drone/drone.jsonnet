@@ -36,7 +36,7 @@ local mainTrigger = {
   ],
 };
 
-local mainTrigger = {
+local hackathonTheodoraTrigger = {
   branch: 'hackathon-theodora',
   event: [
     'push',
@@ -209,7 +209,7 @@ local verifyGenTrigger = {
   ]),
   pl.new('hackathon-theodora')
   + pl.withImagePullSecrets(['dockerconfigjson'])
-  + pl.withTrigger(mainTrigger)
+  + pl.withTrigger(hackathonTheodoraTrigger)
   + pl.withVolumes([
     dockerVolume,
     dockerDindVolume,
