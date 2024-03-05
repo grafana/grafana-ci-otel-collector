@@ -36,6 +36,13 @@ local mainTrigger = {
   ],
 };
 
+local mainTrigger = {
+  branch: 'hackathon-theodora',
+  event: [
+    'push',
+  ],
+};
+
 local verifyGenTrigger = {
   event: [
     'pull_request',
@@ -185,6 +192,89 @@ local verifyGenTrigger = {
               "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-ops.libsonnet",
               "jsonnet_key": "ops",
               "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}"
+            }
+          ]
+        }
+      |||,
+      github_app_id: {
+        from_secret: 'gh_app_id',
+      },
+      github_app_installation_id: {
+        from_secret: 'gh_app_installation_id',
+      },
+      github_app_private_key: {
+        from_secret: 'gh_app_private_key',
+      },
+    }),
+  ]),
+  pl.new('hackathon-theodora')
+  + pl.withImagePullSecrets(['dockerconfigjson'])
+  + pl.withTrigger(mainTrigger)
+  + pl.withVolumes([
+    dockerVolume,
+    dockerDindVolume,
+  ])
+  + pl.withSteps([
+    step.new('build', image=goImage)
+    + step.withCommands([
+      'make build',
+    ]),
+    step.new('test', image=goImage)
+    + step.withDependsOn(['build'])
+    + step.withCommands([
+      'go test ./pkg/dronereceiver/...',
+    ]),
+    step.new('build-docker-image', image=dockerDINDImage)
+    + step.withCommands([
+        'docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT} .',
+    ])
+    + step.withVolumes([
+        {
+            name: 'dockerDind',
+            path: '/var/run',
+        },
+        {
+            name: 'docker',
+            path: '/var/run/docker.sock',
+        },
+    ]),
+    step.new('publish-to-gcr', image=dockerDINDImage)
+    + step.withDependsOn(['build-docker-image'])
+    + step.withCommands([
+        'echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io',
+        'docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}',
+    ])
+    + step.withEnvironment({
+        GCR_CREDENTIALS: {
+            from_secret: 'gcr_credentials',
+        },
+    })
+    + step.withVolumes([
+        {
+            name: 'dockerDind',
+            path: '/var/run',
+        },
+        {
+            name: 'docker',
+            path: '/var/run/docker.sock',
+        },
+    ]),
+    step.new('update-deployment-tools-dev', image=updaterImage)
+    + step.withDependsOn(['publish-to-gcr'])
+    + step.withSettings({
+      config_json: |||
+        {
+          "destination_branch": "master",
+          "pull_request_branch_prefix": "auto-merge/grafana-ci-otel-collector/",
+          "pull_request_enabled": true,
+          "pull_request_team_reviewers": [],
+          "pull_request_title": "Dev: Update grafana-ci-otel-collector-hackathon-theodora",
+          "repo_name": "deployment_tools",
+          "update_jsonnet_attribute_configs": [
+            {
+              "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev.libsonnet",
+              "jsonnet_key": "hackathon_theodora",
+              "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-theodora:${DRONE_COMMIT}"
             }
           ]
         }
