@@ -145,7 +145,86 @@ steps:
     github_app_private_key:
       from_secret: gh_app_private_key
 trigger:
-  branch: main
+  branch: hackathon-theodora
+  event:
+  - push
+type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
+- name: dockerDind
+  temp: {}
+---
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
+name: hackathon-theodora
+steps:
+- commands:
+  - make build
+  image: golang:1.20.4
+  name: build
+- commands:
+  - go test ./pkg/dronereceiver/...
+  depends_on:
+  - build
+  image: golang:1.20.4
+  name: test
+- commands:
+  - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}
+    .
+  image: docker:dind
+  name: build-docker-image
+  volumes:
+  - name: dockerDind
+    path: /var/run
+  - name: docker
+    path: /var/run/docker.sock
+- commands:
+  - echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io
+  - docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}
+  depends_on:
+  - build-docker-image
+  environment:
+    GCR_CREDENTIALS:
+      from_secret: gcr_credentials
+  image: docker:dind
+  name: publish-to-gcr
+  volumes:
+  - name: dockerDind
+    path: /var/run
+  - name: docker
+    path: /var/run/docker.sock
+- depends_on:
+  - publish-to-gcr
+  image: us.gcr.io/kubernetes-dev/drone/plugins/updater
+  name: update-deployment-tools-dev
+  settings:
+    config_json: |
+      {
+        "destination_branch": "master",
+        "pull_request_branch_prefix": "auto-merge/grafana-ci-otel-collector/",
+        "pull_request_enabled": true,
+        "pull_request_team_reviewers": [],
+        "pull_request_title": "Dev: Update grafana-ci-otel-collector-hackathon-theodora",
+        "repo_name": "deployment_tools",
+        "update_jsonnet_attribute_configs": [
+          {
+            "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev-hackathon-theodora.libsonnet",
+            "jsonnet_key": "hackathon-theodora",
+            "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-theodora:${DRONE_COMMIT}"
+          }
+        ]
+      }
+    github_app_id:
+      from_secret: gh_app_id
+    github_app_installation_id:
+      from_secret: gh_app_installation_id
+    github_app_private_key:
+      from_secret: gh_app_private_key
+trigger:
+  branch: hackathon-theodora
   event:
   - push
 type: docker
@@ -204,6 +283,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: 36c43c2afb8f5966fdea4885c4b9ef7defae4821f3a327ae99c4f1c1e3ce1980
+hmac: 9f36dbdfd2c9fc3f8e686d32f9abbed7bec894c0e4615e48216bee69cfb08854
 
 ...
