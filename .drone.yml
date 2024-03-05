@@ -145,7 +145,7 @@ steps:
     github_app_private_key:
       from_secret: gh_app_private_key
 trigger:
-  branch: hackathon-theodora
+  branch: main
   event:
   - push
 type: docker
@@ -211,8 +211,8 @@ steps:
         "repo_name": "deployment_tools",
         "update_jsonnet_attribute_configs": [
           {
-            "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev-hackathon-theodora.libsonnet",
-            "jsonnet_key": "hackathon-theodora",
+            "file_path": "ksonnet/environments/grafana-ci-otel-collector/image-dev.libsonnet",
+            "jsonnet_key": "hackathon_theodora",
             "jsonnet_value": "us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-theodora:${DRONE_COMMIT}"
           }
         ]
@@ -283,6 +283,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: 9f36dbdfd2c9fc3f8e686d32f9abbed7bec894c0e4615e48216bee69cfb08854
+hmac: 86900903b693d3a0200b418557f4fbdf9cc37452ac5be8b2bfd476a256f62039
 
 ...
