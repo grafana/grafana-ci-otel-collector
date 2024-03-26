@@ -102,14 +102,15 @@ func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 			r.set.Logger.Error("error creating listener",
 				zap.String("error", err.Error()),
 			)
-			host.ReportFatalError(err)
+
+			r.set.TelemetrySettings.ReportStatus(component.NewFatalErrorEvent(err))
 		}
 
 		if errHTTP := r.httpServer.Serve(listener); errHTTP != nil && !errors.Is(errHTTP, http.ErrServerClosed) {
 			r.set.Logger.Error("error starting server",
 				zap.String("error", errHTTP.Error()),
 			)
-			host.ReportFatalError(errHTTP)
+			r.set.TelemetrySettings.ReportStatus(component.NewFatalErrorEvent(errHTTP))
 		}
 	}()
 

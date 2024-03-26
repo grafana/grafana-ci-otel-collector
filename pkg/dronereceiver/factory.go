@@ -48,7 +48,7 @@ func createTraceReceiver(_ context.Context, set receiver.CreateSettings, cfg com
 func createMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
 	ns := newDroneScraper(set, cfg)
-	scraper, err := scraperhelper.NewScraper(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
+	scraper, err := scraperhelper.NewScraper(string(metadata.Type), ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
 		return nil, err
