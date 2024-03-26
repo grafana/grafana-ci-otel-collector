@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector/traceutils
 
-go 1.21
+go 1.22
 
 require (
 	github.com/google/uuid v1.6.0

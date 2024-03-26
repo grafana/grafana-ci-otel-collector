@@ -3,7 +3,7 @@ local pl = drone.pipeline.docker;
 local step = pl.step;
 local secret = drone.secret;
 
-local goImage = 'golang:1.20.4';
+local goImage = 'golang:1.22.1';
 local dockerDINDImage = 'docker:dind';
 local updaterImage = 'us.gcr.io/kubernetes-dev/drone/plugins/updater';
 local dockerVolume = {
