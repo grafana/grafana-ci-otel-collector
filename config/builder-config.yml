@@ -27,15 +27,12 @@ extensions:
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.96.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubactionsreceiver v0.96.0
   - gomod: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver v0.1.0'
-    import: 'github.com/grafana/grafana-ci-otel-collector/dronereceiver'
-    name: 'dronereceiver'
     path: './pkg/dronereceiver'
 
 replaces:
   - github.com/grafana/grafana-ci-otel-collector/dronereceiver => ../pkg/dronereceiver
   - github.com/grafana/grafana-ci-otel-collector/semconv => ../pkg/semconv
   - github.com/grafana/grafana-ci-otel-collector/traceutils => ../pkg/traceutils
-
-excludes:
-  - github.com/knadh/koanf v1.5.0
+  - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubactionsreceiver => github.com/grafana/opentelemetry-collector-contrib/receiver/githubactionsreceiver 4077812c33
