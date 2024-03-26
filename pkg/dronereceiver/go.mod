@@ -2,8 +2,6 @@ module github.com/grafana/grafana-ci-otel-collector/dronereceiver
 
 go 1.21
 
-toolchain go1.22.0
-
 require (
 	github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e
 	github.com/drone/drone-go v1.7.1
@@ -51,7 +49,6 @@ require (
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/prometheus/common v0.51.1 // indirect
 	github.com/prometheus/procfs v0.13.0 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.opentelemetry.io/collector v0.96.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.96.0 // indirect
