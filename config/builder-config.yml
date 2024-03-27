@@ -36,3 +36,6 @@ replaces:
   - github.com/grafana/grafana-ci-otel-collector/semconv => ../pkg/semconv
   - github.com/grafana/grafana-ci-otel-collector/traceutils => ../pkg/traceutils
   - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubactionsreceiver => github.com/grafana/opentelemetry-collector-contrib/receiver/githubactionsreceiver 4077812c33
+
+excludes:
+  - github.com/knadh/koanf v1.5.0
