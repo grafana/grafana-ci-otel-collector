@@ -7,13 +7,10 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-
 	t.Run("DroneConfig validation", func(t *testing.T) {
 		t.Run("Fails when Drone host is not defined", func(t *testing.T) {
 			cfg := Config{
-				WebhookConfig: WebhookConfig{
-					Secret: "secret",
-				},
+				Secret: "secret",
 				DroneConfig: DroneConfig{
 					Token: "token",
 				},
@@ -27,9 +24,7 @@ func TestValidate(t *testing.T) {
 
 		t.Run("Fails when Drone token is not defined", func(t *testing.T) {
 			cfg := Config{
-				WebhookConfig: WebhookConfig{
-					Secret: "secret",
-				},
+				Secret: "secret",
 				DroneConfig: DroneConfig{
 					Host: "http://localhost:8080",
 				},
@@ -61,9 +56,7 @@ func TestValidate(t *testing.T) {
 	t.Run("ReposConfig validation", func(t *testing.T) {
 		t.Run("Fails when no repo is  defined", func(t *testing.T) {
 			cfg := Config{
-				WebhookConfig: WebhookConfig{
-					Secret: "secret",
-				},
+				Secret: "secret",
 				DroneConfig: DroneConfig{
 					Token: "token",
 					Host:  "http://localhost:8080",
@@ -75,9 +68,7 @@ func TestValidate(t *testing.T) {
 
 		t.Run("Fails when a repo contains no branches", func(t *testing.T) {
 			cfg := Config{
-				WebhookConfig: WebhookConfig{
-					Secret: "secret",
-				},
+				Secret: "secret",
 				DroneConfig: DroneConfig{
 					Token: "token",
 					Host:  "http://localhost:8080",
@@ -92,9 +83,7 @@ func TestValidate(t *testing.T) {
 
 		t.Run("Fails when a repo contains duplicated branches", func(t *testing.T) {
 			cfg := Config{
-				WebhookConfig: WebhookConfig{
-					Secret: "secret",
-				},
+				Secret: "secret",
 				DroneConfig: DroneConfig{
 					Token: "token",
 					Host:  "http://localhost:8080",
@@ -114,9 +103,7 @@ func TestValidate(t *testing.T) {
 				Host:  "http://localhost:8080",
 				Token: "token",
 			},
-			WebhookConfig: WebhookConfig{
-				Secret: "secret",
-			},
+			Secret: "secret",
 			ReposConfig: map[string][]string{
 				"repo1": {"branch1", "branch2"},
 			},

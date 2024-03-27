@@ -2,21 +2,30 @@ package dronereceiver
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-	"testing"
 )
 
-func TestCreateLogsReceiver(t *testing.T) {
-	cfg := createDefaultConfig().(*Config)
-	_, err := NewFactory().CreateLogsReceiver(
-		context.Background(),
-		receivertest.NewNopCreateSettings(),
-		cfg,
-		nil,
-	)
-	require.NoError(t, err)
+func TestNewTracesReceiver(t *testing.T) {
+	t.Run("Missing consumer fails", func(t *testing.T) {
+		rec, err := newTracesReceiver(context.Background(), receivertest.NewNopCreateSettings(), createDefaultConfig().(*Config), nil)
+
+		require.ErrorIs(t, err, component.ErrNilNextConsumer)
+		require.Nil(t, rec)
+	})
+}
+
+func TestNewLogsReceiver(t *testing.T) {
+	t.Run("Missing consumer fails", func(t *testing.T) {
+		rec, err := newLogsReceiver(context.Background(), receivertest.NewNopCreateSettings(), createDefaultConfig().(*Config), nil)
+
+		require.ErrorIs(t, err, component.ErrNilNextConsumer)
+		require.Nil(t, rec)
+	})
 }
 
 func TestCreateMetricsReceiver(t *testing.T) {
@@ -26,17 +35,6 @@ func TestCreateMetricsReceiver(t *testing.T) {
 		receivertest.NewNopCreateSettings(),
 		cfg,
 		consumertest.NewNop(),
-	)
-	require.NoError(t, err)
-}
-
-func TestCreateTracesReceiver(t *testing.T) {
-	cfg := createDefaultConfig().(*Config)
-	_, err := NewFactory().CreateTracesReceiver(
-		context.Background(),
-		receivertest.NewNopCreateSettings(),
-		cfg,
-		nil,
 	)
 	require.NoError(t, err)
 }

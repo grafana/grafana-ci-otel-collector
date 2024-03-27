@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.17 as go-builder
+FROM golang:1.22.1-alpine3.19 as go-builder
 WORKDIR /collector
 
 COPY . .

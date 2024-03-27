@@ -1,70 +1,72 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package dronereceiver
 
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"testing"
 )
+
+var id = component.MustNewID("test")
+
+func TestNewSharedComponents(t *testing.T) {
+	comps := NewSharedComponents()
+	assert.Len(t, comps.comps, 0)
+}
 
 type mockComponent struct {
 	component.StartFunc
 	component.ShutdownFunc
 }
 
-func TestNewSharedComponents(t *testing.T) {
-	sharedComps := NewSharedComponents[int, mockComponent]()
-	assert.NotNil(t, sharedComps)
-	assert.Empty(t, sharedComps.comps)
-}
-
 func TestSharedComponents_GetOrAdd(t *testing.T) {
 	nop := &mockComponent{}
-	createNop := func() (mockComponent, error) { return *nop, nil }
+	createNop := func() component.Component { return nop }
 
-	key := component.NewID("test")
-	comps := NewSharedComponents[component.ID, mockComponent]()
-	got, err := comps.GetOrAdd(key, createNop)
-	assert.NoError(t, err)
+	comps := NewSharedComponents()
+	got := comps.GetOrAdd(id, createNop)
 	assert.Len(t, comps.comps, 1)
-	assert.Equal(t, nop, &got.component)
+	assert.Same(t, nop, got.Unwrap())
+	assert.Same(t, got, comps.GetOrAdd(id, createNop))
 
+	// Shutdown nop will remove
 	assert.NoError(t, got.Shutdown(context.Background()))
 	assert.Len(t, comps.comps, 0)
-	newGot, err := comps.GetOrAdd(key, createNop)
-	assert.NotSame(t, got, newGot)
+	assert.NotSame(t, got, comps.GetOrAdd(id, createNop))
 }
 
 func TestSharedComponent(t *testing.T) {
-	wantErr := errors.New("err")
-	startCount := 0
-	stopCount := 0
-	mockComp := &mockComponent{
+	wantErr := errors.New("my error")
+	calledStart := 0
+	calledStop := 0
+	comp := &mockComponent{
 		StartFunc: func(ctx context.Context, host component.Host) error {
-			startCount++
+			calledStart++
 			return wantErr
 		},
 		ShutdownFunc: func(ctx context.Context) error {
-			stopCount++
+			calledStop++
 			return wantErr
 		},
 	}
-	createComp := func() (mockComponent, error) { return *mockComp, nil }
+	createComp := func() component.Component { return comp }
 
-	comps := NewSharedComponents[component.ID, mockComponent]()
-	key := component.NewID("test")
-	got, err := comps.GetOrAdd(key, createComp)
-	assert.NoError(t, err)
+	comps := NewSharedComponents()
+	got := comps.GetOrAdd(id, createComp)
 	assert.Equal(t, wantErr, got.Start(context.Background(), componenttest.NewNopHost()))
-	assert.Equal(t, 1, startCount)
-
+	assert.Equal(t, 1, calledStart)
+	// Second time is not called anymore.
 	assert.NoError(t, got.Start(context.Background(), componenttest.NewNopHost()))
-	assert.Equal(t, 1, startCount)
+	assert.Equal(t, 1, calledStart)
 	assert.Equal(t, wantErr, got.Shutdown(context.Background()))
-	assert.Equal(t, 1, stopCount)
-
+	assert.Equal(t, 1, calledStop)
+	// Second time is not called anymore.
 	assert.NoError(t, got.Shutdown(context.Background()))
-	assert.Equal(t, 1, stopCount)
+	assert.Equal(t, 1, calledStop)
 }

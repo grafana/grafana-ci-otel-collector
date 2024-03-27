@@ -8,7 +8,7 @@
 
 You need to run:
 
-```
+```bash
 jb install github.com/crdsonnet/drone-libsonnet@master
 ```
 
@@ -23,6 +23,9 @@ documentation to get more options about your CI/CD needs.
 `.drone/jsonnet*` files are associated with the `drone-libsonnet` library version.
 
 ## Regenerate `.drone.yml`
+
+> [!NOTE]
+> Make sure you have the `DRONE_SERVER` and `DRONE_TOKEN` environment variables set in your shell. You can find them in https://drone.grafana.net/account.
 
 After you are happy with the changes you've made in `.drone/drone.jsonnet` from your root project directory, run:
 

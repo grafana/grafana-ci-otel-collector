@@ -1,3 +1,3 @@
 module github.com/grafana/grafana-ci-otel-collector/semconv
 
-go 1.20
+go 1.22

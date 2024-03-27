@@ -1,10 +1,9 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// Package dronereceiver
 // Package sharedcomponent exposes util functionality for receivers and exporters
 // that need to share state between different signal types instances such as net.Listener or os.File.
-package dronereceiver // import "go.opentelemetry.io/collector/internal/sharedcomponent"
+package dronereceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent"
 
 import (
 	"context"
@@ -15,41 +14,37 @@ import (
 
 // SharedComponents a map that keeps reference of all created instances for a given configuration,
 // and ensures that the shared state is started and stopped only once.
-type SharedComponents[K comparable, V component.Component] struct {
-	comps map[K]*SharedComponent[V]
+type SharedComponents struct {
+	comps map[any]*SharedComponent
 }
 
 // NewSharedComponents returns a new empty SharedComponents.
-func NewSharedComponents[K comparable, V component.Component]() *SharedComponents[K, V] {
-	return &SharedComponents[K, V]{
-		comps: make(map[K]*SharedComponent[V]),
+func NewSharedComponents() *SharedComponents {
+	return &SharedComponents{
+		comps: make(map[any]*SharedComponent),
 	}
 }
 
 // GetOrAdd returns the already created instance if exists, otherwise creates a new instance
 // and adds it to the map of references.
-func (scs *SharedComponents[K, V]) GetOrAdd(key K, create func() (V, error)) (*SharedComponent[V], error) {
+func (scs *SharedComponents) GetOrAdd(key any, create func() component.Component) *SharedComponent {
 	if c, ok := scs.comps[key]; ok {
-		return c, nil
+		return c
 	}
-	comp, err := create()
-	if err != nil {
-		return nil, err
-	}
-	newComp := &SharedComponent[V]{
-		component: comp,
+	newComp := &SharedComponent{
+		Component: create(),
 		removeFunc: func() {
 			delete(scs.comps, key)
 		},
 	}
 	scs.comps[key] = newComp
-	return newComp, nil
+	return newComp
 }
 
 // SharedComponent ensures that the wrapped component is started and stopped only once.
 // When stopped it is removed from the SharedComponents map.
-type SharedComponent[V component.Component] struct {
-	component V
+type SharedComponent struct {
+	component.Component
 
 	startOnce  sync.Once
 	stopOnce   sync.Once
@@ -57,24 +52,24 @@ type SharedComponent[V component.Component] struct {
 }
 
 // Unwrap returns the original component.
-func (r *SharedComponent[V]) Unwrap() V {
-	return r.component
+func (r *SharedComponent) Unwrap() component.Component {
+	return r.Component
 }
 
 // Start implements component.Component.
-func (r *SharedComponent[V]) Start(ctx context.Context, host component.Host) error {
+func (r *SharedComponent) Start(ctx context.Context, host component.Host) error {
 	var err error
 	r.startOnce.Do(func() {
-		err = r.component.Start(ctx, host)
+		err = r.Component.Start(ctx, host)
 	})
 	return err
 }
 
 // Shutdown implements component.Component.
-func (r *SharedComponent[V]) Shutdown(ctx context.Context) error {
+func (r *SharedComponent) Shutdown(ctx context.Context) error {
 	var err error
 	r.stopOnce.Do(func() {
-		err = r.component.Shutdown(ctx)
+		err = r.Component.Shutdown(ctx)
 		r.removeFunc()
 	})
 	return err

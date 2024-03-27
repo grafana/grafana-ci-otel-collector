@@ -1,6 +1,9 @@
 receivers:
   dronereceiver:
     collection_interval: 10s
+    path: /drone/webhook
+    endpoint: localhost:3333
+    secret: bea26a2221fd8090ea38720fc445eca6
     drone:
       token: <DRONE_TOKEN>
       host: http://localhost:8080
@@ -9,10 +12,6 @@ receivers:
         db: drone
         username: postgres
         password: postgres
-    webhook:
-      endpoint: /drone/webhook
-      port: 3333
-      secret: bea26a2221fd8090ea38720fc445eca6
     repos:
       grafana/grafana:
         - main
