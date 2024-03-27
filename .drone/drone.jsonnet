@@ -68,6 +68,7 @@ local verifyGenTrigger = {
     + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
+      'go test ./pkg/traceutils/...',
     ]),
     step.new('build-docker-image', image=dockerDINDImage)
     + step.withCommands([
@@ -92,6 +93,7 @@ local verifyGenTrigger = {
     + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
+      'go test ./pkg/traceutils/...',
     ]),
   ]),
   pl.new('main')
@@ -110,6 +112,7 @@ local verifyGenTrigger = {
     + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
+      'go test ./pkg/traceutils/...',
     ]),
     step.new('build-docker-image', image=dockerDINDImage)
     + step.withCommands([
@@ -223,6 +226,7 @@ local verifyGenTrigger = {
     + step.withDependsOn(['build'])
     + step.withCommands([
       'go test ./pkg/dronereceiver/...',
+      'go test ./pkg/traceutils/...',
     ]),
     step.new('build-docker-image', image=dockerDINDImage)
     + step.withCommands([

@@ -1,0 +1,7 @@
+go 1.22.0
+
+use (
+    ./pkg/dronereceiver
+    ./pkg/semconv
+    ./pkg/traceutils
+)

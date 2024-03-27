@@ -10,6 +10,7 @@ steps:
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
   image: golang:1.22.1
@@ -41,6 +42,7 @@ steps:
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
   image: golang:1.22.1
@@ -61,6 +63,7 @@ steps:
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
   image: golang:1.22.1
@@ -167,6 +170,7 @@ steps:
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
   image: golang:1.22.1
@@ -283,6 +287,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: d92bc7d056fbea27ecd35ca9f064e0625d785cef114678ccc80d562acc484be7
+hmac: f3b8c5b3027707b6ef05c8f73a85db13677163913103d78e0afd539d2571bb47
 
 ...
