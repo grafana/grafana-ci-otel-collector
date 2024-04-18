@@ -1,22 +1,17 @@
 package dronereceiver
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
+	"slices"
 	"time"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/grafana/grafana-ci-otel-collector/semconv"
 	"github.com/grafana/grafana-ci-otel-collector/traceutils"
-	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 )
 
 type RepoEvt struct {
@@ -30,35 +25,10 @@ type WebhookEvent struct {
 	drone.System `json:"system"`
 }
 
-type droneClient interface {
-	drone.Client
-}
-
-type droneWebhookHandler struct {
-	droneClient droneClient
-	logger      *zap.Logger
-
-	reposConfig map[string][]string
-
-	nextLogsConsumer  consumer.Logs
-	nextTraceConsumer consumer.Traces
-}
-
-func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Request) error {
-	d.logger.Debug("Got request")
-
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		// TODO: handle this
-		return fmt.Errorf("error reading the request body: %v", err)
-	}
-
-	var evt WebhookEvent
-	err = json.Unmarshal(body, &evt)
-	if err != nil {
-		// TODO: handle this
-		return fmt.Errorf("error unmarshalling the request body: %v", err)
-	}
+func handleEvent(evt WebhookEvent, config *Config, droneClient drone.Client, logger *zap.Logger) (*ptrace.Traces, *plog.Logs) {
+	repo := evt.Repo
+	build := evt.Repo.Build
+	logger.Debug("Got request")
 
 	// Skip unfinished builds (i.e. builds that are still running)
 	// In theory, according to the docs in https://docs.drone.io/webhooks/examples/, build.Action should be "completed" when a build is completed.
@@ -67,24 +37,22 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 	// However this appears to be sent when a build completes; The structure however changes slightly as in
 	// the `repo.build` seems to be absent in the first one.
 	// TODO: Revisit this, we may not need the Finished check.
-	if evt.Repo.Build == nil || evt.Repo.Build.Finished == 0 {
-		return fmt.Errorf("no build info provided from the webhook event: %v", err)
+	if build == nil || build.Finished == 0 {
+		logger.Warn("no build info provided from the webhook event")
+		return nil, nil
 	}
 
-	repo := evt.Repo
-	build := evt.Repo.Build
-
 	// Skip traces for repos that are not enabled
-	allowedBranches, ok := d.reposConfig[evt.Repo.Slug]
+	allowedBranches, ok := config.ReposConfig[evt.Repo.Slug]
 	if !ok {
-		d.logger.Warn("repo not enabled", zap.String("repo", evt.Repo.Slug))
-		return nil
+		logger.Warn("repo not enabled, skipping", zap.String("repo", evt.Repo.Slug))
+		return nil, nil
 	}
 
 	// Skip traces for branches that are not configured
 	if !slices.Contains(allowedBranches, repo.Branch) {
-		d.logger.Warn("branch not enabled", zap.String("branch", repo.Branch))
-		return nil
+		logger.Warn("branch not enabled, skipping", zap.String("branch", repo.Branch))
+		return nil, nil
 	}
 
 	traces := ptrace.NewTraces()
@@ -202,9 +170,9 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 			stepSpan.SetEndTimestamp(pcommon.Timestamp(step.Stopped * 1000000000))
 
 			// TODO: Handle the error in logs retrieval better
-			newLogs, err := generateLogs(d.droneClient, repo.Repo, *build, *stage, *step, buildSpan.TraceID(), stepSpan.SpanID())
+			newLogs, err := generateLogs(droneClient, repo.Repo, *build, *stage, *step, buildSpan.TraceID(), stepSpan.SpanID())
 			if err != nil {
-				d.logger.Error("error retrieving logs", zap.Error(err))
+				logger.Error("error retrieving logs", zap.Error(err))
 				continue
 			}
 
@@ -212,19 +180,7 @@ func (d *droneWebhookHandler) handler(resp http.ResponseWriter, req *http.Reques
 		}
 	}
 
-	if d.nextTraceConsumer != nil {
-		err := d.nextTraceConsumer.ConsumeTraces(req.Context(), traces)
-		if err != nil {
-			return fmt.Errorf("cannot consume traces: %v", err)
-		}
-	}
-	if d.nextLogsConsumer != nil {
-		err := d.nextLogsConsumer.ConsumeLogs(req.Context(), logs)
-		if err != nil {
-			return fmt.Errorf("cannot consume logs: %v", err)
-		}
-	}
-	return nil
+	return &traces, &logs
 }
 
 func generateLogs(drone drone.Client, repo drone.Repo, build drone.Build, stage drone.Stage, step drone.Step, traceId pcommon.TraceID, stepSpanId pcommon.SpanID) (plog.Logs, error) {
@@ -263,5 +219,4 @@ func generateLogs(drone drone.Client, repo drone.Repo, build drone.Build, stage 
 	}
 
 	return logs, nil
-
 }

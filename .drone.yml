@@ -6,13 +6,14 @@ name: pr
 steps:
 - commands:
   - make build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: test
 - commands:
   - docker build .
@@ -37,13 +38,14 @@ name: custom
 steps:
 - commands:
   - make build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: test
 trigger:
   event:
@@ -57,13 +59,14 @@ name: main
 steps:
 - commands:
   - make build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: test
 - commands:
   - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
@@ -163,13 +166,14 @@ name: hackathon-theodora
 steps:
 - commands:
   - make build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
+  - go test ./pkg/traceutils/...
   depends_on:
   - build
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: test
 - commands:
   - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}
@@ -242,7 +246,7 @@ steps:
   - make metadata
   - 'if [ -n "$(git status --porcelain)" ]; then echo "ERROR: Please run make metadata
     and commit your changes." && git diff --exit-code; fi'
-  image: golang:1.20.4
+  image: golang:1.22.1
   name: verify-gen
 trigger:
   event:
@@ -283,6 +287,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: ffe5526c0fe50867449345b751fb74056f7d10c3e8f680eb92eaa99fc66b4770
+hmac: f3b8c5b3027707b6ef05c8f73a85db13677163913103d78e0afd539d2571bb47
 
 ...

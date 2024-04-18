@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-ci-otel-collector/dronereceiver/internal/metadata"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 )
 
@@ -20,19 +21,15 @@ type DroneConfig struct {
 	Database DBConfig `mapstructure:"database"`
 }
 
-type WebhookConfig struct {
-	Endpoint string `mapstructure:"endpoint"`
-	Port     int    `mapstructure:"port"`
-	Secret   string `mapstructure:"secret"`
-}
-
 // Config defines configuration for dronereceiver receiver.
 type Config struct {
 	scraperhelper.ScraperControllerSettings `mapstructure:",squash"`
 	metadata.MetricsBuilderConfig           `mapstructure:",squash"`
-	WebhookConfig                           WebhookConfig       `mapstructure:"webhook"`
-	DroneConfig                             DroneConfig         `mapstructure:"drone"`
-	ReposConfig                             map[string][]string `mapstructure:"repos"`
+	confighttp.ServerConfig                 `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct
+	Path                                    string                   `mapstructure:"path"`   // path for data collection. Default is <host>:<port>/events
+	Secret                                  string                   `mapstructure:"secret"` // webhook hash signature. Default is empty
+	DroneConfig                             DroneConfig              `mapstructure:"drone"`
+	ReposConfig                             map[string][]string      `mapstructure:"repos"`
 }
 
 // Validate checks if the receiver configuration is valid
@@ -43,7 +40,7 @@ func (cfg *Config) Validate() error {
 	if cfg.DroneConfig.Token == "" {
 		return fmt.Errorf("token must be defined")
 	}
-	if cfg.WebhookConfig.Secret == "" {
+	if cfg.Secret == "" {
 		return fmt.Errorf("webhook secret must be defined")
 	}
 

@@ -124,13 +124,12 @@ Update the `dronereceiver` receiver in the `config.yaml` file to use the [drone 
 receivers:
   dronereceiver:
     collection_interval: 15s
+    endpoint: localhost:3333
+    path: /drone/webhook
+    secret: bea26a2221fd8090ea38720fc445eca6
     drone:
       token: <YOUR TOKEN>
       host: http://${NETWORK_HOST}:8080
-    webhook:
-      endpoint: /drone/webhook
-      port: 3333
-      secret: bea26a2221fd8090ea38720fc445eca6
 ```
 
 ### Start the collector
