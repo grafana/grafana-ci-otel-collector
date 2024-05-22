@@ -38,7 +38,7 @@ func handleEvent(evt WebhookEvent, config *Config, droneClient drone.Client, log
 	// the `repo.build` seems to be absent in the first one.
 	// TODO: Revisit this, we may not need the Finished check.
 	if build == nil {
-		logger.Warn("no build info provided from the webhook event")
+		logger.Debug("no build info provided from the webhook event")
 		return nil, nil
 	}
 
@@ -50,15 +50,17 @@ func handleEvent(evt WebhookEvent, config *Config, droneClient drone.Client, log
 	// Skip traces for repos that are not enabled
 	allowedBranches, ok := config.ReposConfig[evt.Repo.Slug]
 	if !ok {
-		logger.Warn("repo not enabled, skipping", zap.String("repo", evt.Repo.Slug))
+		logger.Debug("repo not enabled, skipping", zap.String("repo", evt.Repo.Slug))
 		return nil, nil
 	}
 
 	// Skip traces for branches that are not configured
 	if !slices.Contains(allowedBranches, repo.Branch) {
-		logger.Warn("branch not enabled, skipping", zap.String("branch", repo.Branch))
+		logger.Debug("branch not enabled, skipping", zap.String("branch", repo.Branch))
 		return nil, nil
 	}
+
+	logger.Debug("generating traces for build", zap.String("branch", repo.Branch), zap.String("repo", repo.Slug))
 
 	traces := ptrace.NewTraces()
 	logs := plog.NewLogs()
