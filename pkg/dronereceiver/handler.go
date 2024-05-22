@@ -37,8 +37,13 @@ func handleEvent(evt WebhookEvent, config *Config, droneClient drone.Client, log
 	// However this appears to be sent when a build completes; The structure however changes slightly as in
 	// the `repo.build` seems to be absent in the first one.
 	// TODO: Revisit this, we may not need the Finished check.
-	if build == nil || build.Finished == 0 {
+	if build == nil {
 		logger.Warn("no build info provided from the webhook event")
+		return nil, nil
+	}
+
+	if build.Finished == 0 {
+		logger.Debug("build hasn't finished yet")
 		return nil, nil
 	}
 
