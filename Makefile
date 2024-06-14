@@ -1,32 +1,96 @@
-include .bingo/Variables.mk
+include ./Makefile.Common
 
-metadata: $(MDATAGEN)
-	$(MDATAGEN) ./pkg/dronereceiver/metadata.yaml
+CUSTOM_COL_DIR ?= $(SRC_ROOT)/build
+OS := $(shell uname | tr '[:upper:]' '[:lower:]')
+ARCH := $(shell uname -m)
 
-build: $(BINGO) $(BUILDER)
-	$(BUILDER) --config config/builder-config.yml
+# Arguments for getting directories & executing commands against them
+PKG_DIRS = $(shell find ./* -not -path "./build/*" -not -path "./tmp/*" -type f -name "go.mod" -exec dirname {} \; | sort | grep -E '^./')
+CHECKS = generate fmt-all tidy-all lint-all test-all scan-all multimod-verify crosslink
 
-run: 
-	./collector/grafana-ci-otelcol --config config.yaml
+# set ARCH var based on output
+ifeq ($(ARCH),x86_64)
+	ARCH = amd64
+endif
+ifeq ($(ARCH),aarch64)
+	ARCH = arm64
+endif
 
-dev: metadata build run
+.PHONY: build
+build: install-tools
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 $(OCB) --config config/manifest.yaml
 
-docker-build:
-	@echo "building docker container grafana-ci-otel-collector"
-	docker build -t grafana-ci-otel-collector .
+.PHONY: build-debug
+build-debug: install-tools
+	sed 's/debug_compilation: false/debug_compilation: true/g' config/manifest.yaml > config/manifest-debug.yaml
+	$(OCB) --config config/manifest-debug.yaml
 
-docker-run:
-	@echo "running docker container"
-	docker run -it -v $$PWD:/tmp -p 3333:3333  \
- 		grafana-ci-otel-collector:latest --config /tmp/config.yaml
+.PHONY: run
+run: build
+	$(CUSTOM_COL_DIR)/otelcol-custom --config config/config.yaml
 
-docker: docker-build docker-run
+.PHONY: for-all
+for-all:
+	@set -e; for dir in $(DIRS); do \
+	  (cd "$${dir}" && \
+	  	echo "running $${CMD} in $${dir}" && \
+	 	$${CMD} ); \
+	done
+	
+.PHONY: lint-all
+lint-all:
+	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) lint"
 
-drone:
-	jsonnet -J .drone/vendor/ .drone/drone.jsonnet > jsonnetfile
-	drone jsonnet --stream \
-		--format \
-		--source jsonnetfile \
-		--target .drone.yml
-	drone --server https://drone.grafana.net sign --save grafana/grafana-ci-otel-collector
-	rm jsonnetfile
+.PHONY: generate
+generate:
+	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) gen"
+
+.PHONY: test-all
+test-all:
+	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) test"
+
+.PHONY: cibuild
+cibuild: install-tools
+	$(OCB) --config config/manifest.yaml --skip-compilation
+
+.PHONY: dockerbuild
+dockerbuild:
+	$(MAKE) build OS=linux ARCH=amd64
+	docker build . -t grafana/grafana-ci-otel-collector:localdev --build-arg BIN_PATH="./build/otelcol-custom"
+
+.PHONY: scan-all
+scan-all:
+	$(OSV) -r .
+
+.PHONY: tidy-all
+tidy-all:
+	$(MAKE) tidy
+	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) tidy"
+
+.PHONY: fmt-all
+fmt-all:
+	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) fmt"
+
+# Setting the paralellism to 1 to improve output readability. Reevaluate later as needed for performance
+.PHONY: checks
+checks: install-tools 
+	$(MAKE) -j 1 $(CHECKS)
+	@if [ -n "$$(git diff --name-only)" ]; then \
+		echo "Some files have changed. Please commit them."; \
+		exit 1; \
+	else \
+		echo "completed successfully."; \
+	fi
+
+.PHONY: multimod-verify
+multimod-verify:
+	$(MULTIMOD) verify
+
+.PHONY: multimod-prerelease
+multimod-prerelease:
+	$(MULTIMOD) prerelease -s=true -b=false -v ./versions.yaml -m liatrio-otel
+	$(MAKE) tidy-all
+
+.PHONY: crosslink
+crosslink:
+	$(CROSSLINK) --root=$(shell pwd) --prune
