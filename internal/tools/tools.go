@@ -9,13 +9,11 @@ package tools // import "github.com/grafana/grafana-ci-otel-collector/internal/t
 import (
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/osv-scanner/cmd/osv-scanner"
-	_ "github.com/goreleaser/goreleaser/v2"
 	_ "github.com/securego/gosec/v2/cmd/gosec"
 	_ "go.opentelemetry.io/build-tools/crosslink"
 	_ "go.opentelemetry.io/build-tools/multimod"
 	_ "go.opentelemetry.io/collector/cmd/builder"
 	_ "go.opentelemetry.io/collector/cmd/mdatagen"
 	_ "golang.org/x/tools/cmd/goimports"
-	_ "golang.org/x/vuln/cmd/govulncheck"
 	_ "honnef.co/go/tools/cmd/staticcheck"
 )
