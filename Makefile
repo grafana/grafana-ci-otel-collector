@@ -27,7 +27,7 @@ build-debug: install-tools
 
 .PHONY: run
 run: build
-	$(CUSTOM_COL_DIR)/otelcol-custom --config config/config.yaml
+	$(CUSTOM_COL_DIR)/grafana-ci-otelcol --config config/config.yaml
 
 .PHONY: for-all
 for-all:
@@ -49,14 +49,9 @@ generate:
 test-all:
 	$(MAKE) for-all DIRS="$(PKG_DIRS)" CMD="$(MAKE) test"
 
-.PHONY: cibuild
-cibuild: install-tools
-	$(OCB) --config config/manifest.yaml --skip-compilation
-
 .PHONY: dockerbuild
 dockerbuild:
-	$(MAKE) build OS=linux ARCH=amd64
-	docker build . -t grafana/grafana-ci-otel-collector:localdev --build-arg BIN_PATH="./build/otelcol-custom"
+	docker build . -t grafana/grafana-ci-otel-collector:localdev
 
 .PHONY: scan-all
 scan-all:

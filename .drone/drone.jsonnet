@@ -3,7 +3,7 @@ local pl = drone.pipeline.docker;
 local step = pl.step;
 local secret = drone.secret;
 
-local goImage = 'golang:1.22.1';
+local goImage = 'golang:1.22.2';
 local dockerDINDImage = 'docker:dind';
 local updaterImage = 'us.gcr.io/kubernetes-dev/drone/plugins/updater';
 local dockerVolume = {
@@ -52,6 +52,60 @@ local verifyGenTrigger = {
   },
 };
 
+local checkPackages() = step.new('check-packages', image=goImage)
+  + step.withCommands([
+      'make tidy-all',
+      'git diff -s --exit-code || (echo "Packages are out of date. Run make tidy-all and commit the changes" && git --no-pager diff && exit 1)',
+    ]);
+
+local installTools() = step.new('install-tools', image=goImage)
+  + step.withDependsOn(['check-packages'])
+  + step.withCommands([
+      'make install-tools',
+    ]);
+
+local codeGen() = step.new('check-codegen', image=goImage)
+  + step.withDependsOn(['install-tools'])
+  + step.withCommands([
+      'make generate',
+      'git diff -s --exit-code || (echo "Generated code is out of date. Run make generate and commit the changes" && git --no-pager diff && exit 1)',
+    ]);
+
+local crosslinkRun() = step.new('check-crosslink', image=goImage)
+  + step.withDependsOn(['install-tools'])
+  + step.withCommands([
+      'make crosslink',
+      'git diff -s --exit-code || (echo "Replace statements not updated. Run make crosslink and commit the changes" && git --no-pager diff && exit 1)'
+    ]);
+
+local lint() = step.new('lint', image=goImage)
+  + step.withDependsOn(['install-tools'])
+  + step.withCommands([
+      'make lint-all',
+    ]);
+
+local test() = step.new('test', image=goImage)
+  + step.withDependsOn(['install-tools'])
+  + step.withCommands([
+      'make test-all',
+    ]);
+
+local build(tag=false) = step.new('build', image=dockerDINDImage)
+  + step.withDependsOn(['test'])
+  + step.withCommands([
+      'docker build'+ (if tag then " --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}" else "") + ' .',
+  ])
+  + step.withVolumes([
+      {
+          name: 'dockerDind',
+          path: '/var/run',
+      },
+      {
+          name: 'docker',
+          path: '/var/run/docker.sock',
+      },
+  ]);
+
 [
   pl.new('pr')
   + pl.withImagePullSecrets(['dockerconfigjson'])
@@ -60,42 +114,15 @@ local verifyGenTrigger = {
     dockerVolume,
   ])
   + pl.withSteps([
-    step.new('build', image=goImage)
-    + step.withCommands([
-      'make build',
-    ]),
-    step.new('test', image=goImage)
-    + step.withDependsOn(['build'])
-    + step.withCommands([
-      'go test ./pkg/dronereceiver/...',
-      'go test ./pkg/traceutils/...',
-    ]),
-    step.new('build-docker-image', image=dockerDINDImage)
-    + step.withCommands([
-        'docker build .',
-    ])
-    + step.withVolumes([
-        {
-            name: 'docker',
-            path: '/var/run/docker.sock',
-        },
-    ]),
+    checkPackages(),
+    installTools(),
+    codeGen(),
+    crosslinkRun(),
+    lint(),
+    test(),
+    build(),
   ]),
-  pl.new('custom')
-  + pl.withImagePullSecrets(['dockerconfigjson'])
-  + pl.withTrigger(customTrigger)
-  + pl.withSteps([
-    step.new('build', image=goImage)
-    + step.withCommands([
-      'make build',
-    ]),
-    step.new('test', image=goImage)
-    + step.withDependsOn(['build'])
-    + step.withCommands([
-      'go test ./pkg/dronereceiver/...',
-      'go test ./pkg/traceutils/...',
-    ]),
-  ]),
+
   pl.new('main')
   + pl.withImagePullSecrets(['dockerconfigjson'])
   + pl.withTrigger(mainTrigger)
@@ -104,32 +131,15 @@ local verifyGenTrigger = {
     dockerDindVolume,
   ])
   + pl.withSteps([
-    step.new('build', image=goImage)
-    + step.withCommands([
-      'make build',
-    ]),
-    step.new('test', image=goImage)
-    + step.withDependsOn(['build'])
-    + step.withCommands([
-      'go test ./pkg/dronereceiver/...',
-      'go test ./pkg/traceutils/...',
-    ]),
-    step.new('build-docker-image', image=dockerDINDImage)
-    + step.withCommands([
-        'docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT} .',
-    ])
-    + step.withVolumes([
-        {
-            name: 'dockerDind',
-            path: '/var/run',
-        },
-        {
-            name: 'docker',
-            path: '/var/run/docker.sock',
-        },
-    ]),
+    checkPackages(),
+    installTools(),
+    codeGen(),
+    crosslinkRun(),
+    lint(),
+    test(),
+    build(tag=true),
     step.new('publish-to-gcr', image=dockerDINDImage)
-    + step.withDependsOn(['build-docker-image'])
+    + step.withDependsOn(['build'])
     + step.withCommands([
         'echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io',
         'docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}',
