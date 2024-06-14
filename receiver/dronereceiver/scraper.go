@@ -89,7 +89,7 @@ func (r *droneScraper) scrapeBuilds(ctx context.Context, now pcommon.Timestamp, 
 	repoSlugs := make([]string, 0)
 	for repoSlug, buildSources := range r.cfg.ReposConfig {
 		repoSlugs = append(repoSlugs, repoSlug)
-		conditions = append(conditions, fmt.Sprintf("WHEN repo_slug = '%s' AND build_source IN ('%s') THEN build_source", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
+		conditions = append(conditions, fmt.Sprintf("WHEN repo_slug = '%s' AND build_source IN ('%s') THEN build_source", repoSlug, strings.Join(buildSources, "', '")))
 	}
 
 	rows, err := r.dbPool.Query(ctx, fmt.Sprintf(`
@@ -174,7 +174,7 @@ func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, er
 
 	conditions := make([]string, 0)
 	for repoSlug, buildSources := range r.cfg.ReposConfig {
-		conditions = append(conditions, fmt.Sprintf("repo_slug = '%s' AND build_source IN ('%s')", repoSlug, fmt.Sprintf(strings.Join(buildSources, "', '"))))
+		conditions = append(conditions, fmt.Sprintf("repo_slug = '%s' AND build_source IN ('%s')", repoSlug, strings.Join(buildSources, "', '")))
 	}
 
 	rows, err := r.dbPool.Query(ctx, fmt.Sprintf(`
