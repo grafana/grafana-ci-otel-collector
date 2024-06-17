@@ -1,8 +1,15 @@
-# Refer to https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector-contrib/main/cmd/mdatagen/metadata-schema.yaml
+# Refer to https://github.com/open-telemetry/opentelemetry-collector/blob/main/cmd/mdatagen/metadata-schema.yaml
 # for the full schema
 type: dronereceiver
 
 sem_conv_version: 1.9.0
+
+tests:
+  goleak:
+    ignore:
+      top:
+        # see https://github.com/jackc/pgx/issues/1641
+        - github.com/jackc/pgx/v5/pgxpool.(*Pool).backgroundHealthCheck
 
 status:
   class: receiver
