@@ -5,21 +5,54 @@ kind: pipeline
 name: pr
 steps:
 - commands:
-  - make build
-  image: golang:1.22.1
-  name: build
+  - make tidy-all
+  - git diff -s --exit-code || (echo "Packages are out of date. Run make tidy-all
+    and commit the changes" && git --no-pager diff && exit 1)
+  image: golang:1.22.2
+  name: check-packages
 - commands:
-  - go test ./pkg/dronereceiver/...
-  - go test ./pkg/traceutils/...
+  - make install-tools
   depends_on:
-  - build
-  image: golang:1.22.1
+  - check-packages
+  image: golang:1.22.2
+  name: install-tools
+- commands:
+  - make generate
+  - git diff -s --exit-code || (echo "Generated code is out of date. Run make generate
+    and commit the changes" && git --no-pager diff && exit 1)
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: check-codegen
+- commands:
+  - make crosslink
+  - git diff -s --exit-code || (echo "Replace statements not updated. Run make crosslink
+    and commit the changes" && git --no-pager diff && exit 1)
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: check-crosslink
+- commands:
+  - make lint-all
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: lint
+- commands:
+  - make test-all
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
   name: test
 - commands:
   - docker build .
+  depends_on:
+  - test
   image: docker:dind
-  name: build-docker-image
+  name: build
   volumes:
+  - name: dockerDind
+    path: /var/run
   - name: docker
     path: /var/run/docker.sock
 trigger:
@@ -34,45 +67,55 @@ volumes:
 image_pull_secrets:
 - dockerconfigjson
 kind: pipeline
-name: custom
-steps:
-- commands:
-  - make build
-  image: golang:1.22.1
-  name: build
-- commands:
-  - go test ./pkg/dronereceiver/...
-  - go test ./pkg/traceutils/...
-  depends_on:
-  - build
-  image: golang:1.22.1
-  name: test
-trigger:
-  event:
-  - custom
-type: docker
----
-image_pull_secrets:
-- dockerconfigjson
-kind: pipeline
 name: main
 steps:
 - commands:
-  - make build
-  image: golang:1.22.1
-  name: build
+  - make tidy-all
+  - git diff -s --exit-code || (echo "Packages are out of date. Run make tidy-all
+    and commit the changes" && git --no-pager diff && exit 1)
+  image: golang:1.22.2
+  name: check-packages
 - commands:
-  - go test ./pkg/dronereceiver/...
-  - go test ./pkg/traceutils/...
+  - make install-tools
   depends_on:
-  - build
-  image: golang:1.22.1
+  - check-packages
+  image: golang:1.22.2
+  name: install-tools
+- commands:
+  - make generate
+  - git diff -s --exit-code || (echo "Generated code is out of date. Run make generate
+    and commit the changes" && git --no-pager diff && exit 1)
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: check-codegen
+- commands:
+  - make crosslink
+  - git diff -s --exit-code || (echo "Replace statements not updated. Run make crosslink
+    and commit the changes" && git --no-pager diff && exit 1)
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: check-crosslink
+- commands:
+  - make lint-all
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
+  name: lint
+- commands:
+  - make test-all
+  depends_on:
+  - install-tools
+  image: golang:1.22.2
   name: test
 - commands:
   - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
     .
+  depends_on:
+  - test
   image: docker:dind
-  name: build-docker-image
+  name: build
   volumes:
   - name: dockerDind
     path: /var/run
@@ -82,7 +125,7 @@ steps:
   - echo $${GCR_CREDENTIALS} | docker login -u _json_key --password-stdin https://us.gcr.io
   - docker push us.gcr.io/kubernetes-dev/grafana-ci-otel-collector:${DRONE_COMMIT}
   depends_on:
-  - build-docker-image
+  - build
   environment:
     GCR_CREDENTIALS:
       from_secret: gcr_credentials
@@ -166,14 +209,14 @@ name: hackathon-theodora
 steps:
 - commands:
   - make build
-  image: golang:1.22.1
+  image: golang:1.22.2
   name: build
 - commands:
   - go test ./pkg/dronereceiver/...
   - go test ./pkg/traceutils/...
   depends_on:
   - build
-  image: golang:1.22.1
+  image: golang:1.22.2
   name: test
 - commands:
   - docker build --tag us.gcr.io/kubernetes-dev/grafana-ci-otel-collector-hackathon-theodora:${DRONE_COMMIT}
@@ -246,7 +289,7 @@ steps:
   - make metadata
   - 'if [ -n "$(git status --porcelain)" ]; then echo "ERROR: Please run make metadata
     and commit your changes." && git diff --exit-code; fi'
-  image: golang:1.22.1
+  image: golang:1.22.2
   name: verify-gen
 trigger:
   event:
@@ -287,6 +330,6 @@ kind: secret
 name: dockerconfigjson
 ---
 kind: signature
-hmac: f3b8c5b3027707b6ef05c8f73a85db13677163913103d78e0afd539d2571bb47
+hmac: 52c068b869562195ab4b50e54cc551fe3d20466f2f464ccb2976f37526b53c15
 
 ...

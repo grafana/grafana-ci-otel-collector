@@ -1,0 +1,77 @@
+# Refer to https://github.com/open-telemetry/opentelemetry-collector/blob/main/cmd/mdatagen/metadata-schema.yaml
+# for the full schema
+type: dronereceiver
+
+sem_conv_version: 1.9.0
+
+tests:
+  goleak:
+    ignore:
+      top:
+        # see https://github.com/jackc/pgx/issues/1641
+        - github.com/jackc/pgx/v5/pgxpool.(*Pool).backgroundHealthCheck
+
+status:
+  class: receiver
+  stability:
+    development: [logs, traces, metrics]
+  warnings:
+    - Any additional information that should be brought to the consumer's attention
+
+resource_attributes:
+
+attributes:
+  ci.workflow_item.status:
+    description: Build status
+    enum:
+      [
+        skipped,
+        blocked,
+        declined,
+        waiting_on_dependencies,
+        pending,
+        running,
+        success,
+        failure,
+        killed,
+        error,
+      ]
+    type: string
+  git.repo.name:
+    description: Repository name
+    type: string
+  git.branch.name:
+    description: Branch name
+    type: string
+
+metrics:
+  builds_number:
+    enabled: true
+    description: Number of builds.
+    extended_documentation:
+      Currently there's no way to differentiate between restarted builds and manually triggered builds.
+      This means builds started manually (i.e. via Drone UI or via APis) will count towards this metric
+      should they run against a branch for which a build has already been executed.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
+  repo_info:
+    enabled: true
+    description: Repo status.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
+  restarts_total:
+    enabled: true
+    description: Total number build restarts.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
