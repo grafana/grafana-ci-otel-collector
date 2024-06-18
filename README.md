@@ -14,7 +14,7 @@ cp config.example.yaml config.yaml
 ### Building
 
 ```bash
-make metadata && make build
+make build
 ```
 
 ### Running
@@ -143,19 +143,13 @@ make dev
 Build the Docker image:
 
 ```bash
-make docker-build
+make dockerbuild
 ```
 
 Run the Docker image:
 
 ```bash
-make docker-run
-```
-
-Do both at once:
-
-```bash
-make docker
+make dockerrun
 ```
 
 **NOTES:**

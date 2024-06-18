@@ -53,6 +53,10 @@ test-all:
 dockerbuild:
 	docker build . -t grafana/grafana-ci-otel-collector:localdev
 
+.PHONY: dockerrun
+dockerrun: dockerbuild
+	docker run -v ./config.yaml:/etc/grafana-ci-otelcol/config.yaml -t grafana/grafana-ci-otel-collector:localdev
+
 .PHONY: scan-all
 scan-all:
 	$(OSV) -r .
