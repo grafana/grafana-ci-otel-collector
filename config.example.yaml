@@ -40,7 +40,7 @@ connectors:
     aggregation_temporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE'
 
 exporters:
-  logging:
+  debug:
     verbosity: detailed
   otlp:
     endpoint: localhost:4317
@@ -59,15 +59,15 @@ service:
     traces:
       receivers: [dronereceiver]
       processors: []
-      exporters: [otlp, logging, spanmetrics]
+      exporters: [otlp, debug, spanmetrics]
     logs:
       receivers: [dronereceiver]
       processors: []
-      exporters: [loki, logging]
+      exporters: [loki, debug]
     metrics:
       receivers: [dronereceiver, spanmetrics]
       processors: []
-      exporters: [prometheusremotewrite, logging]
+      exporters: [prometheusremotewrite, debug]
 
   telemetry:
     logs:
