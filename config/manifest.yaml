@@ -36,7 +36,7 @@ replaces:
   - github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver => ../receiver/dronereceiver
   - github.com/grafana/grafana-ci-otel-collector/internal/semconv => ../internal/semconv
   - github.com/grafana/grafana-ci-otel-collector/internal/traceutils => ../internal/traceutils
-  - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubactionsreceiver => github.com/grafana/opentelemetry-collector-contrib/receiver/githubactionsreceiver e46f054
+  - github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubactionsreceiver => github.com/grafana/opentelemetry-collector-contrib/receiver/githubactionsreceiver 94f6703
 
 excludes:
   - github.com/knadh/koanf v1.5.0
