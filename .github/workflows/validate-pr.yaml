@@ -11,9 +11,14 @@ concurrency:
 
 jobs:
   prepare:
+    name: Prepare
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Tools
         run: make install-tools
+      - name: Lint
+        run: make lint-all
+      - name: Test
+        run: make test-all
