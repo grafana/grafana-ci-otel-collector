@@ -15,8 +15,10 @@ status:
   class: receiver
   stability:
     development: [logs, traces, metrics]
-  warnings:
-    - Any additional information that should be brought to the consumer's attention
+  distributions:
+    - grafana-ci-otel-collector
+  codeowners:
+    active: [Elfo404]
 
 resource_attributes:
 
