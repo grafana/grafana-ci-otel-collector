@@ -1,31 +1,75 @@
-# grafana-ci-collector
+# grafana-ci-otel-collector
+
+The Grafana CI OTel Collector is a distribution of the Open Telemetry collector tailored to CI/CD Observability.
+
+## Components
+
+The following is a list of components that are included in the Grafana CI OTel Collector.
+
+<mark>**Highlighted**</mark> components are currently being developed by us.
+
+### Receivers
+
+- [otlpreceiver][otlpreceiver]
+- <mark>**[dronereceiver][dronereceiver]**</mark>
+- <mark>**[githubactionsreceiver][githubactionsreceiver]**</mark>
+
+[otlpreceiver]: FILLTHIS
+[dronereceiver]: ./receiver/dronereceiver/README.md
+[githubactionsreceiver]: FILLTHIS
+
+### Processors
+
+- [attributesprocessor][attributesprocessor]
+- [batchprocessor][batchprocessor]
+- [resourceprocessor][resourceprocessor]
+
+[attributesprocessor]: FILLTHIS
+[batchprocessor]: FILLTHIS
+[resourceprocessor]: FILLTHIS
+
+### Connectors
+
+- [routingconnector][routingconnector]
+- [spanmetricsconnector][spanmetricsconnector]
+
+[routingconnector]: FILLTHIS
+[spanmetricsconnector]: FILLTHIS
+
+### Exporters
+
+- [debugexporter][debugexporter]
+- [lokiexporter][lokiexporter]
+- [otlpexporter][otlpexporter]
+- [prometheusexporter][prometheusexporter]
+- [prometheusremotewriteexporter][prometheusremotewriteexporter]
+
+[debugexporter]: FILLTHIS
+[lokiexporter]: FILLTHIS
+[otlpexporter]: FILLTHIS
+[prometheusexporter]: FILLTHIS
+[prometheusremotewriteexporter]: FILLTHIS
+
+### Extensions
+
+- [basicauthextension][basicauthextension]
+- [healthcheckextension][healthcheckextension]
+
+[basicauthextension]: FILLTHIS
+[healthcheckextension]: FILLTHIS
+
+## Configuration
+
+The collector is configured using the `config.yaml` file.
+You can learn more about the OpenTelemetry Collector configuration [here][otel-configuration].
+
+Refer to each component's documentation (linked above) for specific configuration options.
+
+[otel-configuration]: https://opentelemetry.io/docs/collector/configuration/
 
 ## Development
 
-### Configuring the collector
-
-The collector is configured using the `config.yaml` file.
-An example configuration can be found in `config.yaml.example`, copy the file to `config.yaml` and replace the values for the `dronereceiver` receiver with the ones relevant to your environment.
-
-```bash
-cp config.example.yaml config.yaml
-```
-
-### Building
-
-```bash
-make build
-```
-
-### Running
-
-In the example config an exporter is configured to send data locally. A `docker-compose` file is provided to start Grafana Tempo.
-
-```bash
-docker-compose up -d
-```
-
-Then you can start the collector with:
+After having configured the collector, you can start it by running:
 
 ```bash
 make run
@@ -131,30 +175,6 @@ receivers:
       token: <YOUR TOKEN>
       host: http://${NETWORK_HOST}:8080
 ```
-
-### Start the collector
-
-```bash
-make dev
-```
-
-### Spin up the collector as a Docker image
-
-Build the Docker image:
-
-```bash
-make dockerbuild
-```
-
-Run the Docker image:
-
-```bash
-make dockerrun
-```
-
-**NOTES:**
-
-- When building/running the collector via the Docker image, you need to change your `config.yaml` so that all hosts pointing to services exposed via docker-compose point to `host.docker.internal`.
 
 ## Spin up Grafana as a Docker image locally
 
