@@ -14,9 +14,9 @@ The following is a list of components that are included in the Grafana CI OTel C
 - <mark>**[dronereceiver][dronereceiver]**</mark>
 - <mark>**[githubactionsreceiver][githubactionsreceiver]**</mark>
 
-[otlpreceiver]: FILLTHIS
+[otlpreceiver]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/receiver/otlpreceiver
 [dronereceiver]: ./receiver/dronereceiver/README.md
-[githubactionsreceiver]: FILLTHIS
+[githubactionsreceiver]: https://github.com/grafana/opentelemetry-collector-contrib/tree/feat-add-githubactionseventreceiver-2/receiver/githubactionsreceiver
 
 ### Processors
 
@@ -24,17 +24,17 @@ The following is a list of components that are included in the Grafana CI OTel C
 - [batchprocessor][batchprocessor]
 - [resourceprocessor][resourceprocessor]
 
-[attributesprocessor]: FILLTHIS
-[batchprocessor]: FILLTHIS
-[resourceprocessor]: FILLTHIS
+[attributesprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/processor/attributesprocessor
+[batchprocessor]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/processor/batchprocessor
+[resourceprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/processor/resourceprocessor
 
 ### Connectors
 
 - [routingconnector][routingconnector]
 - [spanmetricsconnector][spanmetricsconnector]
 
-[routingconnector]: FILLTHIS
-[spanmetricsconnector]: FILLTHIS
+[routingconnector]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/connector/routingconnector
+[spanmetricsconnector]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/connector/spanmetricsconnector
 
 ### Exporters
 
@@ -44,19 +44,19 @@ The following is a list of components that are included in the Grafana CI OTel C
 - [prometheusexporter][prometheusexporter]
 - [prometheusremotewriteexporter][prometheusremotewriteexporter]
 
-[debugexporter]: FILLTHIS
-[lokiexporter]: FILLTHIS
-[otlpexporter]: FILLTHIS
-[prometheusexporter]: FILLTHIS
-[prometheusremotewriteexporter]: FILLTHIS
+[debugexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/exporter/debugexporter
+[lokiexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/lokiexporter
+[otlpexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/exporter/otlpexporter
+[prometheusexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/prometheusexporter
+[prometheusremotewriteexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/prometheusremotewriteexporter
 
 ### Extensions
 
 - [basicauthextension][basicauthextension]
 - [healthcheckextension][healthcheckextension]
 
-[basicauthextension]: FILLTHIS
-[healthcheckextension]: FILLTHIS
+[basicauthextension]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/extension/basicauthextension
+[healthcheckextension]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/extension/healthcheckextension
 
 ## Configuration
 
