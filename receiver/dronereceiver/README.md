@@ -20,10 +20,13 @@ For a list of generated metrics, see the [generated metrics documentation](./doc
 
 ## Configuration
 
+> [!TIP]  
+> The following configuration should work OOTB with the docker compose file provided.
+
 ```yaml
 receivers:
   dronereceiver:
-    collection_interval: 10s
+    collection_interval: 1m
     path: /drone/webhook
     endpoint: localhost:3333
     secret: bea26a2221fd8090ea38720fc445eca6
@@ -36,10 +39,128 @@ receivers:
         username: postgres
         password: postgres
     repos:
-      grafana/grafana:
+      org1/repo1:
         - main
-      grafana/gracie:
+      org1/repo2:
         - main
-      grafana/grafana-ci-otel-collector:
+        - development
+      org2/another-repo:
         - main
+        - v1.0.x
+```
+
+## Local Drone instance
+
+It is possible to use a local Drone instance for easier development.
+
+> [!NOTE]  
+> Note that by default no webhook events are sent to the receiver from GitHub (i.e. when
+> pushing to a branch to trigger a build), so make sure your pipelines can be run manually.
+>
+> If you want to trigger pipelines in your local Drone instance when pushing, you need to setup
+> webhooks in your repository. Refer to Drone docs for more informations.
+
+### Environment variables
+
+The `docker-compose.yml` file expects the following environment variables to be set:
+
+```properties
+DRONE_SERVER_PROXY_HOST=
+DRONE_GITHUB_CLIENT_ID=
+DRONE_GITHUB_CLIENT_SECRET=
+GH_HANDLE=
+```
+
+you can copy the example env vars file and follow the instructions below to fill them in:
+
+```bash
+cp .env.example .env
+```
+
+### Tunneling
+
+> [!TIP]  
+> These instructions use [ngrok](https://ngrok.com/download), but feel free to use any other
+> tunneling service and adapt the instructions accordingly.
+
+First, [install ngrok](https://ngrok.com/download) to expose a tunnel to your local drone instance.
+
+Once installed, start ngrok with:
+
+```bash
+ngrok http 8080
+```
+
+the output should look something like this:
+
+```bash
+Session Status                online
+Account                       you@example.com
+Version                       3.3.1
+Region                        Europe (eu)
+Latency                       44ms
+Web Interface                 http://127.0.0.1:4040
+Forwarding                    https://SOMETHING.ngrok-free.app -> http://localhost:8080
+```
+
+Copy the forwarding url (in this case `https://SOMETHING.ngrok-free.app`) and use it to configure the `DRONE_SERVER_PROXY_HOST` environment variable in the `.env` file.
+
+### GitHub OAuth App
+
+We then need to create a GitHub OAuth App to use for authentication with Drone.
+In Github, Go to **Settings -> Developer settings -> OAuth Apps** and click on "New OAuth App".
+
+Pick whatever you want for the name and description, and use the ngrok forwarding url for the `Homepage URL` and `Authorization callback URL` fields as follows (example using the URL from above):
+
+```
+Homepage URL:
+https://SOMETHING.ngrok-free.app
+
+
+Authorization callback URL:
+https://SOMETHING.ngrok-free.app/login
+```
+
+Click on "Register application".
+
+After the application is registered, generate a `Client secret`.
+
+Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
+
+### Run Drone
+
+You can now start Drone with:
+
+```bash
+docker compose up -d
+```
+
+And use the ngrok forwarding url to access the Drone UI.
+Navigate to the repository you want to start monitoring and click on "Activate repository".
+
+> [!NOTE]  
+> This also starts Tempo, Loki and Prometheus from the `docker-compose.yml` file in the root of the repository. If you only want to start drone you can use
+>
+> ```bash
+> docker compose up -f docker-compose.drone.yml -d
+> ```
+
+### Get your drone token
+
+If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your drone token by navigating to https://SOMETHING.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
+
+### Configure the collector
+
+Update the `dronereceiver` receiver in the `config.yaml` file to use the [drone token](#get-your-drone-token) from above:
+
+```yaml
+receivers:
+  dronereceiver:
+    collection_interval: 15s
+    endpoint: localhost:3333
+    path: /drone/webhook
+    secret: bea26a2221fd8090ea38720fc445eca6
+    drone:
+      token: <YOUR TOKEN>
+      host: http://${NETWORK_HOST}:8080
 ```

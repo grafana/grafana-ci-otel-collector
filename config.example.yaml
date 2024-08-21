@@ -1,43 +1,12 @@
 receivers:
-  dronereceiver:
-    collection_interval: 10s
-    path: /drone/webhook
-    endpoint: localhost:3333
-    secret: bea26a2221fd8090ea38720fc445eca6
-    drone:
-      token: <DRONE_TOKEN>
-      host: http://localhost:8080
-      database:
-        host: localhost
-        db: drone
-        username: postgres
-        password: postgres
-    repos:
-      grafana/grafana:
-        - main
-      grafana/gracie:
-        - main
-      grafana/grafana-ci-otel-collector:
-        - main
+# Your receivers here
 
 processors:
+  batch:
+# Your processors here
 
 connectors:
-  spanmetrics:
-    histogram:
-      explicit:
-        buckets: [30s, 1m, 5m, 10m, 30m, 1h]
-    dimensions:
-      - name: git.repo.name
-      - name: git.branch.name
-      - name: ci.drone.workflow_item.kind
-      - name: ci.drone.stage.name
-    exclude_dimensions:
-      - service.version
-      - service.name
-      - span.kind
-    dimensions_cache_size: 1000
-    aggregation_temporality: 'AGGREGATION_TEMPORALITY_CUMULATIVE'
+# Your connectors here
 
 exporters:
   debug:
@@ -47,7 +16,7 @@ exporters:
     tls:
       insecure: true
   prometheusremotewrite:
-    endpoint: 'http://localhost:9090/api/v1/write'
+    endpoint: "http://localhost:9090/api/v1/write"
     namespace: ci
     resource_to_telemetry_conversion:
       enabled: true
@@ -57,17 +26,17 @@ exporters:
 service:
   pipelines:
     traces:
-      receivers: [dronereceiver]
-      processors: []
+      receivers: []
+      processors: [batch]
       exporters: [otlp, debug, spanmetrics]
     logs:
-      receivers: [dronereceiver]
-      processors: []
-      exporters: [loki, debug]
+      receivers: []
+      processors: [batch]
+      exporters: [debug, loki]
     metrics:
-      receivers: [dronereceiver, spanmetrics]
-      processors: []
-      exporters: [prometheusremotewrite, debug]
+      receivers: [spanmetrics]
+      processors: [batch]
+      exporters: [debug, prometheusremotewrite]
 
   telemetry:
     logs:
