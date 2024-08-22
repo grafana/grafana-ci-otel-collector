@@ -139,7 +139,7 @@ And use the ngrok forwarding url to access the Drone UI.
 Navigate to the repository you want to start monitoring and click on "Activate repository".
 
 > [!NOTE]  
-> This also starts Tempo, Loki and Prometheus from the `docker-compose.yml` file in the root of the repository. If you only want to start drone you can use
+> This also starts Tempo, Loki and Prometheus from the `docker-compose.yml` file in the root of the repository. If you only want to start Drone you can use
 >
 > ```bash
 > docker compose up -f docker-compose.drone.yml -d
@@ -147,11 +147,11 @@ Navigate to the repository you want to start monitoring and click on "Activate r
 
 ### Get your drone token
 
-If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your drone token by navigating to https://SOMETHING.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
+If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your Drone token by navigating to https://SOMETHING.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
 
 ### Configure the collector
 
-Update the `dronereceiver` receiver in the `config.yaml` file to use the [drone token](#get-your-drone-token) from above:
+Update the `dronereceiver` receiver in the `config.yaml` file to use the [Drone token](#get-your-drone-token) from above:
 
 ```yaml
 receivers:

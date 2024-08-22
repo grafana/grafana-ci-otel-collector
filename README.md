@@ -73,7 +73,7 @@ A barebones configuration file can be found in the `config.example.yaml` file in
 
 A basic docker-compose file is provided in the root of the repository to run Tempo, Loki, and Prometheus.
 
-to start the services, run:
+To start the services, run:
 
 ```bash
 docker-compose up
