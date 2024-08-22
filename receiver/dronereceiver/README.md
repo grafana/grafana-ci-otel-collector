@@ -21,7 +21,7 @@ For a list of generated metrics, see the [generated metrics documentation](./doc
 ## Configuration
 
 > [!TIP]  
-> The following configuration should work OOTB with the docker compose file provided.
+> The following configuration should work OOTB with the Docker compose file provided.
 
 ```yaml
 receivers:
@@ -52,13 +52,6 @@ receivers:
 ## Local Drone instance
 
 It is possible to use a local Drone instance for easier development.
-
-> [!NOTE]  
-> Note that by default no webhook events are sent to the receiver from GitHub (i.e. when
-> pushing to a branch to trigger a build), so make sure your pipelines can be run manually.
->
-> If you want to trigger pipelines in your local Drone instance when pushing, you need to setup
-> webhooks in your repository. Refer to Drone docs for more informations.
 
 ### Environment variables
 
@@ -104,6 +97,22 @@ Forwarding                    https://SOMETHING.ngrok-free.app -> http://localho
 ```
 
 Copy the forwarding url (in this case `https://SOMETHING.ngrok-free.app`) and use it to configure the `DRONE_SERVER_PROXY_HOST` environment variable in the `.env` file.
+
+> [!NOTE]  
+> By default no webhook events are sent to the receiver from GitHub (i.e. when
+> pushing to a branch to trigger a build), so make sure your pipelines can be run manually.
+>
+> If you want to automatically trigger pipelines in your local Drone instance, you need to add a
+> webhook to your repository configuration in **Settings -> Webhooks**.
+> The Payload URL should be `https://SOMETHING.ngrok-free.app/hook`. You can find the webhook secret
+> in the [compose file](./docker-compose.drone.yml under the `DRONE_WEBHOOK_SECRET` environment
+> variable. Select `application/json` as the content type and the following events:
+>
+> - Branch or tag creation
+> - Branch or tag deletion
+> - Deployments
+> - Pull requests
+> - Pushes
 
 ### GitHub OAuth App
 
