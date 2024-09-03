@@ -131,7 +131,7 @@ jobs:
           # Only push to GAR on main branch pushes
           push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
           tags: |-
-            "<IMAGE_TAG>"
+            ${{ github.sha }}
             "latest"
           context: "." # e.g. "." - where the Dockerfile is
           image_name: "grafana-ci-otel-collector" # name of the image to be published, required
