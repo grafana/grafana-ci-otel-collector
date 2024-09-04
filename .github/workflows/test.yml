@@ -96,47 +96,6 @@ jobs:
       - name: Make lint-all
         run: make lint-all
 
-  build:
-    name: Build & Push
-    runs-on: ubuntu-latest
-    needs: install-tools
-    steps:
-      - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Set up Go
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-        with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Cache Go
-        timeout-minutes: 5
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
-        with:
-          path: |
-            ~/go/bin
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ./.tools
-          key: go-cache-${{ hashFiles('**/go.sum') }}
-          fail-on-cache-miss: true
-
-      - name: Make build
-        run: make build
-
-      - name: Push to GAR
-        uses: grafana/shared-workflows/actions/push-to-gar-docker@main
-        with:
-          # Only push to GAR on main branch pushes
-          push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
-          tags: |-
-            ${{ github.sha }}
-            "latest"
-          context: "." # e.g. "." - where the Dockerfile is
-          image_name: "grafana-ci-otel-collector" # name of the image to be published, required
-          environment: "dev"
-
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -165,3 +124,111 @@ jobs:
 
       - name: Make test-all
         run: make test-all
+
+  build-and-push:
+    name: Build & push
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Push to GAR
+        uses: grafana/shared-workflows/actions/push-to-gar-docker@main
+        with:
+          # Only push to GAR on main branch pushes
+          push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+          tags: |-
+            ${{ github.sha }}
+            "latest"
+          context: "."
+          image_name: "grafana-ci-otel-collector"
+          environment: "dev"
+
+      - name: Export GHA URL
+        id: export-gha-url
+        shell: bash
+        run: |
+          GHA_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "gha_url=${GHA_URL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Get Vault secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        with:
+          common_secrets: |
+            GITHUB_APP_ID=updater-app:app-id
+            GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
+            GITHUB_APP_PRIVATE_KEY=updater-app:private-key
+
+      - name: Update jsonnet (dev)
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+        run: |
+          set -e -o pipefail
+
+          cat << EOF > config.json
+          {
+            "destination_branch": "master",
+            "git_author_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
+            "git_author_name": "updater-for-ci[bot]",
+            "git_committer_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
+            "git_committer_name": "updater-for-ci[bot]",
+            "pull_request_branch_prefix": "auto-merge/cicd-o11y/update-images/",
+            "pull_request_enabled": true,
+            "pull_request_existing_strategy": "replace",
+            "pull_request_message": "Created by scheduled GHA build ${{ steps.export-gha-url.outputs.gha_url }}\n",
+            "pull_request_title": "[Auto Merge]CI/CD O11y: Update dev image",
+            "repo_name": "deployment_tools",
+            "repo_owner": "grafana",
+            "update_jsonnet_attribute_configs": [
+              {
+                "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
+                "jsonnet_key": "dev",
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+              }
+            ]
+          }
+          EOF
+
+          docker run --rm \
+          -e GITHUB_APP_ID="$GITHUB_APP_ID" \
+          -e GITHUB_APP_INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID" \
+          -e GITHUB_APP_PRIVATE_KEY="$GITHUB_APP_PRIVATE_KEY" \
+          -e CONFIG_JSON="$(cat config.json)" us-docker.pkg.dev/grafanalabs-global/docker-deployment-tools-prod/updater |& tee updater-output.log
+
+      - name: Update jsonnet (ops)
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+        run: |
+          set -e -o pipefail
+
+          cat << EOF > config.json
+          {
+            "destination_branch": "master",
+            "git_author_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
+            "git_author_name": "updater-for-ci[bot]",
+            "git_committer_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
+            "git_committer_name": "updater-for-ci[bot]",
+            "pull_request_branch_prefix": "cicd-o11y/update-images/",
+            "pull_request_enabled": true,
+            "pull_request_existing_strategy": "replace",
+            "pull_request_message": "Created by scheduled GHA build ${{ steps.export-gha-url.outputs.gha_url }}\n",
+            "pull_request_title": "CI/CD O11y: Update ops image",
+            "repo_name": "deployment_tools",
+            "repo_owner": "grafana",
+            "update_jsonnet_attribute_configs": [
+              {
+                "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
+                "jsonnet_key": "ops",
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+              }
+            ]
+          }
+          EOF
+
+          docker run --rm \
+          -e GITHUB_APP_ID="$GITHUB_APP_ID" \
+          -e GITHUB_APP_INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID" \
+          -e GITHUB_APP_PRIVATE_KEY="$GITHUB_APP_PRIVATE_KEY" \
+          -e CONFIG_JSON="$(cat config.json)" us-docker.pkg.dev/grafanalabs-global/docker-deployment-tools-prod/updater |& tee updater-output.log
