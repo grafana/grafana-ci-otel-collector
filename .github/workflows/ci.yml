@@ -165,6 +165,11 @@ jobs:
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
 
+      - name: Authenticate to GAR
+        uses: grafana/shared-workflows/actions/login-to-gar@main
+        with:
+          environment: prod # logging in to prod to pull the updater image from grafanalabs-global
+
       - name: Update jsonnet (dev)
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         run: |
@@ -188,7 +193,7 @@ jobs:
               {
                 "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
                 "jsonnet_key": "dev",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
           }
@@ -223,7 +228,7 @@ jobs:
               {
                 "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
                 "jsonnet_key": "ops",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
           }
