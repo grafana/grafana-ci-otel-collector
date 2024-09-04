@@ -164,7 +164,7 @@ jobs:
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
 
       - name: Update jsonnet (dev)
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         run: |
           set -e -o pipefail
 
@@ -199,7 +199,7 @@ jobs:
           -e CONFIG_JSON="$(cat config.json)" us-docker.pkg.dev/grafanalabs-global/docker-deployment-tools-prod/updater |& tee updater-output.log
 
       - name: Update jsonnet (ops)
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         run: |
           set -e -o pipefail
 
