@@ -193,7 +193,7 @@ jobs:
               {
                 "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
                 "jsonnet_key": "dev",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
           }
@@ -228,7 +228,7 @@ jobs:
               {
                 "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
                 "jsonnet_key": "ops",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector/grafana-ci-otel-collector:${{ github.sha }}"
+                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
           }
