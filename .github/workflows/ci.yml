@@ -149,6 +149,7 @@ jobs:
           environment: "dev"
 
       - name: Export GHA URL
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         id: export-gha-url
         shell: bash
         run: |
@@ -156,6 +157,7 @@ jobs:
           echo "gha_url=${GHA_URL}" >> "${GITHUB_OUTPUT}"
 
       - name: Get Vault secrets
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         uses: grafana/shared-workflows/actions/get-vault-secrets@main
         with:
           common_secrets: |
