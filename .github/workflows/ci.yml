@@ -1,4 +1,4 @@
-name: Build and Test
+name: Continuous Integration
 
 concurrency:
   # For pushes, this lets concurrent runs happen, so each push gets a result.
