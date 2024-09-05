@@ -1,0 +1,13 @@
+# Refer to https://github.com/open-telemetry/opentelemetry-collector/blob/main/cmd/mdatagen/metadata-schema.yaml
+# for the full schema
+type: githubactions
+
+status:
+  class: receiver
+  stability:
+    alpha: [traces, logs]
+  distributions:
+    - grafana-ci-otel-collector
+  codeowners:
+    active: [Elfo404]
+    emeritus:
