@@ -85,12 +85,3 @@ checks: install-tools
 crosslink:
 	$(CROSSLINK) --root=$(shell pwd) --prune
 
-.PHONY: drone
-drone:
-	jsonnet -J .drone/vendor/ .drone/drone.jsonnet > jsonnetfile
-	drone jsonnet --stream \
-		--format \
-		--source jsonnetfile \
-		--target .drone.yml
-	drone --server https://drone.grafana.net sign --save grafana/grafana-ci-otel-collector
-	rm jsonnetfile

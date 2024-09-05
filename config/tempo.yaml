@@ -27,8 +27,8 @@ metrics_generator:
   processor:
     span_metrics:
       intrinsic_dimensions: # Remove labels that are related to distributed systems
-        service: false # Always drone
-        span_kind: false # Not applicable
+        service: false
+        span_kind: false
       dimensions:
         - "repo.name"
         - "repo.branch"
