@@ -16,7 +16,7 @@ The following is a list of components that are included in the Grafana CI OTel C
 
 [otlpreceiver]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/receiver/otlpreceiver
 [dronereceiver]: ./receiver/dronereceiver/README.md
-[githubactionsreceiver]: https://github.com/grafana/opentelemetry-collector-contrib/tree/feat-add-githubactionseventreceiver-2/receiver/githubactionsreceiver
+[githubactionsreceiver]: ./receiver/githubactionsreceiver/README.md
 
 ### Processors
 

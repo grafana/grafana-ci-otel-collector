@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector/internal/tools
 
-go 1.22
+go 1.22.5
 
 require (
 	github.com/golangci/golangci-lint v1.59.0
