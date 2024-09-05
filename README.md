@@ -78,7 +78,3 @@ To start the services, run:
 ```bash
 docker compose up
 ```
-
-## Make CI/CD changes
-
-See [Make CI/CD changes](.drone/README.md)
