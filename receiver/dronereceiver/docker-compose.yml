@@ -1,0 +1,3 @@
+include:
+  - ../../docker-compose.yml
+  - ../../docker-compose.drone.yml

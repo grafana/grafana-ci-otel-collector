@@ -1,188 +1,83 @@
-# grafana-ci-collector
+# grafana-ci-otel-collector
 
-## Development
+The Grafana CI OTel Collector is a distribution of the Open Telemetry collector tailored to CI/CD Observability.
 
-### Configuring the collector
+## Components
 
-The collector is configured using the `config.yaml` file.
-An example configuration can be found in `config.yaml.example`, copy the file to `config.yaml` and replace the values for the `dronereceiver` receiver with the ones relevant to your environment.
+The following is a list of components that are included in the Grafana CI OTel Collector.
 
-```bash
-cp config.example.yaml config.yaml
-```
+<mark>**Highlighted**</mark> components are currently being developed by us.
 
-### Building
+### Receivers
 
-```bash
-make build
-```
+- [otlpreceiver][otlpreceiver]
+- <mark>**[dronereceiver][dronereceiver]**</mark>
+- <mark>**[githubactionsreceiver][githubactionsreceiver]**</mark>
 
-### Running
+[otlpreceiver]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/receiver/otlpreceiver
+[dronereceiver]: ./receiver/dronereceiver/README.md
+[githubactionsreceiver]: https://github.com/grafana/opentelemetry-collector-contrib/tree/feat-add-githubactionseventreceiver-2/receiver/githubactionsreceiver
 
-In the example config an exporter is configured to send data locally. A `docker-compose` file is provided to start Grafana Tempo.
+### Processors
 
-```bash
-docker-compose up -d
-```
+- [attributesprocessor][attributesprocessor]
+- [batchprocessor][batchprocessor]
+- [resourceprocessor][resourceprocessor]
 
-Then you can start the collector with:
+[attributesprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/processor/attributesprocessor
+[batchprocessor]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/processor/batchprocessor
+[resourceprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/processor/resourceprocessor
 
-```bash
-make run
-```
+### Connectors
 
-## Local Drone instance
+- [routingconnector][routingconnector]
+- [spanmetricsconnector][spanmetricsconnector]
 
-It is possible to use a local Drone instance for easier development.
+[routingconnector]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/connector/routingconnector
+[spanmetricsconnector]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/connector/spanmetricsconnector
 
-Note that by default no webhook events are sent to the receiver from GitHub (i.e. when you push to a branch to trigger a build), you need to manually trigger builds on Drone.
-If you need to get those webhooks, you can configure it your repository settings on GitHub.
+### Exporters
 
-### Environment variables
+- [debugexporter][debugexporter]
+- [lokiexporter][lokiexporter]
+- [otlpexporter][otlpexporter]
+- [prometheusexporter][prometheusexporter]
+- [prometheusremotewriteexporter][prometheusremotewriteexporter]
 
-The `docker-compose.localdrone.yml` file expects the following environment variables to be set:
+[debugexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/exporter/debugexporter
+[lokiexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/lokiexporter
+[otlpexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.99.0/exporter/otlpexporter
+[prometheusexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/prometheusexporter
+[prometheusremotewriteexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/exporter/prometheusremotewriteexporter
 
-```bash
-DRONE_SERVER_PROXY_HOST=
-DRONE_GITHUB_CLIENT_ID=
-DRONE_GITHUB_CLIENT_SECRET=
-GH_HANDLE=
-```
+### Extensions
 
-you can copy the example env vars file and replace the values:
+- [basicauthextension][basicauthextension]
+- [healthcheckextension][healthcheckextension]
 
-```bash
-cp .env.example .env
-```
+[basicauthextension]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/extension/basicauthextension
+[healthcheckextension]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.99.0/extension/healthcheckextension
 
-### ngrok
+## Configuration
 
-First, [install ngrok](https://ngrok.com/download) to expose a tunnel to your local drone instance.
+The collector is configured using the `config.yaml` file in the root of the repository.
+You can learn more about the OpenTelemetry Collector configuration [here][otel-configuration].
 
-Once installed, start ngrok with:
+Refer to each component's documentation (linked above) for specific configuration options.
 
-```bash
-ngrok http 8080
-```
+A barebones configuration file can be found in the `config.example.yaml` file in the root of the repository, with preconfigured exporters for Loki, Tempo, and Prometheus. You can use this file as a starting point for your own configuration.
 
-the output should look something like this:
+[otel-configuration]: https://opentelemetry.io/docs/collector/configuration/
 
-```bash
-Session Status                online
-Account                       you@example.com
-Version                       3.3.1
-Region                        Europe (eu)
-Latency                       44ms
-Web Interface                 http://127.0.0.1:4040
-Forwarding                    https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app -> http://localhost:8080
-```
+## Running Tempo, Loki, and Prometheus
 
-Copy the forwarding url (in this case `https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app`) and use it to configure the `DRONE_SERVER_PROXY_HOST` environment variable in the `.env` file.
+[A basic Docker compose file](./docker-compose.yml) is provided in the root of the repository to run Tempo, Loki, and Prometheus.
 
-### GitHub OAuth App
-
-We then need to create a GitHub OAuth App to use for authentication with Drone.
-Go to **Settings -> Developer settings -> OAuth Apps** and click on "New OAuth App".
-
-Pick whatever you want for the name and description, and use the ngrok forwarding url for the `Homepage URL` and `Authorization callback URL` fields as follows (example using the URL from above):
-
-```
-Homepage URL:
-https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app
-
-
-Authorization callback URL:
-https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/login
-```
-
-Click on "Register application".
-
-After the application is registered, generate a `Client secret`.
-
-Take note of the `Client ID` and `Client secret` values and use them to configure the `DRONE_GITHUB_CLIENT_ID` and `DRONE_GITHUB_CLIENT_SECRET` environment variables in the `.env` file.
-
-### Run Drone
-
-You can now start Drone with:
+To start the services, run:
 
 ```bash
-docker compose -f docker-compose.localdrone.yaml up -d
+docker compose up
 ```
-
-And use the ngrok forwarding url to access the Drone UI.
-Navigate to the repository you want to start monitoring and click on "Activate repository".
-
-### Get your drone token
-
-If you filled in the `GH_HANDLE` environment variable in the `.env` file, your user has admin privileges. You can get your drone token by navigating to https://3dfc-2001-818-d8d9-a00-e5-c197-b7d2-3551.ngrok-free.app/account (replace the url with your ngrok forwarding url) and copy the token.
-
-### Configure the collector
-
-Update the `dronereceiver` receiver in the `config.yaml` file to use the [drone token](#get-your-drone-token) from above:
-
-```yaml
-receivers:
-  dronereceiver:
-    collection_interval: 15s
-    endpoint: localhost:3333
-    path: /drone/webhook
-    secret: bea26a2221fd8090ea38720fc445eca6
-    drone:
-      token: <YOUR TOKEN>
-      host: http://${NETWORK_HOST}:8080
-```
-
-### Start the collector
-
-```bash
-make dev
-```
-
-### Spin up the collector as a Docker image
-
-Build the Docker image:
-
-```bash
-make dockerbuild
-```
-
-Run the Docker image:
-
-```bash
-make dockerrun
-```
-
-**NOTES:**
-
-- When building/running the collector via the Docker image, you need to change your `config.yaml` so that all hosts pointing to services exposed via docker-compose point to `host.docker.internal`.
-
-## Spin up Grafana as a Docker image locally
-
-### Run Docker image
-
-Choose your Grafana image version. In this example we'll use `10.0.0`. Make sure to add `--add-host=host.docker.internal:host-gateway`
-for the image to be able to have access to your personal machine's localhost.
-
-```bash
-docker run --add-host=host.docker.internal:host-gateway --rm -p 3000:3000 grafana/grafana:10.0.0
-```
-
-### Set up Tempo datasource
-
-As of Grafana 10:
-
-`Toggle menu` -> `Connections` -> `Data sources` -> `Search for Tempo` -> `+ Add new data source`
-
-Under `HTTP`, in the `URL` field, provided that you still use the default app's port for Tempo (`3200`), add:
-
-```
-http://host.docker.internal:3200
-```
-
-Click `Save & Test`
-
-You are now ready to see your traces collector and play around with it using Tempo in Explore, or while building a new
-dashboard!
 
 ## Make CI/CD changes
 
