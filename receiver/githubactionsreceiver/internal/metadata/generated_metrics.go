@@ -58,7 +58,7 @@ func (m *metricWorkflowJobsTotal) init() {
 	m.data.SetUnit("1")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
