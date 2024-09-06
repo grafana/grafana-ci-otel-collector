@@ -26,6 +26,7 @@ func NewFactory() receiver.Factory {
 		createDefaultConfig,
 		receiver.WithTraces(newTracesReceiver, metadata.TracesStability),
 		receiver.WithLogs(newLogsReceiver, metadata.LogsStability),
+		receiver.WithMetrics(newMetricsReceiver, metadata.MetricsStability),
 	)
 }
 

@@ -1,0 +1,84 @@
+package githubactionsreceiver
+
+import (
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/google/go-github/v62/github"
+	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/receiver"
+	"go.uber.org/zap"
+)
+
+type metricsHandler struct {
+	settings component.TelemetrySettings
+	mb       *metadata.MetricsBuilder
+	cfg      *Config
+}
+
+var mCache = sync.Map{}
+
+func newMetricsHandler(settings receiver.CreateSettings, cfg *Config) *metricsHandler {
+	return &metricsHandler{
+		cfg:      cfg,
+		settings: settings.TelemetrySettings,
+		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
+	}
+}
+
+func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent, config *Config, logger *zap.Logger) pmetric.Metrics {
+
+	repo := event.GetRepo().GetFullName()
+
+	labels := ""
+	if len(event.GetWorkflowJob().Labels) > 0 {
+		labelsSlice := event.GetWorkflowJob().Labels
+		for i, label := range labelsSlice {
+			labelsSlice[i] = strings.ToLower(label)
+		}
+		sort.Strings(labelsSlice)
+		labels = strings.Join(labelsSlice, ",")
+	} else {
+		labels = "no labels"
+	}
+
+	if status, ok := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]; ok {
+		curVal, _ := loadFromCache(repo, labels, status)
+		storeInCache(repo, labels, status, curVal+1)
+
+		m.mb.RecordWorkflowJobsTotalDataPoint(pcommon.NewTimestampFromTime(time.Now()), curVal+1, repo, labels, status)
+	}
+
+	return m.mb.Emit()
+}
+
+func storeInCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, value int64) {
+	middleMap, _ := mCache.LoadOrStore(repo, &sync.Map{})
+	innerMap, _ := middleMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
+	innerMap.(*sync.Map).Store(status, value)
+}
+
+// Helper function to load values from the nested sync.Map structure
+func loadFromCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus) (int64, bool) {
+	middleMap, ok := mCache.Load(repo)
+	if !ok {
+		return 0, false
+	}
+
+	innerMap, ok := middleMap.(*sync.Map).Load(labels)
+	if !ok {
+		return 0, false
+	}
+
+	value, ok := innerMap.(*sync.Map).Load(status)
+	if !ok {
+		return 0, false
+	}
+
+	return value.(int64), true
+}

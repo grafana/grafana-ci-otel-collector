@@ -27,7 +27,7 @@ build-debug: install-tools
 
 .PHONY: run
 run: build
-	$(CUSTOM_COL_DIR)/grafana-ci-otelcol --config config/config.yaml
+	$(CUSTOM_COL_DIR)/grafana-ci-otelcol --config config.yaml
 
 .PHONY: for-all
 for-all:

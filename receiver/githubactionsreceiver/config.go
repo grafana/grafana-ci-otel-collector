@@ -6,6 +6,7 @@ package githubactionsreceiver // import "github.com/grafana/grafana-ci-otel-coll
 import (
 	"errors"
 
+	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.uber.org/multierr"
@@ -35,13 +36,14 @@ type GitHubAPIConfig struct {
 
 // Config defines configuration for GitHub Actions receiver
 type Config struct {
-	confighttp.ServerConfig `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct
-	Path                    string                   `mapstructure:"path"`                // path for data collection. Default is <host>:<port>/events
-	Secret                  string                   `mapstructure:"secret"`              // github webhook hash signature. Default is empty
-	CustomServiceName       string                   `mapstructure:"custom_service_name"` // custom service name. Default is empty
-	ServiceNamePrefix       string                   `mapstructure:"service_name_prefix"` // service name prefix. Default is empty
-	ServiceNameSuffix       string                   `mapstructure:"service_name_suffix"` // service name suffix. Default is empty
-	GitHubAPIConfig         GitHubAPIConfig          `mapstructure:"gh_api"`              // github api configuration
+	metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	confighttp.ServerConfig       `mapstructure:",squash"` // squash ensures fields are correctly decoded in embedded struct
+	Path                          string                   `mapstructure:"path"`                // path for data collection. Default is <host>:<port>/events
+	Secret                        string                   `mapstructure:"secret"`              // github webhook hash signature. Default is empty
+	CustomServiceName             string                   `mapstructure:"custom_service_name"` // custom service name. Default is empty
+	ServiceNamePrefix             string                   `mapstructure:"service_name_prefix"` // service name prefix. Default is empty
+	ServiceNameSuffix             string                   `mapstructure:"service_name_suffix"` // service name suffix. Default is empty
+	GitHubAPIConfig               GitHubAPIConfig          `mapstructure:"gh_api"`              // github api configuration
 }
 
 var _ component.Config = (*Config)(nil)

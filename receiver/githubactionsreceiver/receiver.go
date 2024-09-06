@@ -23,15 +23,17 @@ import (
 var errMissingEndpoint = errors.New("missing a receiver endpoint")
 
 type githubActionsReceiver struct {
-	logsConsumer   consumer.Logs
-	tracesConsumer consumer.Traces
-	config         *Config
-	server         *http.Server
-	shutdownWG     sync.WaitGroup
-	createSettings receiver.CreateSettings
-	logger         *zap.Logger
-	obsrecv        *receiverhelper.ObsReport
-	ghClient       *github.Client
+	logsConsumer    consumer.Logs
+	tracesConsumer  consumer.Traces
+	metricsConsumer consumer.Metrics
+	metricsHandler  metricsHandler
+	config          *Config
+	server          *http.Server
+	shutdownWG      sync.WaitGroup
+	createSettings  receiver.CreateSettings
+	logger          *zap.Logger
+	obsrecv         *receiverhelper.ObsReport
+	ghClient        *github.Client
 }
 
 func newReceiver(
@@ -86,6 +88,7 @@ func newReceiver(
 		logger:         params.Logger,
 		obsrecv:        obsrecv,
 		ghClient:       ghClient,
+		metricsHandler: *newMetricsHandler(params, config),
 	}
 
 	return gar, nil
@@ -135,6 +138,30 @@ func newLogsReceiver(
 	}
 
 	r.Unwrap().(*githubActionsReceiver).logsConsumer = consumer
+
+	return r, nil
+}
+
+// newLogsReceiver creates a logs receiver based on provided config.
+func newMetricsReceiver(
+	_ context.Context,
+	set receiver.CreateSettings,
+	cfg component.Config,
+	consumer consumer.Metrics,
+) (receiver.Metrics, error) {
+	rCfg := cfg.(*Config)
+	var err error
+
+	r := receivers.GetOrAdd(cfg, func() component.Component {
+		var rcv component.Component
+		rcv, err = newReceiver(set, rCfg)
+		return rcv
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.Unwrap().(*githubActionsReceiver).metricsConsumer = consumer
 
 	return r, nil
 }
@@ -198,6 +225,14 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	// Handle events based on specific types and completion status
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
+		if gar.metricsConsumer != nil && e.GetWorkflowJob().GetConclusion() != "skipped" {
+			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e, gar.config, gar.logger.Named("eventToMetrics")))
+
+			if err != nil {
+				gar.logger.Error("Failed to consume metrics", zap.Error(err))
+			}
+		}
+
 		if e.GetWorkflowJob().GetStatus() != "completed" {
 			gar.logger.Debug("Skipping non-completed WorkflowJobEvent", zap.String("status", e.GetWorkflowJob().GetStatus()))
 			w.WriteHeader(http.StatusNoContent)
