@@ -32,7 +32,6 @@ func newMetricsHandler(settings receiver.CreateSettings, cfg *Config) *metricsHa
 }
 
 func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent, config *Config, logger *zap.Logger) pmetric.Metrics {
-
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
