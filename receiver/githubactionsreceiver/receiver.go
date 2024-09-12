@@ -142,7 +142,7 @@ func newLogsReceiver(
 	return r, nil
 }
 
-// newLogsReceiver creates a logs receiver based on provided config.
+// newMetricsReceiver creates a logs receiver based on provided config.
 func newMetricsReceiver(
 	_ context.Context,
 	set receiver.CreateSettings,
