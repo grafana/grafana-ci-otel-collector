@@ -5,9 +5,43 @@ type: githubactions
 status:
   class: receiver
   stability:
-    alpha: [traces, logs]
+    alpha: [traces, logs, metrics]
   distributions:
     - grafana-ci-otel-collector
   codeowners:
     active: [Elfo404]
     emeritus:
+
+resource_attributes:
+
+attributes:
+  ci.github.workflow.job.labels:
+    description: Job labels.
+    type: string
+  vcs.repository.name:
+    description: Repository name
+    type: string
+  ci.github.workflow.job.status:
+    description: Job status
+    enum:
+      - completed
+      - in_progress
+      - queued
+      - waiting
+    type: string
+
+metrics:
+  workflow_jobs_total:
+    enabled: true
+    description: Number of jobs.
+    unit: 1
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: delta
+    attributes:
+      [
+        vcs.repository.name,
+        ci.github.workflow.job.labels,
+        ci.github.workflow.job.status,
+      ]
