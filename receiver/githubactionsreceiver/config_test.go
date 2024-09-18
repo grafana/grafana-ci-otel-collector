@@ -154,6 +154,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	expect := &Config{
+		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
 			Endpoint: "localhost:8080",
 		},

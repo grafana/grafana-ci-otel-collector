@@ -33,6 +33,7 @@ func NewFactory() receiver.Factory {
 // createDefaultConfig creates the default configuration for GitHub Actions receiver.
 func createDefaultConfig() component.Config {
 	return &Config{
+		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
 			Endpoint: defaultBindEndpoint,
 		},

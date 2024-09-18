@@ -38,7 +38,7 @@ metrics:
     sum:
       value_type: int
       monotonic: true
-      aggregation_temporality: delta
+      aggregation_temporality: cumulative
     attributes:
       [
         vcs.repository.name,
