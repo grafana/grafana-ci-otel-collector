@@ -11,7 +11,7 @@ updates:
       interval: "weekly"
   - package-ecosystem: "gomod"
     directories:
-      - "/":
+      - "/"
       - "/internal/semconv"
       - "/internal/sharedcomponent"
       - "/internal/tools"

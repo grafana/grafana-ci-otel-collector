@@ -110,7 +110,7 @@ gendependabot:
 	@echo "  - package-ecosystem: \"gomod\"" >> ${DEPENDABOT_PATH}; 
 	@echo "    directories:" >> ${DEPENDABOT_PATH}; 
 	@echo "  "- /""
-	@echo "      "- \"/\"":" >> ${DEPENDABOT_PATH}
+	@echo "      "- \"/\""" >> ${DEPENDABOT_PATH}
 	@set -e; for dir in $(PKG_DIRS); do \
 			echo "  - $${dir:1}"; \
 			echo "      - \"$${dir:1}\"" >> ${DEPENDABOT_PATH}; \
