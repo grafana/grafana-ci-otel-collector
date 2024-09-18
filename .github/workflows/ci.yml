@@ -93,6 +93,11 @@ jobs:
           make fmt-all
           git diff -s --exit-code || (echo 'Code is not formatted. Run make fmt-all and commit the changes' && git --no-pager diff && exit 1)
 
+      - name: Check dependabot config
+        run: |
+          make gendependabot
+          git diff -s --exit-code || (echo 'Dependabot config is out of date. Run make gendependabot and commit the changes' && git --no-pager diff && exit 1)
+
       - name: Make lint-all
         run: make lint-all
 
