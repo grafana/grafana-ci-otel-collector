@@ -103,6 +103,10 @@ gendependabot:
 	@echo "    directory: \"/\"" >> ${DEPENDABOT_PATH}
 	@echo "    schedule:" >> ${DEPENDABOT_PATH}
 	@echo "      interval: \"${DEPENDABOT_UPDATE_FREQUENCY}\"" >> ${DEPENDABOT_PATH}
+	@echo "    ignore:" >> ${DEPENDABOT_PATH};
+	@echo "      # OpenTelemetry updates will be done manually" >> ${DEPENDABOT_PATH};
+	@echo "      - dependency-name: \"github.com/open-telemetry/opentelemetry-collector*\"" >> ${DEPENDABOT_PATH};
+	@echo "      - dependency-name: \"go.opentelemetry.io/*\"" >> ${DEPENDABOT_PATH};
 	@echo "Add entry for \"/\" docker"
 	@echo "  - package-ecosystem: \"docker\"" >> ${DEPENDABOT_PATH}
 	@echo "    directory: \"/\"" >> ${DEPENDABOT_PATH}
@@ -114,4 +118,8 @@ gendependabot:
 		echo "    directory: \"$${dir:1}\"" >> ${DEPENDABOT_PATH}; \
 		echo "    schedule:" >> ${DEPENDABOT_PATH}; \
 		echo "      interval: \"${DEPENDABOT_UPDATE_FREQUENCY}\"" >> ${DEPENDABOT_PATH}; \
+		echo "    ignore:" >> ${DEPENDABOT_PATH}; \
+    echo "      # OpenTelemetry updates will be done manually" >> ${DEPENDABOT_PATH}; \
+    echo "      - dependency-name: \"github.com/open-telemetry/opentelemetry-collector*\"" >> ${DEPENDABOT_PATH}; \
+    echo "      - dependency-name: \"go.opentelemetry.io/*\"" >> ${DEPENDABOT_PATH}; \
 	done

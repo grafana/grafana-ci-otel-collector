@@ -9,6 +9,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -17,23 +21,47 @@ updates:
     directory: "/internal/semconv"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "gomod"
     directory: "/internal/sharedcomponent"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "gomod"
     directory: "/internal/tools"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "gomod"
     directory: "/internal/traceutils"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "gomod"
     directory: "/receiver/dronereceiver"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
   - package-ecosystem: "gomod"
     directory: "/receiver/githubactionsreceiver"
     schedule:
       interval: "weekly"
+    ignore:
+      # OpenTelemetry updates will be done manually
+      - dependency-name: "github.com/open-telemetry/opentelemetry-collector*"
+      - dependency-name: "go.opentelemetry.io/*"
