@@ -47,7 +47,7 @@ func (cfg *Config) Validate() error {
 	// Validates that the repos and branches are defined.
 	// At least one repo and one branch must be defined.
 	// branches may appear only once per repo.
-	if cfg.ReposConfig == nil || len(cfg.ReposConfig) == 0 {
+	if len(cfg.ReposConfig) == 0 {
 		return fmt.Errorf("repos must be defined")
 	}
 
