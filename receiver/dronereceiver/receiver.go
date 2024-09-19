@@ -25,7 +25,7 @@ var errParsingSignature = errors.New("error parsing signature")
 
 type droneReceiver struct {
 	cfg         *Config
-	set         receiver.CreateSettings
+	set         receiver.Settings
 	httpServer  *http.Server
 	shutdownWG  sync.WaitGroup
 	droneClient drone.Client
@@ -36,7 +36,7 @@ type droneReceiver struct {
 	tracesConsumer consumer.Traces
 }
 
-func newReceiver(params receiver.CreateSettings,
+func newReceiver(params receiver.Settings,
 	config *Config) (*droneReceiver, error) {
 
 	transport := "http"

@@ -23,7 +23,7 @@ type metricsHandler struct {
 
 var mCache = sync.Map{}
 
-func newMetricsHandler(settings receiver.CreateSettings, cfg *Config) *metricsHandler {
+func newMetricsHandler(settings receiver.Settings, cfg *Config) *metricsHandler {
 	return &metricsHandler{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,

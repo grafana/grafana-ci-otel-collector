@@ -30,14 +30,14 @@ type githubActionsReceiver struct {
 	config          *Config
 	server          *http.Server
 	shutdownWG      sync.WaitGroup
-	createSettings  receiver.CreateSettings
+	createSettings  receiver.Settings
 	logger          *zap.Logger
 	obsrecv         *receiverhelper.ObsReport
 	ghClient        *github.Client
 }
 
 func newReceiver(
-	params receiver.CreateSettings,
+	params receiver.Settings,
 	config *Config,
 ) (*githubActionsReceiver, error) {
 	if config.Endpoint == "" {
@@ -97,7 +97,7 @@ func newReceiver(
 // newLogsReceiver creates a trace receiver based on provided config.
 func newTracesReceiver(
 	_ context.Context,
-	set receiver.CreateSettings,
+	set receiver.Settings,
 	cfg component.Config,
 	consumer consumer.Traces,
 ) (receiver.Traces, error) {
@@ -121,7 +121,7 @@ func newTracesReceiver(
 // newLogsReceiver creates a logs receiver based on provided config.
 func newLogsReceiver(
 	_ context.Context,
-	set receiver.CreateSettings,
+	set receiver.Settings,
 	cfg component.Config,
 	consumer consumer.Logs,
 ) (receiver.Logs, error) {
@@ -145,7 +145,7 @@ func newLogsReceiver(
 // newMetricsReceiver creates a logs receiver based on provided config.
 func newMetricsReceiver(
 	_ context.Context,
-	set receiver.CreateSettings,
+	set receiver.Settings,
 	cfg component.Config,
 	consumer consumer.Metrics,
 ) (receiver.Metrics, error) {

@@ -29,7 +29,7 @@ type droneScraper struct {
 	cfg      *Config
 }
 
-func newDroneScraper(settings receiver.CreateSettings, cfg *Config) *droneScraper {
+func newDroneScraper(settings receiver.Settings, cfg *Config) *droneScraper {
 	return &droneScraper{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,

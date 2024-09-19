@@ -80,7 +80,7 @@ type metricBuildsNumber struct {
 func (m *metricBuildsNumber) init() {
 	m.data.SetName("builds_number")
 	m.data.SetDescription("Number of builds.")
-	m.data.SetUnit("1")
+	m.data.SetUnit("{build}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -135,7 +135,7 @@ type metricRepoInfo struct {
 func (m *metricRepoInfo) init() {
 	m.data.SetName("repo_info")
 	m.data.SetDescription("Repo status.")
-	m.data.SetUnit("1")
+	m.data.SetUnit("{repository}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -190,7 +190,7 @@ type metricRestartsTotal struct {
 func (m *metricRestartsTotal) init() {
 	m.data.SetName("restarts_total")
 	m.data.SetDescription("Total number build restarts.")
-	m.data.SetUnit("1")
+	m.data.SetUnit("{restart}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -254,7 +254,7 @@ func WithStartTime(startTime pcommon.Timestamp) metricBuilderOption {
 	}
 }
 
-func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSettings, options ...metricBuilderOption) *MetricsBuilder {
+func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...metricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:              mbc,
 		startTime:           pcommon.NewTimestampFromTime(time.Now()),

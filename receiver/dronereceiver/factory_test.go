@@ -13,7 +13,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	cfg := createDefaultConfig().(*Config)
 	_, err := NewFactory().CreateMetricsReceiver(
 		context.Background(),
-		receivertest.NewNopCreateSettings(),
+		receivertest.NewNopSettings(),
 		cfg,
 		consumertest.NewNop(),
 	)

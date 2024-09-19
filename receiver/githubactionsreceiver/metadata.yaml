@@ -34,7 +34,7 @@ metrics:
   workflow_jobs_total:
     enabled: true
     description: Number of jobs.
-    unit: 1
+    unit: "{job}"
     sum:
       value_type: int
       monotonic: true
