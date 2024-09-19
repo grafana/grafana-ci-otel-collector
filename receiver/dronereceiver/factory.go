@@ -60,7 +60,7 @@ func newMetricsReceiver(_ context.Context, set receiver.Settings, rConf componen
 	cfg := rConf.(*Config)
 
 	ns := newDroneScraper(set, cfg)
-	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
+	scraper, err := scraperhelper.NewScraperWithComponentType(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
 		return nil, err
