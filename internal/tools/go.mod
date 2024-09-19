@@ -9,8 +9,8 @@ require (
 	go.opentelemetry.io/build-tools/crosslink v0.13.0
 	go.opentelemetry.io/collector/cmd/builder v0.99.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.99.0
-	golang.org/x/tools v0.21.1-0.20240514024235-59d9797072e7
-	honnef.co/go/tools v0.4.7
+	golang.org/x/tools v0.21.1-0.20240531212143-b6235391adb3
+	honnef.co/go/tools v0.5.1
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/Antonboom/errname v0.1.13 // indirect
 	github.com/Antonboom/nilnil v0.1.9 // indirect
 	github.com/Antonboom/testifylint v1.3.0 // indirect
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/Crocmagnon/fatcontext v0.2.2 // indirect
 	github.com/CycloneDX/cyclonedx-go v0.8.0 // indirect
 	github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24 // indirect
