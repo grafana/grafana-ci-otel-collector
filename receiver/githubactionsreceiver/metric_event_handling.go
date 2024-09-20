@@ -46,11 +46,26 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent, config *
 		labels = "no labels"
 	}
 
-	if status, ok := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]; ok {
-		curVal, _ := loadFromCache(repo, labels, status)
-		storeInCache(repo, labels, status, curVal+1)
+	now := pcommon.NewTimestampFromTime(time.Now())
 
-		m.mb.RecordWorkflowJobsTotalDataPoint(pcommon.NewTimestampFromTime(time.Now()), curVal+1, repo, labels, status)
+	if status, ok := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]; ok {
+		curVal, found := loadFromCache(repo, labels, status)
+
+		// If the value was not found in the cache, we record a 0 value for all other possible statuses
+		// so that counter resets are properly handled.
+		if !found {
+			for _, s := range metadata.MapAttributeCiGithubWorkflowJobStatus {
+				if s == status {
+					continue
+				}
+
+				storeInCache(repo, labels, s, 0)
+				m.mb.RecordWorkflowJobsTotalDataPoint(now, 0, repo, labels, s)
+			}
+		}
+
+		storeInCache(repo, labels, status, curVal+1)
+		m.mb.RecordWorkflowJobsTotalDataPoint(now, curVal+1, repo, labels, status)
 	}
 
 	return m.mb.Emit()
