@@ -18,7 +18,7 @@ Number of jobs.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | true |
+| {job} | Sum | Int | Cumulative | true |
 
 #### Attributes
 

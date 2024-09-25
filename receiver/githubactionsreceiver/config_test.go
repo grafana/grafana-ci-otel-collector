@@ -150,7 +150,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 	// LoadConf includes the TypeStr which NewFactory does not set
 	id := component.NewIDWithName(metadata.Type, "valid_config")
-	cmNoStr, err := cm.Sub(id.String())
+	sub, err := cm.Sub(id.String())
 	require.NoError(t, err)
 
 	expect := &Config{
@@ -165,7 +165,7 @@ func TestLoadConfig(t *testing.T) {
 	// create expected config
 	factory := NewFactory()
 	conf := factory.CreateDefaultConfig()
-	require.NoError(t, component.UnmarshalConfig(cmNoStr, conf))
+	require.NoError(t, sub.Unmarshal(conf))
 	require.NoError(t, component.ValidateConfig(conf))
 
 	require.Equal(t, expect, conf)

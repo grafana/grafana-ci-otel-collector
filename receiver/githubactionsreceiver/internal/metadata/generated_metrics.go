@@ -55,7 +55,7 @@ type metricWorkflowJobsTotal struct {
 func (m *metricWorkflowJobsTotal) init() {
 	m.data.SetName("workflow_jobs_total")
 	m.data.SetDescription("Number of jobs.")
-	m.data.SetUnit("1")
+	m.data.SetUnit("{job}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -121,7 +121,7 @@ func WithStartTime(startTime pcommon.Timestamp) metricBuilderOption {
 	}
 }
 
-func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSettings, options ...metricBuilderOption) *MetricsBuilder {
+func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...metricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                  mbc,
 		startTime:               pcommon.NewTimestampFromTime(time.Now()),

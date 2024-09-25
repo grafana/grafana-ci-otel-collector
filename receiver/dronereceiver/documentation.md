@@ -20,7 +20,7 @@ Currently there's no way to differentiate between restarted builds and manually 
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | false |
+| {build} | Sum | Int | Cumulative | false |
 
 #### Attributes
 
@@ -36,7 +36,7 @@ Repo status.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | false |
+| {repository} | Sum | Int | Cumulative | false |
 
 #### Attributes
 
@@ -52,4 +52,4 @@ Total number build restarts.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| 1 | Sum | Int | Cumulative | true |
+| {restart} | Sum | Int | Cumulative | true |

@@ -101,7 +101,7 @@ func TestNewReceiver(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			rec, err := newReceiver(receivertest.NewNopCreateSettings(), &test.config)
+			rec, err := newReceiver(receivertest.NewNopSettings(), &test.config)
 			if test.err == nil {
 				require.NotNil(t, rec)
 			} else {

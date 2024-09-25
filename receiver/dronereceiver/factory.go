@@ -39,7 +39,7 @@ func NewFactory() receiver.Factory {
 		receiver.WithLogs(newLogsReceiver, metadata.LogsStability))
 }
 
-func newTracesReceiver(_ context.Context, set receiver.CreateSettings, cfg component.Config, consumer consumer.Traces) (receiver.Traces, error) {
+func newTracesReceiver(_ context.Context, set receiver.Settings, cfg component.Config, consumer consumer.Traces) (receiver.Traces, error) {
 	rCfg := cfg.(*Config)
 	var err error
 
@@ -56,11 +56,11 @@ func newTracesReceiver(_ context.Context, set receiver.CreateSettings, cfg compo
 	return r, nil
 }
 
-func newMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
+func newMetricsReceiver(_ context.Context, set receiver.Settings, rConf component.Config, consumer consumer.Metrics) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
 
 	ns := newDroneScraper(set, cfg)
-	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
+	scraper, err := scraperhelper.NewScraperWithComponentType(metadata.Type, ns.scrape, scraperhelper.WithStart(ns.start))
 
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func newMetricsReceiver(_ context.Context, set receiver.CreateSettings, rConf co
 	)
 }
 
-func newLogsReceiver(_ context.Context, set receiver.CreateSettings, cfg component.Config, consumer consumer.Logs) (receiver.Logs, error) {
+func newLogsReceiver(_ context.Context, set receiver.Settings, cfg component.Config, consumer consumer.Logs) (receiver.Logs, error) {
 	rCfg := cfg.(*Config)
 	var err error
 
