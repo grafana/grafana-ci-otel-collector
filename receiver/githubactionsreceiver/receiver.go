@@ -88,7 +88,7 @@ func newReceiver(
 		logger:         params.Logger,
 		obsrecv:        obsrecv,
 		ghClient:       ghClient,
-		metricsHandler: *newMetricsHandler(params, config),
+		metricsHandler: *newMetricsHandler(params, config, params.Logger.Named("metricsHandler")),
 	}
 
 	return gar, nil
@@ -226,7 +226,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
 		if gar.metricsConsumer != nil && e.GetWorkflowJob().GetConclusion() != "skipped" {
-			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e, gar.config, gar.logger.Named("eventToMetrics")))
+			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e))
 
 			if err != nil {
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
