@@ -145,8 +145,8 @@ func TestEventToMetrics(t *testing.T) {
 
 			metrics := mh.eventToMetrics(event.(*github.WorkflowJobEvent))
 
-			require.Equal(t, test.expectedMetrics, metrics.MetricCount(), fmt.Sprintf("%s: unexpected number of metrics", test.desc))
-			require.Equal(t, len(metadata.MapAttributeCiGithubWorkflowJobStatus), metrics.DataPointCount(), fmt.Sprintf("%s: unexpected number of datapoints", test.desc))
+			require.Equalf(t, test.expectedMetrics, metrics.MetricCount(), "%s: unexpected number of metrics", test.desc)
+			require.Equalf(t, len(metadata.MapAttributeCiGithubWorkflowJobStatus), metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)
 		})
 	}
 }
