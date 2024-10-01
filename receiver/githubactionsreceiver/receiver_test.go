@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v62/github"
+	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
@@ -104,6 +105,48 @@ func TestEventToTracesTraces(t *testing.T) {
 			}
 
 			require.Equal(t, test.expectedSpans, traces.SpanCount(), fmt.Sprintf("%s: unexpected number of spans", test.desc))
+		})
+	}
+}
+
+func TestEventToMetrics(t *testing.T) {
+	tests := []struct {
+		desc            string
+		payloadFilePath string
+		eventType       string
+		expectedMetrics int
+	}{
+		{
+			desc:            "WorkflowJobEvent processing",
+			payloadFilePath: "./testdata/queued/1_workflow_job_queued.json",
+			eventType:       "workflow_job",
+			expectedMetrics: 1,
+		},
+	}
+
+	logger := zaptest.NewLogger(t)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			payload, err := os.ReadFile(test.payloadFilePath)
+			require.NoError(t, err)
+
+			event, err := github.ParseWebHook(test.eventType, payload)
+			require.NoError(t, err)
+
+			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
+				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
+					Metrics: metadata.MetricsConfig{
+						WorkflowJobsTotal: metadata.MetricConfig{
+							Enabled: true,
+						},
+					},
+				},
+			}, logger.Named("metricsHandler"))
+
+			metrics := mh.eventToMetrics(event.(*github.WorkflowJobEvent))
+
+			require.Equalf(t, test.expectedMetrics, metrics.MetricCount(), "%s: unexpected number of metrics", test.desc)
+			require.Equalf(t, len(metadata.MapAttributeCiGithubWorkflowJobStatus), metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)
 		})
 	}
 }

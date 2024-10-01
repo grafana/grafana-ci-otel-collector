@@ -19,19 +19,21 @@ type metricsHandler struct {
 	settings component.TelemetrySettings
 	mb       *metadata.MetricsBuilder
 	cfg      *Config
+	logger   *zap.Logger
 }
 
 var mCache = sync.Map{}
 
-func newMetricsHandler(settings receiver.Settings, cfg *Config) *metricsHandler {
+func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
 	return &metricsHandler{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,
 		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
+		logger:   logger,
 	}
 }
 
-func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent, config *Config, logger *zap.Logger) pmetric.Metrics {
+func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
