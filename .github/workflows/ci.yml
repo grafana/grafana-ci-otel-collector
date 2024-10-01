@@ -196,8 +196,8 @@ jobs:
             "repo_owner": "grafana",
             "update_jsonnet_attribute_configs": [
               {
-                "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
-                "jsonnet_key": "dev",
+                "file_path": "ksonnet/environments/cicd-o11y/images/dev.libsonnet",
+                "jsonnet_key": "image",
                 "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
@@ -231,8 +231,8 @@ jobs:
             "repo_owner": "grafana",
             "update_jsonnet_attribute_configs": [
               {
-                "file_path": "ksonnet/environments/cicd-o11y/images.libsonnet",
-                "jsonnet_key": "ops",
+                "file_path": "ksonnet/environments/cicd-o11y/images/ops.libsonnet",
+                "jsonnet_key": "image",
                 "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
               }
             ]
