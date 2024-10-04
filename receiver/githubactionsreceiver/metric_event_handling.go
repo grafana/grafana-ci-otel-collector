@@ -34,6 +34,15 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 }
 
 func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
+	if event.GetWorkflowJob().GetConclusion() == "skipped" ||
+		// Check runs are also reported via WorkflowJobEvent, we want to skip them when generating metrics.
+		// We do so by checking if the runner ID is 0, which is the zero value for the field.
+		// see https://github.com/actions/actions-runner-controller/issues/2118.
+		// NOTE: This also applies to cancelled jobs which have not been started.
+		(event.GetAction() == "completed" && event.GetWorkflowJob().GetRunnerID() == 0) {
+		return m.mb.Emit()
+	}
+
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
