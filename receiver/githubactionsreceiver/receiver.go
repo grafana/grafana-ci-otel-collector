@@ -225,7 +225,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	// Handle events based on specific types and completion status
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
-		if gar.metricsConsumer != nil && e.GetWorkflowJob().GetConclusion() != "skipped" {
+		if gar.metricsConsumer != nil {
 			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e))
 
 			if err != nil {

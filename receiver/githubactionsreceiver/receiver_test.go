@@ -111,16 +111,25 @@ func TestEventToTracesTraces(t *testing.T) {
 
 func TestEventToMetrics(t *testing.T) {
 	tests := []struct {
-		desc            string
-		payloadFilePath string
-		eventType       string
-		expectedMetrics int
+		desc               string
+		payloadFilePath    string
+		eventType          string
+		expectedMetrics    int
+		expectedDataPoints int
 	}{
 		{
-			desc:            "WorkflowJobEvent processing",
-			payloadFilePath: "./testdata/queued/1_workflow_job_queued.json",
-			eventType:       "workflow_job",
-			expectedMetrics: 1,
+			desc:               "WorkflowJobEvent processing",
+			payloadFilePath:    "./testdata/queued/1_workflow_job_queued.json",
+			eventType:          "workflow_job",
+			expectedMetrics:    1,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus),
+		},
+		{
+			desc:               "WorkflowJobEvent (check run) processing",
+			payloadFilePath:    "./testdata/completed/5_workflow_job_check-run_completed.json",
+			eventType:          "workflow_job",
+			expectedMetrics:    0,
+			expectedDataPoints: 0,
 		},
 	}
 
@@ -146,7 +155,7 @@ func TestEventToMetrics(t *testing.T) {
 			metrics := mh.eventToMetrics(event.(*github.WorkflowJobEvent))
 
 			require.Equalf(t, test.expectedMetrics, metrics.MetricCount(), "%s: unexpected number of metrics", test.desc)
-			require.Equalf(t, len(metadata.MapAttributeCiGithubWorkflowJobStatus), metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)
+			require.Equalf(t, test.expectedDataPoints, metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)
 		})
 	}
 }
