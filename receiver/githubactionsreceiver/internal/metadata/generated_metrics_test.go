@@ -61,7 +61,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordWorkflowJobsTotalDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted)
+			mb.RecordWorkflowJobsTotalDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -108,6 +108,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.status")
 					assert.True(t, ok)
 					assert.EqualValues(t, "completed", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.conclusion")
+					assert.True(t, ok)
+					assert.EqualValues(t, "success", attrVal.Str())
 				}
 			}
 		})
