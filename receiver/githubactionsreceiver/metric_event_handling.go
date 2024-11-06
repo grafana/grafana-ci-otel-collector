@@ -22,7 +22,7 @@ type metricsHandler struct {
 	logger   *zap.Logger
 }
 
-var mCache = sync.Map{}
+var repoMap = sync.Map{}
 
 func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
 	return &metricsHandler{
@@ -34,19 +34,6 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 }
 
 func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
-	if event.GetWorkflowJob().GetConclusion() == "skipped" ||
-		// Check runs are also reported via WorkflowJobEvent, we want to skip them when generating metrics.
-		// We do so by checking if the runner ID is 0, which is the zero value for the field.
-		// see https://github.com/actions/actions-runner-controller/issues/2118.
-		// NOTE: This also applies to cancelled jobs which have not been started.
-		(event.GetAction() == "completed" && event.GetWorkflowJob().GetRunnerID() == 0) {
-		return m.mb.Emit()
-	}
-
-	if event.GetWorkflowJob().GetName() == "eslint" && event.GetRepo().GetFullName() == "grafana/deployment_tools" {
-		m.logger.Info("CHECK OUT THIS", zap.Any("event", event))
-	}
-
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
@@ -63,48 +50,63 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 
 	now := pcommon.NewTimestampFromTime(time.Now())
 
-	if status, ok := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]; ok {
-		curVal, found := loadFromCache(repo, labels, status)
+	status, actionOk := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]
+	conclusion, conclusionOk := metadata.MapAttributeCiGithubWorkflowJobConclusion[event.GetWorkflowJob().GetConclusion()]
+	if !conclusionOk {
+		conclusion = metadata.AttributeCiGithubWorkflowJobConclusionNull
+	}
+
+	if actionOk {
+		curVal, found := loadFromCache(repo, labels, status, conclusion)
 
 		// If the value was not found in the cache, we record a 0 value for all other possible statuses
 		// so that all counters for a given labels combination are always present and reset at the same time.
 		if !found {
 			for _, s := range metadata.MapAttributeCiGithubWorkflowJobStatus {
-				if s == status {
-					continue
+				for _, c := range metadata.MapAttributeCiGithubWorkflowJobConclusion {
+					if s == status && c == conclusion {
+						continue
+					}
+
+					storeInCache(repo, labels, s, c, 0)
+					m.mb.RecordWorkflowJobsTotalDataPoint(now, 0, repo, labels, s, c)
 				}
 
-				storeInCache(repo, labels, s, 0)
-				m.mb.RecordWorkflowJobsTotalDataPoint(now, 0, repo, labels, s)
 			}
 		}
 
-		storeInCache(repo, labels, status, curVal+1)
-		m.mb.RecordWorkflowJobsTotalDataPoint(now, curVal+1, repo, labels, status)
+		storeInCache(repo, labels, status, conclusion, curVal+1)
+		m.mb.RecordWorkflowJobsTotalDataPoint(now, curVal+1, repo, labels, status, conclusion)
 	}
 
 	return m.mb.Emit()
 }
 
-func storeInCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, value int64) {
-	middleMap, _ := mCache.LoadOrStore(repo, &sync.Map{})
-	innerMap, _ := middleMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
-	innerMap.(*sync.Map).Store(status, value)
+func storeInCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, conclusion metadata.AttributeCiGithubWorkflowJobConclusion, value int64) {
+	labelsMap, _ := repoMap.LoadOrStore(repo, &sync.Map{})
+	statusesMap, _ := labelsMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
+	conclusionsMap, _ := statusesMap.(*sync.Map).LoadOrStore(status, &sync.Map{})
+	conclusionsMap.(*sync.Map).Store(conclusion, value)
 }
 
 // Helper function to load values from the nested sync.Map structure
-func loadFromCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus) (int64, bool) {
-	middleMap, ok := mCache.Load(repo)
+func loadFromCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, conclusion metadata.AttributeCiGithubWorkflowJobConclusion) (int64, bool) {
+	labelsMap, ok := repoMap.Load(repo)
 	if !ok {
 		return 0, false
 	}
 
-	innerMap, ok := middleMap.(*sync.Map).Load(labels)
+	statusesMap, ok := labelsMap.(*sync.Map).Load(labels)
 	if !ok {
 		return 0, false
 	}
 
-	value, ok := innerMap.(*sync.Map).Load(status)
+	conclusionsMap, ok := statusesMap.(*sync.Map).Load(status)
+	if !ok {
+		return 0, false
+	}
+
+	value, ok := conclusionsMap.(*sync.Map).Load(conclusion)
 	if !ok {
 		return 0, false
 	}

@@ -27,3 +27,4 @@ Number of jobs.
 | vcs.repository.name | Repository name | Any Str |
 | ci.github.workflow.job.labels | Job labels. | Any Str |
 | ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting`` |
+| ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null`` |
