@@ -43,6 +43,10 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 		return m.mb.Emit()
 	}
 
+	if event.GetWorkflowJob().GetName() == "eslint" && event.GetRepo().GetFullName() == "grafana/deployment_tools" {
+		m.logger.Info("CHECK OUT THIS", zap.Any("event", event))
+	}
+
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
@@ -63,7 +67,7 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 		curVal, found := loadFromCache(repo, labels, status)
 
 		// If the value was not found in the cache, we record a 0 value for all other possible statuses
-		// so that counter resets are properly handled.
+		// so that all counters for a given labels combination are always present and reset at the same time.
 		if !found {
 			for _, s := range metadata.MapAttributeCiGithubWorkflowJobStatus {
 				if s == status {
