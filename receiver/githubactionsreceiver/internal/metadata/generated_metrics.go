@@ -58,6 +58,7 @@ const (
 	AttributeCiGithubWorkflowJobStatusInProgress
 	AttributeCiGithubWorkflowJobStatusQueued
 	AttributeCiGithubWorkflowJobStatusWaiting
+	AttributeCiGithubWorkflowJobStatusAborted
 )
 
 // String returns the string representation of the AttributeCiGithubWorkflowJobStatus.
@@ -71,6 +72,8 @@ func (av AttributeCiGithubWorkflowJobStatus) String() string {
 		return "queued"
 	case AttributeCiGithubWorkflowJobStatusWaiting:
 		return "waiting"
+	case AttributeCiGithubWorkflowJobStatusAborted:
+		return "aborted"
 	}
 	return ""
 }
@@ -81,6 +84,7 @@ var MapAttributeCiGithubWorkflowJobStatus = map[string]AttributeCiGithubWorkflow
 	"in_progress": AttributeCiGithubWorkflowJobStatusInProgress,
 	"queued":      AttributeCiGithubWorkflowJobStatusQueued,
 	"waiting":     AttributeCiGithubWorkflowJobStatusWaiting,
+	"aborted":     AttributeCiGithubWorkflowJobStatusAborted,
 }
 
 type metricWorkflowJobsTotal struct {
