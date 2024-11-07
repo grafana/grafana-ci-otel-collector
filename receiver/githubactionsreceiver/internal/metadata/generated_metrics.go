@@ -21,6 +21,9 @@ const (
 	AttributeCiGithubWorkflowJobConclusionCancelled
 	AttributeCiGithubWorkflowJobConclusionNeutral
 	AttributeCiGithubWorkflowJobConclusionNull
+	AttributeCiGithubWorkflowJobConclusionSkipped
+	AttributeCiGithubWorkflowJobConclusionTimedOut
+	AttributeCiGithubWorkflowJobConclusionActionRequired
 )
 
 // String returns the string representation of the AttributeCiGithubWorkflowJobConclusion.
@@ -36,17 +39,26 @@ func (av AttributeCiGithubWorkflowJobConclusion) String() string {
 		return "neutral"
 	case AttributeCiGithubWorkflowJobConclusionNull:
 		return "null"
+	case AttributeCiGithubWorkflowJobConclusionSkipped:
+		return "skipped"
+	case AttributeCiGithubWorkflowJobConclusionTimedOut:
+		return "timed_out"
+	case AttributeCiGithubWorkflowJobConclusionActionRequired:
+		return "action_required"
 	}
 	return ""
 }
 
 // MapAttributeCiGithubWorkflowJobConclusion is a helper map of string to AttributeCiGithubWorkflowJobConclusion attribute value.
 var MapAttributeCiGithubWorkflowJobConclusion = map[string]AttributeCiGithubWorkflowJobConclusion{
-	"success":   AttributeCiGithubWorkflowJobConclusionSuccess,
-	"failure":   AttributeCiGithubWorkflowJobConclusionFailure,
-	"cancelled": AttributeCiGithubWorkflowJobConclusionCancelled,
-	"neutral":   AttributeCiGithubWorkflowJobConclusionNeutral,
-	"null":      AttributeCiGithubWorkflowJobConclusionNull,
+	"success":         AttributeCiGithubWorkflowJobConclusionSuccess,
+	"failure":         AttributeCiGithubWorkflowJobConclusionFailure,
+	"cancelled":       AttributeCiGithubWorkflowJobConclusionCancelled,
+	"neutral":         AttributeCiGithubWorkflowJobConclusionNeutral,
+	"null":            AttributeCiGithubWorkflowJobConclusionNull,
+	"skipped":         AttributeCiGithubWorkflowJobConclusionSkipped,
+	"timed_out":       AttributeCiGithubWorkflowJobConclusionTimedOut,
+	"action_required": AttributeCiGithubWorkflowJobConclusionActionRequired,
 }
 
 // AttributeCiGithubWorkflowJobStatus specifies the a value ci.github.workflow.job.status attribute.
