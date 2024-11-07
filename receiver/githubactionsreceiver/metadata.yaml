@@ -38,6 +38,9 @@ attributes:
       - cancelled
       - neutral
       - "null"
+      - skipped
+      - timed_out
+      - action_required
     type: string
 
 metrics:
