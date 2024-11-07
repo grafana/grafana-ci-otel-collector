@@ -28,6 +28,7 @@ attributes:
       - in_progress
       - queued
       - waiting
+      - aborted
     type: string
   ci.github.workflow.job.conclusion:
     description: Job Conclusion
