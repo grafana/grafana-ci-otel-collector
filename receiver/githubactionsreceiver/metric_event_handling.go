@@ -50,6 +50,10 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 
 	m.logger.Info("Processing workflow_job event",
 		zap.String("repo", repo),
+		zap.Int64("run_id", event.GetWorkflowJob().GetRunID()),
+		zap.Int64("id", event.GetWorkflowJob().GetID()),
+		zap.String("name", event.GetWorkflowJob().GetName()),
+		zap.String("workflow_name", event.GetWorkflowJob().GetWorkflowName()),
 		zap.String("action", event.GetAction()),
 		zap.String("status", event.GetWorkflowJob().GetStatus()),
 		zap.String("conclusion", event.GetWorkflowJob().GetConclusion()),
