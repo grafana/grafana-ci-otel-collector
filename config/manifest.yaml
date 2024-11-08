@@ -2,7 +2,7 @@ dist:
   name: grafana-ci-otelcol
   description: Grafana's OTel Collector distribution for CI/CD observability
   output_path: ./build
-  otelcol_version: 0.109.0
+  otelcol_version: 0.113.0
   debug_compilation: false
   version: 0.1.0
 
