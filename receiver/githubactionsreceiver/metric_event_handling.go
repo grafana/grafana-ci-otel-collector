@@ -48,6 +48,16 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 		labels = "no labels"
 	}
 
+	m.logger.Info("Processing workflow_job event",
+		zap.String("repo", repo),
+		zap.String("action", event.GetAction()),
+		zap.String("status", event.GetWorkflowJob().GetStatus()),
+		zap.String("conclusion", event.GetWorkflowJob().GetConclusion()),
+		zap.String("labels", labels),
+		zap.Any("steps", event.GetWorkflowJob().Steps),
+		zap.Int64("runner", event.GetWorkflowJob().GetRunnerID()),
+	)
+
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	status, actionOk := metadata.MapAttributeCiGithubWorkflowJobStatus[event.GetAction()]
