@@ -11,7 +11,7 @@ import (
 
 func TestCreateMetricsReceiver(t *testing.T) {
 	cfg := createDefaultConfig().(*Config)
-	_, err := NewFactory().CreateMetricsReceiver(
+	_, err := NewFactory().CreateMetrics(
 		context.Background(),
 		receivertest.NewNopSettings(),
 		cfg,
