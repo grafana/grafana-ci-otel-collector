@@ -7,6 +7,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -64,8 +65,15 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 			return nil, err
 		}
 
-		archive, _ := zip.OpenReader(out.Name())
+		archive, err := zip.OpenReader(out.Name())
+		if err != nil {
+			return nil, fmt.Errorf("Failed to open zip file: %w", err)
+		}
 		defer archive.Close()
+
+		if archive.File == nil {
+			return nil, fmt.Errorf("Archive is empty")
+		}
 
 		// steps is a map of job names to a map of step numbers to file names
 		var jobs = make([]string, 0)
