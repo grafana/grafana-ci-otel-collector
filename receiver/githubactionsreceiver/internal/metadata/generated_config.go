@@ -27,12 +27,12 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for githubactions metrics.
 type MetricsConfig struct {
-	WorkflowJobsTotal MetricConfig `mapstructure:"workflow_jobs_total"`
+	WorkflowJobsCount MetricConfig `mapstructure:"workflow.jobs.count"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		WorkflowJobsTotal: MetricConfig{
+		WorkflowJobsCount: MetricConfig{
 			Enabled: true,
 		},
 	}

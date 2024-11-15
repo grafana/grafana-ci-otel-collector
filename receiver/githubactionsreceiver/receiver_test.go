@@ -145,7 +145,7 @@ func TestEventToMetrics(t *testing.T) {
 			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
-						WorkflowJobsTotal: metadata.MetricConfig{
+						WorkflowJobsCount: metadata.MetricConfig{
 							Enabled: true,
 						},
 					},

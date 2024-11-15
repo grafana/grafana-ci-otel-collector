@@ -44,10 +44,10 @@ attributes:
     type: string
 
 metrics:
-  workflow_jobs_total:
+  workflow.jobs.count:
     enabled: true
     description: Number of jobs.
-    unit: "{job}"
+    unit: "{jobs}"
     sum:
       value_type: int
       monotonic: true

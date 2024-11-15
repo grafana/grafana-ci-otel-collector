@@ -86,14 +86,14 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 					}
 
 					storeInCache(repo, labels, s, c, 0)
-					m.mb.RecordWorkflowJobsTotalDataPoint(now, 0, repo, labels, s, c)
+					m.mb.RecordWorkflowJobsCountDataPoint(now, 0, repo, labels, s, c)
 				}
 
 			}
 		}
 
 		storeInCache(repo, labels, status, conclusion, curVal+1)
-		m.mb.RecordWorkflowJobsTotalDataPoint(now, curVal+1, repo, labels, status, conclusion)
+		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion)
 	}
 
 	return m.mb.Emit()

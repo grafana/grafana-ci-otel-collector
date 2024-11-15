@@ -12,13 +12,13 @@ metrics:
     enabled: false
 ```
 
-### workflow_jobs_total
+### workflow.jobs.count
 
 Number of jobs.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {job} | Sum | Int | Cumulative | true |
+| {jobs} | Sum | Int | Cumulative | true |
 
 #### Attributes
 
