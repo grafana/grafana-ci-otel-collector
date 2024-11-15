@@ -109,7 +109,7 @@ type metricWorkflowJobsCount struct {
 func (m *metricWorkflowJobsCount) init() {
 	m.data.SetName("workflow.jobs.count")
 	m.data.SetDescription("Number of jobs.")
-	m.data.SetUnit("{jobs}")
+	m.data.SetUnit("{job}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)

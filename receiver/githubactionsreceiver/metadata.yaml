@@ -47,7 +47,7 @@ metrics:
   workflow.jobs.count:
     enabled: true
     description: Number of jobs.
-    unit: "{jobs}"
+    unit: "{job}"
     sum:
       value_type: int
       monotonic: true
