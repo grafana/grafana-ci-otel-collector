@@ -72,7 +72,7 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 		defer archive.Close()
 
 		if archive.File == nil {
-			return nil, fmt.Errorf("Archive is empty")
+			return nil, fmt.Errorf("archive is empty")
 		}
 
 		// steps is a map of job names to a map of step numbers to file names
