@@ -67,7 +67,7 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 
 		archive, err := zip.OpenReader(out.Name())
 		if err != nil {
-			return nil, fmt.Errorf("Failed to open zip file: %w", err)
+			return nil, fmt.Errorf("failed to open zip file: %w", err)
 		}
 		defer archive.Close()
 
