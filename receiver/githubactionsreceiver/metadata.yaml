@@ -28,10 +28,23 @@ attributes:
       - in_progress
       - queued
       - waiting
+      - aborted
+    type: string
+  ci.github.workflow.job.conclusion:
+    description: Job Conclusion
+    enum:
+      - success
+      - failure
+      - cancelled
+      - neutral
+      - "null"
+      - skipped
+      - timed_out
+      - action_required
     type: string
 
 metrics:
-  workflow_jobs_total:
+  workflow.jobs.count:
     enabled: true
     description: Number of jobs.
     unit: "{job}"
@@ -44,4 +57,5 @@ metrics:
         vcs.repository.name,
         ci.github.workflow.job.labels,
         ci.github.workflow.job.status,
+        ci.github.workflow.job.conclusion,
       ]

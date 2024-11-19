@@ -122,14 +122,14 @@ func TestEventToMetrics(t *testing.T) {
 			payloadFilePath:    "./testdata/queued/1_workflow_job_queued.json",
 			eventType:          "workflow_job",
 			expectedMetrics:    1,
-			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus),
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus) * len(metadata.MapAttributeCiGithubWorkflowJobConclusion),
 		},
 		{
 			desc:               "WorkflowJobEvent (check run) processing",
 			payloadFilePath:    "./testdata/completed/5_workflow_job_check-run_completed.json",
 			eventType:          "workflow_job",
-			expectedMetrics:    0,
-			expectedDataPoints: 0,
+			expectedMetrics:    1,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus) * len(metadata.MapAttributeCiGithubWorkflowJobConclusion),
 		},
 	}
 
@@ -145,7 +145,7 @@ func TestEventToMetrics(t *testing.T) {
 			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
-						WorkflowJobsTotal: metadata.MetricConfig{
+						WorkflowJobsCount: metadata.MetricConfig{
 							Enabled: true,
 						},
 					},

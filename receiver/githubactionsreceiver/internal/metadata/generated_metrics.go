@@ -11,6 +11,56 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
+// AttributeCiGithubWorkflowJobConclusion specifies the a value ci.github.workflow.job.conclusion attribute.
+type AttributeCiGithubWorkflowJobConclusion int
+
+const (
+	_ AttributeCiGithubWorkflowJobConclusion = iota
+	AttributeCiGithubWorkflowJobConclusionSuccess
+	AttributeCiGithubWorkflowJobConclusionFailure
+	AttributeCiGithubWorkflowJobConclusionCancelled
+	AttributeCiGithubWorkflowJobConclusionNeutral
+	AttributeCiGithubWorkflowJobConclusionNull
+	AttributeCiGithubWorkflowJobConclusionSkipped
+	AttributeCiGithubWorkflowJobConclusionTimedOut
+	AttributeCiGithubWorkflowJobConclusionActionRequired
+)
+
+// String returns the string representation of the AttributeCiGithubWorkflowJobConclusion.
+func (av AttributeCiGithubWorkflowJobConclusion) String() string {
+	switch av {
+	case AttributeCiGithubWorkflowJobConclusionSuccess:
+		return "success"
+	case AttributeCiGithubWorkflowJobConclusionFailure:
+		return "failure"
+	case AttributeCiGithubWorkflowJobConclusionCancelled:
+		return "cancelled"
+	case AttributeCiGithubWorkflowJobConclusionNeutral:
+		return "neutral"
+	case AttributeCiGithubWorkflowJobConclusionNull:
+		return "null"
+	case AttributeCiGithubWorkflowJobConclusionSkipped:
+		return "skipped"
+	case AttributeCiGithubWorkflowJobConclusionTimedOut:
+		return "timed_out"
+	case AttributeCiGithubWorkflowJobConclusionActionRequired:
+		return "action_required"
+	}
+	return ""
+}
+
+// MapAttributeCiGithubWorkflowJobConclusion is a helper map of string to AttributeCiGithubWorkflowJobConclusion attribute value.
+var MapAttributeCiGithubWorkflowJobConclusion = map[string]AttributeCiGithubWorkflowJobConclusion{
+	"success":         AttributeCiGithubWorkflowJobConclusionSuccess,
+	"failure":         AttributeCiGithubWorkflowJobConclusionFailure,
+	"cancelled":       AttributeCiGithubWorkflowJobConclusionCancelled,
+	"neutral":         AttributeCiGithubWorkflowJobConclusionNeutral,
+	"null":            AttributeCiGithubWorkflowJobConclusionNull,
+	"skipped":         AttributeCiGithubWorkflowJobConclusionSkipped,
+	"timed_out":       AttributeCiGithubWorkflowJobConclusionTimedOut,
+	"action_required": AttributeCiGithubWorkflowJobConclusionActionRequired,
+}
+
 // AttributeCiGithubWorkflowJobStatus specifies the a value ci.github.workflow.job.status attribute.
 type AttributeCiGithubWorkflowJobStatus int
 
@@ -20,6 +70,7 @@ const (
 	AttributeCiGithubWorkflowJobStatusInProgress
 	AttributeCiGithubWorkflowJobStatusQueued
 	AttributeCiGithubWorkflowJobStatusWaiting
+	AttributeCiGithubWorkflowJobStatusAborted
 )
 
 // String returns the string representation of the AttributeCiGithubWorkflowJobStatus.
@@ -33,6 +84,8 @@ func (av AttributeCiGithubWorkflowJobStatus) String() string {
 		return "queued"
 	case AttributeCiGithubWorkflowJobStatusWaiting:
 		return "waiting"
+	case AttributeCiGithubWorkflowJobStatusAborted:
+		return "aborted"
 	}
 	return ""
 }
@@ -43,17 +96,18 @@ var MapAttributeCiGithubWorkflowJobStatus = map[string]AttributeCiGithubWorkflow
 	"in_progress": AttributeCiGithubWorkflowJobStatusInProgress,
 	"queued":      AttributeCiGithubWorkflowJobStatusQueued,
 	"waiting":     AttributeCiGithubWorkflowJobStatusWaiting,
+	"aborted":     AttributeCiGithubWorkflowJobStatusAborted,
 }
 
-type metricWorkflowJobsTotal struct {
+type metricWorkflowJobsCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills workflow_jobs_total metric with initial data.
-func (m *metricWorkflowJobsTotal) init() {
-	m.data.SetName("workflow_jobs_total")
+// init fills workflow.jobs.count metric with initial data.
+func (m *metricWorkflowJobsCount) init() {
+	m.data.SetName("workflow.jobs.count")
 	m.data.SetDescription("Number of jobs.")
 	m.data.SetUnit("{job}")
 	m.data.SetEmptySum()
@@ -62,7 +116,7 @@ func (m *metricWorkflowJobsTotal) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricWorkflowJobsTotal) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string) {
+func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -73,17 +127,18 @@ func (m *metricWorkflowJobsTotal) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
+	dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricWorkflowJobsTotal) updateCapacity() {
+func (m *metricWorkflowJobsCount) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricWorkflowJobsTotal) emit(metrics pmetric.MetricSlice) {
+func (m *metricWorkflowJobsCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -91,8 +146,8 @@ func (m *metricWorkflowJobsTotal) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricWorkflowJobsTotal(cfg MetricConfig) metricWorkflowJobsTotal {
-	m := metricWorkflowJobsTotal{config: cfg}
+func newMetricWorkflowJobsCount(cfg MetricConfig) metricWorkflowJobsCount {
+	m := metricWorkflowJobsCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -108,7 +163,7 @@ type MetricsBuilder struct {
 	metricsCapacity         int                  // maximum observed number of metrics per resource.
 	metricsBuffer           pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo               component.BuildInfo  // contains version information.
-	metricWorkflowJobsTotal metricWorkflowJobsTotal
+	metricWorkflowJobsCount metricWorkflowJobsCount
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -135,7 +190,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		startTime:               pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:           pmetric.NewMetrics(),
 		buildInfo:               settings.BuildInfo,
-		metricWorkflowJobsTotal: newMetricWorkflowJobsTotal(mbc.Metrics.WorkflowJobsTotal),
+		metricWorkflowJobsCount: newMetricWorkflowJobsCount(mbc.Metrics.WorkflowJobsCount),
 	}
 
 	for _, op := range options {
@@ -201,7 +256,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName("github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricWorkflowJobsTotal.emit(ils.Metrics())
+	mb.metricWorkflowJobsCount.emit(ils.Metrics())
 
 	for _, op := range options {
 		op.apply(rm)
@@ -223,9 +278,9 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
-// RecordWorkflowJobsTotalDataPoint adds a data point to workflow_jobs_total metric.
-func (mb *MetricsBuilder) RecordWorkflowJobsTotalDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus) {
-	mb.metricWorkflowJobsTotal.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String())
+// RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.
+func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion) {
+	mb.metricWorkflowJobsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String())
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

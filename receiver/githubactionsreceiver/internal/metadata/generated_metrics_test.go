@@ -61,7 +61,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordWorkflowJobsTotalDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted)
+			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -85,9 +85,9 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "workflow_jobs_total":
-					assert.False(t, validatedMetrics["workflow_jobs_total"], "Found a duplicate in the metrics slice: workflow_jobs_total")
-					validatedMetrics["workflow_jobs_total"] = true
+				case "workflow.jobs.count":
+					assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
+					validatedMetrics["workflow.jobs.count"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
 					assert.Equal(t, "Number of jobs.", ms.At(i).Description())
@@ -108,6 +108,9 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.status")
 					assert.True(t, ok)
 					assert.EqualValues(t, "completed", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.conclusion")
+					assert.True(t, ok)
+					assert.EqualValues(t, "success", attrVal.Str())
 				}
 			}
 		})
