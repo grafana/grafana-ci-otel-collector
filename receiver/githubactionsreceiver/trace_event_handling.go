@@ -168,6 +168,12 @@ func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github
 	span.SetParentSpanID(parentSpanID)
 
 	var spanID pcommon.SpanID
+	
+	if job.GetHeadBranch() == "main" || job.GetHeadBranch() == "master" {
+		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", true)
+	} else {
+		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", false)
+	}
 
 	span.Attributes().PutStr("ci.github.workflow.job.step.name", step.GetName())
 	span.Attributes().PutStr("ci.github.workflow.job.step.status", step.GetStatus())
