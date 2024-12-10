@@ -263,6 +263,11 @@ func TestResourceAndSpanAttributesCreation(t *testing.T) {
 						continue
 					}
 
+					isMainValue, found := attrs.Get("ci.github.workflow.job.head_branch.is_main")
+					isMain := isMainValue.Bool()
+
+					require.True(t, isMain)
+
 					expectedStepName := expectedStep["ci.github.workflow.job.step.name"]
 
 					if stepName == expectedStepName {
