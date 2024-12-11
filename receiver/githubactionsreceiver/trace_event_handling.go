@@ -163,7 +163,7 @@ func createRootSpan(resourceSpans ptrace.ResourceSpans, event *github.WorkflowRu
 	return rootSpanID, nil
 }
 
-func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github.WorkflowJob, defaultBranch *string, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) pcommon.SpanID {
+func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github.WorkflowJob, defaultBranch *string, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) ptrace.Span {
 	logger.Debug("Processing span", zap.String("step_name", step.GetName()))
 	span := scopeSpans.Spans().AppendEmpty()
 	span.SetTraceID(traceID)
@@ -207,7 +207,7 @@ func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github
 
 	span.Status().SetMessage(step.GetConclusion())
 
-	return span.SpanID()
+	return span
 }
 
 func generateTraceID(runID int64, runAttempt int) (pcommon.TraceID, error) {
