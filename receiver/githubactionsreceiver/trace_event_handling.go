@@ -34,8 +34,10 @@ func eventToTraces(event interface{}, config *Config, logger *zap.Logger) (*ptra
 			return nil, fmt.Errorf("failed to generate trace ID: %w", err)
 		}
 
+		defaultBranch := e.GetRepo().DefaultBranch
+
 		parentSpanID := createParentSpan(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), traceID, logger)
-		processSteps(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), traceID, parentSpanID, logger)
+		processSteps(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), defaultBranch, traceID, parentSpanID, logger)
 
 	case *github.WorkflowRunEvent:
 		logger.Info("Processing WorkflowRunEvent", zap.Int64("workflow_id", e.GetWorkflowRun().GetID()), zap.String("workflow_name", e.GetWorkflowRun().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
@@ -161,13 +163,18 @@ func createRootSpan(resourceSpans ptrace.ResourceSpans, event *github.WorkflowRu
 	return rootSpanID, nil
 }
 
-func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github.WorkflowJob, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) pcommon.SpanID {
+func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github.WorkflowJob, defaultBranch *string, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) pcommon.SpanID {
 	logger.Debug("Processing span", zap.String("step_name", step.GetName()))
 	span := scopeSpans.Spans().AppendEmpty()
 	span.SetTraceID(traceID)
 	span.SetParentSpanID(parentSpanID)
 
 	var spanID pcommon.SpanID
+	if job.GetHeadBranch() == *defaultBranch {
+		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", true)
+	} else {
+		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", false)
+	}
 
 	span.Attributes().PutStr("ci.github.workflow.job.step.name", step.GetName())
 	span.Attributes().PutStr("ci.github.workflow.job.step.status", step.GetStatus())
@@ -267,9 +274,9 @@ func generateStepSpanID(runID int64, runAttempt int, jobName string, stepNumber 
 	return spanID, nil
 }
 
-func processSteps(scopeSpans ptrace.ScopeSpans, steps []*github.TaskStep, job *github.WorkflowJob, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) {
+func processSteps(scopeSpans ptrace.ScopeSpans, steps []*github.TaskStep, job *github.WorkflowJob, defaultBranch *string, traceID pcommon.TraceID, parentSpanID pcommon.SpanID, logger *zap.Logger) {
 	for _, step := range steps {
-		createSpan(scopeSpans, step, job, traceID, parentSpanID, logger)
+		createSpan(scopeSpans, step, job, defaultBranch, traceID, parentSpanID, logger)
 	}
 }
 

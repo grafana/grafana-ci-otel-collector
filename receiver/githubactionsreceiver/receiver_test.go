@@ -200,7 +200,8 @@ func TestProcessSteps(t *testing.T) {
 			traceID, _ := generateTraceID(123, 1)
 			parentSpanID := createParentSpan(ss, tc.givenSteps, &github.WorkflowJob{}, traceID, logger)
 
-			processSteps(ss, tc.givenSteps, &github.WorkflowJob{}, traceID, parentSpanID, logger)
+			defaultBranch := "main"
+			processSteps(ss, tc.givenSteps, &github.WorkflowJob{}, &defaultBranch, traceID, parentSpanID, logger)
 
 			startIdx := 1 // Skip the parent span if it's the first one
 			if len(tc.expectedStatuses) == 0 {
@@ -262,6 +263,13 @@ func TestResourceAndSpanAttributesCreation(t *testing.T) {
 					if !found || stepName == "" { // Skip if the attribute is not found or name is empty
 						continue
 					}
+
+					isMainValue, found := attrs.Get("ci.github.workflow.job.head_branch.is_main")
+					if !found || isMainValue.AsString() == "" { // Skip if the attribute is not found or name is empty
+						continue
+					}
+
+					require.True(t, isMainValue.Bool())
 
 					expectedStepName := expectedStep["ci.github.workflow.job.step.name"]
 
