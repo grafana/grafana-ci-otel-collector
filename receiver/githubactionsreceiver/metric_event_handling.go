@@ -73,6 +73,13 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 		conclusion = metadata.AttributeCiGithubWorkflowJobConclusionNull
 	}
 
+	defaultBranch := event.GetRepo().DefaultBranch
+	var isMain bool
+
+	if event.GetWorkflowJob().GetHeadBranch() == *defaultBranch {
+		isMain = true
+	}
+
 	if actionOk {
 		curVal, found := loadFromCache(repo, labels, status, conclusion)
 
@@ -86,14 +93,14 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 					}
 
 					storeInCache(repo, labels, s, c, 0)
-					m.mb.RecordWorkflowJobsCountDataPoint(now, 0, repo, labels, s, c)
+					m.mb.RecordWorkflowJobsCountDataPoint(now, 0, repo, labels, s, c, isMain)
 				}
 
 			}
 		}
 
 		storeInCache(repo, labels, status, conclusion, curVal+1)
-		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion)
+		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion, isMain)
 	}
 
 	return m.mb.Emit()

@@ -116,7 +116,7 @@ func (m *metricWorkflowJobsCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string) {
+func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
@@ -128,6 +128,7 @@ func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
+	dp.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -279,8 +280,8 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.
-func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion) {
-	mb.metricWorkflowJobsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String())
+func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
+	mb.metricWorkflowJobsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String(), ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

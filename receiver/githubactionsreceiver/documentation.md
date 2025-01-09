@@ -28,3 +28,4 @@ Number of jobs.
 | ci.github.workflow.job.labels | Job labels. | Any Str |
 | ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` |
 | ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` |
+| ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool |
