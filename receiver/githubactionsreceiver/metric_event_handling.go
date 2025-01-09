@@ -159,7 +159,6 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	return m.mb.Emit()
 }
 
-
 func storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
 	labelsMap, _ := repoMap.LoadOrStore(repo, &sync.Map{})
 	statusesMap, _ := labelsMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})

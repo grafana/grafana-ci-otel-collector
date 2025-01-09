@@ -211,7 +211,6 @@ func TestWorkflowRunEventToMetrics(t *testing.T) {
 	}
 }
 
-
 func TestProcessSteps(t *testing.T) {
 	tests := []struct {
 		desc             string

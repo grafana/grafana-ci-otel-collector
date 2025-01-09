@@ -246,7 +246,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
 			}
 		}
-		
+
 		if e.GetWorkflowRun().GetStatus() != "completed" {
 			gar.logger.Debug("Skipping non-completed WorkflowRunEvent", zap.String("status", e.GetWorkflowRun().GetStatus()))
 			w.WriteHeader(http.StatusNoContent)
