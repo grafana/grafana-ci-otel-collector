@@ -65,7 +65,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
+			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.run.labels-val", AttributeCiGithubWorkflowRunStatusCompleted, AttributeCiGithubWorkflowRunConclusionSuccess, true)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -135,16 +135,16 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("vcs.repository.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "vcs.repository.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.labels")
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.labels")
 					assert.True(t, ok)
-					assert.EqualValues(t, "ci.github.workflow.job.labels-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.status")
+					assert.EqualValues(t, "ci.github.workflow.run.labels-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.status")
 					assert.True(t, ok)
 					assert.EqualValues(t, "completed", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.conclusion")
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.conclusion")
 					assert.True(t, ok)
 					assert.EqualValues(t, "success", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.head_branch.is_main")
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.head_branch.is_main")
 					assert.True(t, ok)
 					assert.True(t, attrVal.Bool())
 				}

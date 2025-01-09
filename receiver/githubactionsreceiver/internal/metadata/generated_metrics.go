@@ -99,6 +99,94 @@ var MapAttributeCiGithubWorkflowJobStatus = map[string]AttributeCiGithubWorkflow
 	"aborted":     AttributeCiGithubWorkflowJobStatusAborted,
 }
 
+// AttributeCiGithubWorkflowRunConclusion specifies the a value ci.github.workflow.run.conclusion attribute.
+type AttributeCiGithubWorkflowRunConclusion int
+
+const (
+	_ AttributeCiGithubWorkflowRunConclusion = iota
+	AttributeCiGithubWorkflowRunConclusionSuccess
+	AttributeCiGithubWorkflowRunConclusionFailure
+	AttributeCiGithubWorkflowRunConclusionCancelled
+	AttributeCiGithubWorkflowRunConclusionNeutral
+	AttributeCiGithubWorkflowRunConclusionNull
+	AttributeCiGithubWorkflowRunConclusionSkipped
+	AttributeCiGithubWorkflowRunConclusionTimedOut
+	AttributeCiGithubWorkflowRunConclusionActionRequired
+)
+
+// String returns the string representation of the AttributeCiGithubWorkflowRunConclusion.
+func (av AttributeCiGithubWorkflowRunConclusion) String() string {
+	switch av {
+	case AttributeCiGithubWorkflowRunConclusionSuccess:
+		return "success"
+	case AttributeCiGithubWorkflowRunConclusionFailure:
+		return "failure"
+	case AttributeCiGithubWorkflowRunConclusionCancelled:
+		return "cancelled"
+	case AttributeCiGithubWorkflowRunConclusionNeutral:
+		return "neutral"
+	case AttributeCiGithubWorkflowRunConclusionNull:
+		return "null"
+	case AttributeCiGithubWorkflowRunConclusionSkipped:
+		return "skipped"
+	case AttributeCiGithubWorkflowRunConclusionTimedOut:
+		return "timed_out"
+	case AttributeCiGithubWorkflowRunConclusionActionRequired:
+		return "action_required"
+	}
+	return ""
+}
+
+// MapAttributeCiGithubWorkflowRunConclusion is a helper map of string to AttributeCiGithubWorkflowRunConclusion attribute value.
+var MapAttributeCiGithubWorkflowRunConclusion = map[string]AttributeCiGithubWorkflowRunConclusion{
+	"success":         AttributeCiGithubWorkflowRunConclusionSuccess,
+	"failure":         AttributeCiGithubWorkflowRunConclusionFailure,
+	"cancelled":       AttributeCiGithubWorkflowRunConclusionCancelled,
+	"neutral":         AttributeCiGithubWorkflowRunConclusionNeutral,
+	"null":            AttributeCiGithubWorkflowRunConclusionNull,
+	"skipped":         AttributeCiGithubWorkflowRunConclusionSkipped,
+	"timed_out":       AttributeCiGithubWorkflowRunConclusionTimedOut,
+	"action_required": AttributeCiGithubWorkflowRunConclusionActionRequired,
+}
+
+// AttributeCiGithubWorkflowRunStatus specifies the a value ci.github.workflow.run.status attribute.
+type AttributeCiGithubWorkflowRunStatus int
+
+const (
+	_ AttributeCiGithubWorkflowRunStatus = iota
+	AttributeCiGithubWorkflowRunStatusCompleted
+	AttributeCiGithubWorkflowRunStatusInProgress
+	AttributeCiGithubWorkflowRunStatusQueued
+	AttributeCiGithubWorkflowRunStatusWaiting
+	AttributeCiGithubWorkflowRunStatusAborted
+)
+
+// String returns the string representation of the AttributeCiGithubWorkflowRunStatus.
+func (av AttributeCiGithubWorkflowRunStatus) String() string {
+	switch av {
+	case AttributeCiGithubWorkflowRunStatusCompleted:
+		return "completed"
+	case AttributeCiGithubWorkflowRunStatusInProgress:
+		return "in_progress"
+	case AttributeCiGithubWorkflowRunStatusQueued:
+		return "queued"
+	case AttributeCiGithubWorkflowRunStatusWaiting:
+		return "waiting"
+	case AttributeCiGithubWorkflowRunStatusAborted:
+		return "aborted"
+	}
+	return ""
+}
+
+// MapAttributeCiGithubWorkflowRunStatus is a helper map of string to AttributeCiGithubWorkflowRunStatus attribute value.
+var MapAttributeCiGithubWorkflowRunStatus = map[string]AttributeCiGithubWorkflowRunStatus{
+	"completed":   AttributeCiGithubWorkflowRunStatusCompleted,
+	"in_progress": AttributeCiGithubWorkflowRunStatusInProgress,
+	"queued":      AttributeCiGithubWorkflowRunStatusQueued,
+	"waiting":     AttributeCiGithubWorkflowRunStatusWaiting,
+	"aborted":     AttributeCiGithubWorkflowRunStatusAborted,
+}
+
 type metricWorkflowJobsCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -173,7 +261,7 @@ func (m *metricWorkflowRunsCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
+func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue string, ciGithubWorkflowRunConclusionAttributeValue string, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
@@ -182,10 +270,10 @@ func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
-	dp.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
+	dp.Attributes().PutStr("ci.github.workflow.run.labels", ciGithubWorkflowRunLabelsAttributeValue)
+	dp.Attributes().PutStr("ci.github.workflow.run.status", ciGithubWorkflowRunStatusAttributeValue)
+	dp.Attributes().PutStr("ci.github.workflow.run.conclusion", ciGithubWorkflowRunConclusionAttributeValue)
+	dp.Attributes().PutBool("ci.github.workflow.run.head_branch.is_main", ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -345,8 +433,8 @@ func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp,
 }
 
 // RecordWorkflowRunsCountDataPoint adds a data point to workflow.runs.count metric.
-func (mb *MetricsBuilder) RecordWorkflowRunsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
-	mb.metricWorkflowRunsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String(), ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
+func (mb *MetricsBuilder) RecordWorkflowRunsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue AttributeCiGithubWorkflowRunStatus, ciGithubWorkflowRunConclusionAttributeValue AttributeCiGithubWorkflowRunConclusion, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
+	mb.metricWorkflowRunsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowRunLabelsAttributeValue, ciGithubWorkflowRunStatusAttributeValue.String(), ciGithubWorkflowRunConclusionAttributeValue.String(), ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,
