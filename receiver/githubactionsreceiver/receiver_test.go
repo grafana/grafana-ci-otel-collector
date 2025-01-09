@@ -152,7 +152,7 @@ func TestEventToMetrics(t *testing.T) {
 				},
 			}, logger.Named("metricsHandler"))
 
-			metrics := mh.eventToMetrics(event.(*github.WorkflowJobEvent))
+			metrics := mh.workflowJobEventToMetrics(event.(*github.WorkflowJobEvent))
 
 			require.Equalf(t, test.expectedMetrics, metrics.MetricCount(), "%s: unexpected number of metrics", test.desc)
 			require.Equalf(t, test.expectedDataPoints, metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)

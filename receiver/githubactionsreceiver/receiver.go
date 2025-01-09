@@ -226,7 +226,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
 		if gar.metricsConsumer != nil {
-			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e))
+			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowJobEventToMetrics(e))
 
 			if err != nil {
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
