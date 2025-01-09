@@ -109,7 +109,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
 	repo := event.GetRepo().GetFullName()
 
-	m.logger.Info("Processing workflow_job event",
+	m.logger.Info("Processing workflow_run event",
 		zap.String("repo", repo),
 		zap.Int64("id", event.GetWorkflowRun().GetID()),
 		zap.String("name", event.GetWorkflowRun().GetName()),
