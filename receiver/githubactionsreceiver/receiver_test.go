@@ -62,7 +62,7 @@ func TestNewReceiver(t *testing.T) {
 	}
 }
 
-func TestEventToTracesTraces(t *testing.T) {
+func TestEventToTraces(t *testing.T) {
 	tests := []struct {
 		desc            string
 		payloadFilePath string
@@ -109,7 +109,7 @@ func TestEventToTracesTraces(t *testing.T) {
 	}
 }
 
-func TestEventToMetrics(t *testing.T) {
+func TestWorkflowJobEventToMetrics(t *testing.T) {
 	tests := []struct {
 		desc               string
 		payloadFilePath    string
@@ -159,6 +159,58 @@ func TestEventToMetrics(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkflowRunEventToMetrics(t *testing.T) {
+	tests := []struct {
+		desc               string
+		payloadFilePath    string
+		eventType          string
+		expectedMetrics    int
+		expectedDataPoints int
+	}{
+		{
+			desc:               "WorkflowRunEvent processing",
+			payloadFilePath:    "./testdata/completed/8_workflow_run_completed.json",
+			eventType:          "workflow_run",
+			expectedMetrics:    1,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowRunStatus) * len(metadata.MapAttributeCiGithubWorkflowRunConclusion),
+		},
+		{
+			desc:               "WorkflowRunEvent processing",
+			payloadFilePath:    "./testdata/in_progress/10_workflow_run_in_progress.json",
+			eventType:          "workflow_run",
+			expectedMetrics:    1,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowRunStatus) * len(metadata.MapAttributeCiGithubWorkflowRunConclusion),
+		},
+	}
+
+	logger := zaptest.NewLogger(t)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			payload, err := os.ReadFile(test.payloadFilePath)
+			require.NoError(t, err)
+
+			event, err := github.ParseWebHook(test.eventType, payload)
+			require.NoError(t, err)
+
+			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
+				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
+					Metrics: metadata.MetricsConfig{
+						WorkflowRunsCount: metadata.MetricConfig{
+							Enabled: true,
+						},
+					},
+				},
+			}, logger.Named("metricsHandler"))
+
+			metrics := mh.workflowRunEventToMetrics(event.(*github.WorkflowRunEvent))
+
+			require.Equalf(t, test.expectedMetrics, metrics.MetricCount(), "%s: unexpected number of metrics", test.desc)
+			require.Equalf(t, test.expectedDataPoints, metrics.DataPointCount(), "%s: unexpected number of datapoints", test.desc)
+		})
+	}
+}
+
 
 func TestProcessSteps(t *testing.T) {
 	tests := []struct {
