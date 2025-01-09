@@ -63,6 +63,10 @@ func TestMetricsBuilder(t *testing.T) {
 			allMetricsCount++
 			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
 
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
+
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
 
@@ -92,6 +96,35 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
 					assert.Equal(t, "Number of jobs.", ms.At(i).Description())
 					assert.Equal(t, "{job}", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("vcs.repository.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "vcs.repository.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.labels")
+					assert.True(t, ok)
+					assert.EqualValues(t, "ci.github.workflow.job.labels-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.status")
+					assert.True(t, ok)
+					assert.EqualValues(t, "completed", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.conclusion")
+					assert.True(t, ok)
+					assert.EqualValues(t, "success", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.head_branch.is_main")
+					assert.True(t, ok)
+					assert.True(t, attrVal.Bool())
+				case "workflow.runs.count":
+					assert.False(t, validatedMetrics["workflow.runs.count"], "Found a duplicate in the metrics slice: workflow.runs.count")
+					validatedMetrics["workflow.runs.count"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Number of runs.", ms.At(i).Description())
+					assert.Equal(t, "{run}", ms.At(i).Unit())
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
 					dp := ms.At(i).Sum().DataPoints().At(0)

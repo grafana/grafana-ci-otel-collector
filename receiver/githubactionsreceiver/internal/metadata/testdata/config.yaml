@@ -3,7 +3,11 @@ all_set:
   metrics:
     workflow.jobs.count:
       enabled: true
+    workflow.runs.count:
+      enabled: true
 none_set:
   metrics:
     workflow.jobs.count:
+      enabled: false
+    workflow.runs.count:
       enabled: false
