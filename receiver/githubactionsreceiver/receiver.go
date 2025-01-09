@@ -239,7 +239,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	case *github.WorkflowRunEvent:
-		if gar.metricsConsumer != nil {
+		if gar.metricsConsumer != nil && e.GetWorkflowRun().GetEvent() == "push" {
 			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowRunEventToMetrics(e))
 
 			if err != nil {
