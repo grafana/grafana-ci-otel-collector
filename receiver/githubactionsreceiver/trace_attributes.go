@@ -30,6 +30,7 @@ func createResourceAttributes(resource pcommon.Resource, event interface{}, conf
 		attrs.PutStr("ci.github.workflow.job.head_sha", e.GetWorkflowJob().GetHeadSHA())
 		attrs.PutStr("ci.github.workflow.job.html_url", e.GetWorkflowJob().GetHTMLURL())
 		attrs.PutInt("ci.github.workflow.job.id", e.GetWorkflowJob().GetID())
+		attrs.PutStr("ci.github.workflow.job.runner_name", e.GetWorkflowJob().GetRunnerName())
 
 		if len(e.WorkflowJob.Labels) > 0 {
 			labels := e.GetWorkflowJob().Labels
