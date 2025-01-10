@@ -129,9 +129,9 @@ func createRootSpan(resourceSpans ptrace.ResourceSpans, event *github.WorkflowRu
 		return pcommon.SpanID{}, fmt.Errorf("failed to generate root span ID: %w", err)
 	}
 
-	defaultBranch := event.GetWorkflowRun().GetRepository().DefaultBranch
+	defaultBranch := event.GetRepo().GetDefaultBranch()
 
-	if event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
+	if event.GetWorkflowRun().GetHeadBranch() == defaultBranch {
 		span.Attributes().PutBool("ci.github.workflow.run.head_branch.is_main", true)
 	} else {
 		span.Attributes().PutBool("ci.github.workflow.run.head_branch.is_main", false)
