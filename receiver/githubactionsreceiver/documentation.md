@@ -29,3 +29,21 @@ Number of jobs.
 | ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` |
 | ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` |
 | ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool |
+
+### workflow.runs.count
+
+Number of runs.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| {run} | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| vcs.repository.name | Repository name | Any Str |
+| ci.github.workflow.run.labels | Run labels. | Any Str |
+| ci.github.workflow.run.status | Run status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` |
+| ci.github.workflow.run.conclusion | Run Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` |
+| ci.github.workflow.run.head_branch.is_main | Whether the head branch is the main branch | Any Bool |

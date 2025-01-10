@@ -45,6 +45,33 @@ attributes:
   ci.github.workflow.job.head_branch.is_main:
     description: Whether the head branch is the main branch
     type: bool
+  ci.github.workflow.run.labels:
+    description: Run labels.
+    type: string
+  ci.github.workflow.run.status:
+    description: Run status
+    enum:
+      - completed
+      - in_progress
+      - queued
+      - waiting
+      - aborted
+    type: string
+  ci.github.workflow.run.conclusion:
+    description: Run Conclusion
+    enum:
+      - success
+      - failure
+      - cancelled
+      - neutral
+      - "null"
+      - skipped
+      - timed_out
+      - action_required
+    type: string
+  ci.github.workflow.run.head_branch.is_main:
+    description: Whether the head branch is the main branch
+    type: bool
 
 metrics:
   workflow.jobs.count:
@@ -62,4 +89,20 @@ metrics:
         ci.github.workflow.job.status,
         ci.github.workflow.job.conclusion,
         ci.github.workflow.job.head_branch.is_main,
+      ]
+  workflow.runs.count:
+    enabled: true
+    description: Number of runs.
+    unit: "{run}"
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes:
+      [
+        vcs.repository.name,
+        ci.github.workflow.run.labels,
+        ci.github.workflow.run.status,
+        ci.github.workflow.run.conclusion,
+        ci.github.workflow.run.head_branch.is_main,
       ]

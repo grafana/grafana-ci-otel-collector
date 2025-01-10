@@ -226,7 +226,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
 		if gar.metricsConsumer != nil {
-			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.eventToMetrics(e))
+			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowJobEventToMetrics(e))
 
 			if err != nil {
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
@@ -239,6 +239,14 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	case *github.WorkflowRunEvent:
+		if gar.metricsConsumer != nil && e.GetWorkflowRun().GetEvent() == "push" {
+			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowRunEventToMetrics(e))
+
+			if err != nil {
+				gar.logger.Error("Failed to consume metrics", zap.Error(err))
+			}
+		}
+
 		if e.GetWorkflowRun().GetStatus() != "completed" {
 			gar.logger.Debug("Skipping non-completed WorkflowRunEvent", zap.String("status", e.GetWorkflowRun().GetStatus()))
 			w.WriteHeader(http.StatusNoContent)

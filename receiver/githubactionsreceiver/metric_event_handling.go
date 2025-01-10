@@ -33,7 +33,7 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 	}
 }
 
-func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
+func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
@@ -106,7 +106,60 @@ func (m *metricsHandler) eventToMetrics(event *github.WorkflowJobEvent) pmetric.
 	return m.mb.Emit()
 }
 
-func storeInCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, conclusion metadata.AttributeCiGithubWorkflowJobConclusion, value int64) {
+func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
+	repo := event.GetRepo().GetFullName()
+
+	m.logger.Info("Processing workflow_run event",
+		zap.String("repo", repo),
+		zap.Int64("id", event.GetWorkflowRun().GetID()),
+		zap.String("name", event.GetWorkflowRun().GetName()),
+		zap.String("action", event.GetAction()),
+		zap.String("status", event.GetWorkflowRun().GetStatus()),
+		zap.String("conclusion", event.GetWorkflowRun().GetConclusion()),
+	)
+
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	status, actionOk := metadata.MapAttributeCiGithubWorkflowRunStatus[event.GetAction()]
+	conclusion, conclusionOk := metadata.MapAttributeCiGithubWorkflowRunConclusion[event.GetWorkflowRun().GetConclusion()]
+	if !conclusionOk {
+		conclusion = metadata.AttributeCiGithubWorkflowRunConclusionNull
+	}
+
+	defaultBranch := event.GetRepo().DefaultBranch
+	var isMain bool
+
+	if event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
+		isMain = true
+	}
+
+	if actionOk {
+		curVal, found := loadFromCache(repo, "default", status, conclusion)
+
+		// If the value was not found in the cache, we record a 0 value for all other possible statuses
+		// so that all counters for a given labels combination are always present and reset at the same time.
+		if !found {
+			for _, s := range metadata.MapAttributeCiGithubWorkflowRunStatus {
+				for _, c := range metadata.MapAttributeCiGithubWorkflowRunConclusion {
+					if s == status && c == conclusion {
+						continue
+					}
+
+					storeInCache(repo, "default", s, c, 0)
+					m.mb.RecordWorkflowRunsCountDataPoint(now, 0, repo, "default", s, c, isMain)
+				}
+
+			}
+		}
+
+		storeInCache(repo, "default", status, conclusion, curVal+1)
+		m.mb.RecordWorkflowRunsCountDataPoint(now, curVal+1, repo, "default", status, conclusion, isMain)
+	}
+
+	return m.mb.Emit()
+}
+
+func storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
 	labelsMap, _ := repoMap.LoadOrStore(repo, &sync.Map{})
 	statusesMap, _ := labelsMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
 	conclusionsMap, _ := statusesMap.(*sync.Map).LoadOrStore(status, &sync.Map{})
@@ -114,7 +167,7 @@ func storeInCache(repo, labels string, status metadata.AttributeCiGithubWorkflow
 }
 
 // Helper function to load values from the nested sync.Map structure
-func loadFromCache(repo, labels string, status metadata.AttributeCiGithubWorkflowJobStatus, conclusion metadata.AttributeCiGithubWorkflowJobConclusion) (int64, bool) {
+func loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
 	labelsMap, ok := repoMap.Load(repo)
 	if !ok {
 		return 0, false
