@@ -18,7 +18,7 @@ status:
   distributions:
     - grafana-ci-otel-collector
   codeowners:
-    active: [Elfo404]
+    active: [Elfo404, dsotirakis]
 
 resource_attributes:
 
