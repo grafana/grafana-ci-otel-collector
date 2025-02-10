@@ -48,7 +48,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		labels = "no labels"
 	}
 
-	m.logger.Info("Processing workflow_job event",
+	m.logger.Debug("Processing workflow_job event",
 		zap.String("repo", repo),
 		zap.Int64("run_id", event.GetWorkflowJob().GetRunID()),
 		zap.Int64("id", event.GetWorkflowJob().GetID()),
@@ -109,7 +109,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
 	repo := event.GetRepo().GetFullName()
 
-	m.logger.Info("Processing workflow_run event",
+	m.logger.Debug("Processing workflow_run event",
 		zap.String("repo", repo),
 		zap.Int64("id", event.GetWorkflowRun().GetID()),
 		zap.String("name", event.GetWorkflowRun().GetName()),
