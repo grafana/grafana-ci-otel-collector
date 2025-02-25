@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
@@ -166,7 +167,7 @@ func TestLoadConfig(t *testing.T) {
 	factory := NewFactory()
 	conf := factory.CreateDefaultConfig()
 	require.NoError(t, sub.Unmarshal(conf))
-	require.NoError(t, component.ValidateConfig(conf))
+	require.NoError(t, xconfmap.Validate(conf))
 
 	require.Equal(t, expect, conf)
 }

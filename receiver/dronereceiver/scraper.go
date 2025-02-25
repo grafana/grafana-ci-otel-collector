@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	timeout = 120
+	// Timeout is the maximum time to wait for DB connection
+	Timeout = 120
 )
 
 type droneScraper struct {
@@ -37,23 +38,24 @@ func newDroneScraper(settings receiver.Settings, cfg *Config) *droneScraper {
 	}
 }
 
-func (r *droneScraper) start(_ context.Context, host component.Host) error {
+// Start initializes the scraper
+func (r *droneScraper) Start(ctx context.Context, host component.Host) error {
 	r.settings.Logger.Info("Starting the drone scraper")
 
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	timeoutExceeded := time.After(timeout * time.Second)
+	timeoutExceeded := time.After(Timeout * time.Second)
 	success := false
 	for !success {
 		select {
 		case <-timeoutExceeded:
-			r.settings.Logger.Error("db connection failed after %d second(s) timeout", zap.Int64("timeout", timeout))
+			r.settings.Logger.Error("db connection failed after %d second(s) timeout", zap.Int64("timeout", Timeout))
 			os.Exit(1)
 
 		case <-ticker.C:
 			connString := fmt.Sprintf("postgres://%s:%s@%s:5432/%s?sslmode=disable", r.cfg.DroneConfig.Database.Username, r.cfg.DroneConfig.Database.Password, r.cfg.DroneConfig.Database.Host, r.cfg.DroneConfig.Database.DB)
-			err := r.dbConnect(connString)
+			err := r.DBConnect(connString)
 			if err == nil {
 				success = true
 				break
@@ -216,7 +218,8 @@ func (r *droneScraper) scrapeInfo(ctx context.Context, now pcommon.Timestamp, er
 	}
 }
 
-func (r *droneScraper) dbConnect(connString string) error {
+// DBConnect establishes connection to the database
+func (r *droneScraper) DBConnect(connString string) error {
 	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
 		return err
