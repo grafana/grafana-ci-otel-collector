@@ -5,7 +5,7 @@ import (
 
 	"github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver/internal/metadata"
 	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
 type DBConfig struct {
