@@ -66,13 +66,12 @@ func newMetricsReceiver(_ context.Context, set receiver.Settings, rConf componen
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return scraperhelper.NewMetricsController(
 		&cfg.ControllerConfig, set, consumer,
 		scraperhelper.AddScraper(metadata.Type, scraper),
 	)
 }
-
 
 func newLogsReceiver(_ context.Context, set receiver.Settings, cfg component.Config, consumer consumer.Logs) (receiver.Logs, error) {
 	rCfg := cfg.(*Config)
