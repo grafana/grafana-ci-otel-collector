@@ -6,7 +6,7 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent =>
 
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.14.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v62 v62.0.0
 	github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.10.0
