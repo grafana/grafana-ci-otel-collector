@@ -12,7 +12,7 @@ import (
 	conventions "go.opentelemetry.io/collector/semconv/v1.9.0"
 )
 
-// AttributeCiWorkflowItemStatus specifies the a value ci.workflow_item.status attribute.
+// AttributeCiWorkflowItemStatus specifies the value ci.workflow_item.status attribute.
 type AttributeCiWorkflowItemStatus int
 
 const (
@@ -261,7 +261,6 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:              mbc,

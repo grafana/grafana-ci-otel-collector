@@ -7,8 +7,8 @@ require (
 	github.com/google/osv-scanner v1.9.2
 	github.com/securego/gosec/v2 v2.22.1
 	go.opentelemetry.io/build-tools/crosslink v0.15.0
-	go.opentelemetry.io/collector/cmd/builder v0.113.0
-	go.opentelemetry.io/collector/cmd/mdatagen v0.113.0
+	go.opentelemetry.io/collector/cmd/builder v0.120.0
+	go.opentelemetry.io/collector/cmd/mdatagen v0.120.0
 	golang.org/x/tools v0.30.0
 	honnef.co/go/tools v0.6.0
 )
@@ -158,7 +158,7 @@ require (
 	github.com/knadh/koanf/providers/env v1.0.0 // indirect
 	github.com/knadh/koanf/providers/file v1.1.2 // indirect
 	github.com/knadh/koanf/providers/fs v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.1 // indirect
+	github.com/knadh/koanf/v2 v2.1.2 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
 	github.com/kunwardeep/paralleltest v1.0.10 // indirect
 	github.com/lasiar/canonicalheader v1.1.2 // indirect
@@ -278,12 +278,11 @@ require (
 	go-simpler.org/sloglint v0.9.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/build-tools v0.15.0 // indirect
-	go.opentelemetry.io/collector/component v0.113.0 // indirect
-	go.opentelemetry.io/collector/config/configtelemetry v0.113.0 // indirect
-	go.opentelemetry.io/collector/confmap v1.19.0 // indirect
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.19.0 // indirect
-	go.opentelemetry.io/collector/filter v0.113.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.19.0 // indirect
+	go.opentelemetry.io/collector/component v0.120.0 // indirect
+	go.opentelemetry.io/collector/confmap v1.26.0 // indirect
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.26.0 // indirect
+	go.opentelemetry.io/collector/filter v0.120.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.26.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.58.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0 // indirect
 	go.opentelemetry.io/otel v1.34.0 // indirect
@@ -308,7 +307,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
-	google.golang.org/protobuf v1.36.4 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
