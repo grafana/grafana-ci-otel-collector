@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
-// AttributeCiGithubWorkflowJobConclusion specifies the a value ci.github.workflow.job.conclusion attribute.
+// AttributeCiGithubWorkflowJobConclusion specifies the value ci.github.workflow.job.conclusion attribute.
 type AttributeCiGithubWorkflowJobConclusion int
 
 const (
@@ -61,7 +61,7 @@ var MapAttributeCiGithubWorkflowJobConclusion = map[string]AttributeCiGithubWork
 	"action_required": AttributeCiGithubWorkflowJobConclusionActionRequired,
 }
 
-// AttributeCiGithubWorkflowJobStatus specifies the a value ci.github.workflow.job.status attribute.
+// AttributeCiGithubWorkflowJobStatus specifies the value ci.github.workflow.job.status attribute.
 type AttributeCiGithubWorkflowJobStatus int
 
 const (
@@ -99,7 +99,7 @@ var MapAttributeCiGithubWorkflowJobStatus = map[string]AttributeCiGithubWorkflow
 	"aborted":     AttributeCiGithubWorkflowJobStatusAborted,
 }
 
-// AttributeCiGithubWorkflowRunConclusion specifies the a value ci.github.workflow.run.conclusion attribute.
+// AttributeCiGithubWorkflowRunConclusion specifies the value ci.github.workflow.run.conclusion attribute.
 type AttributeCiGithubWorkflowRunConclusion int
 
 const (
@@ -149,7 +149,7 @@ var MapAttributeCiGithubWorkflowRunConclusion = map[string]AttributeCiGithubWork
 	"action_required": AttributeCiGithubWorkflowRunConclusionActionRequired,
 }
 
-// AttributeCiGithubWorkflowRunStatus specifies the a value ci.github.workflow.run.status attribute.
+// AttributeCiGithubWorkflowRunStatus specifies the value ci.github.workflow.run.status attribute.
 type AttributeCiGithubWorkflowRunStatus int
 
 const (
@@ -330,7 +330,6 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                  mbc,
