@@ -23,8 +23,29 @@ import (
 
 func eventToLogs(event interface{}, config *Config, ghClient *github.Client, logger *zap.Logger, withTraceInfo bool) (*plog.Logs, error) {
 	if e, ok := event.(*github.WorkflowRunEvent); ok {
+		log := logger.With()
+		if e.GetRepo() != nil {
+			log = log.With(
+				zap.String("repo_owner", e.GetRepo().GetOwner().GetLogin()),
+				zap.String("repo_name", e.GetRepo().GetName()),
+			)
+		}
+		if e.GetWorkflow() != nil {
+			log = log.With(
+				zap.String("workflow_path", e.GetWorkflow().GetPath()),
+			)
+		}
+		if e.GetWorkflowRun() != nil {
+			log = log.With(
+				zap.Int64("workflow_run_id", e.GetWorkflowRun().GetID()),
+				zap.Int("workflow_run_attempt", e.GetWorkflowRun().GetRunAttempt()),
+				zap.String("workflow_run_name", e.GetWorkflowRun().GetName()),
+				zap.String("workflow_url", e.GetWorkflowRun().GetWorkflowURL()),
+			)
+		}
+
 		if e.GetWorkflowRun().GetStatus() != "completed" {
-			logger.Debug("Run not completed, skipping")
+			log.Debug("Run not completed, skipping")
 			return nil, nil
 		}
 
@@ -39,13 +60,13 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 		url, _, err := ghClient.Actions.GetWorkflowRunAttemptLogs(context.Background(), e.GetRepo().GetOwner().GetLogin(), e.GetRepo().GetName(), e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt(), 10)
 
 		if err != nil {
-			logger.Error("Failed to get logs", zap.Error(err))
+			log.Error("Failed to get logs", zap.Error(err))
 			return nil, err
 		}
 
 		out, err := os.CreateTemp("", "tmpfile-")
 		if err != nil {
-			logger.Error("Failed to create temp file", zap.Error(err))
+			log.Error("Failed to create temp file", zap.Error(err))
 			return nil, err
 		}
 		defer out.Close()
@@ -53,7 +74,7 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 
 		resp, err := http.Get(url.String())
 		if err != nil {
-			logger.Error("Failed to get logs", zap.Error(err))
+			log.Error("Failed to get logs", zap.Error(err))
 			return nil, err
 		}
 		defer resp.Body.Close()
@@ -61,17 +82,19 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 		// Copy the response into the temp file
 		_, err = io.Copy(out, resp.Body)
 		if err != nil {
-			logger.Error("Failed to copy response to temp file", zap.Error(err))
+			log.Error("Failed to copy response to temp file", zap.Error(err))
 			return nil, err
 		}
 
 		archive, err := zip.OpenReader(out.Name())
 		if err != nil {
+			log.Error("Failed to open zip file", zap.Error(err), zap.String("zip_file", out.Name()))
 			return nil, fmt.Errorf("failed to open zip file: %w", err)
 		}
 		defer archive.Close()
 
 		if archive.File == nil {
+			log.Error("Archive is empty", zap.String("zip_file", out.Name()))
 			return nil, fmt.Errorf("archive is empty")
 		}
 
@@ -102,19 +125,21 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 				stepNumberStr := strings.Split(fileNameWithoutDir, "_")[0]
 				stepNumber, err := strconv.Atoi(stepNumberStr)
 				if err != nil {
-					logger.Error("Invalid step number", zap.String("stepNumberStr", stepNumberStr), zap.Error(err))
+					log.Error("Invalid step number", zap.String("stepNumberStr", stepNumberStr), zap.Error(err))
 					continue
 				}
 
+				steplog := log.With(zap.Int("step_number", stepNumber))
+
 				spanID, err := generateStepSpanID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt(), jobName, int64(stepNumber))
 				if err != nil {
-					logger.Error("Failed to generate span ID", zap.Error(err))
+					steplog.Error("Failed to generate span ID", zap.Error(err))
 					continue
 				}
 
 				ff, err := logFile.Open()
 				if err != nil {
-					logger.Error("Failed to open file", zap.Error(err))
+					steplog.Error("Failed to open file", zap.Error(err))
 					continue
 				}
 				defer ff.Close()
@@ -123,19 +148,19 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 				for scanner.Scan() {
 					lineText := scanner.Text()
 					if lineText == "" {
-						logger.Debug("Skipping empty line")
+						steplog.Debug("Skipping empty line")
 						continue
 					}
 
 					ts, line, ok := strings.Cut(lineText, " ")
 					if !ok {
-						logger.Error("Failed to cut log line", zap.String("body", lineText))
+						steplog.Error("Failed to cut log line", zap.String("body", lineText))
 						continue
 					}
 
 					parsedTime, err := time.Parse(time.RFC3339, ts)
 					if err != nil {
-						logger.Error("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
+						steplog.Error("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
 						continue
 					}
 
@@ -151,7 +176,7 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 				}
 
 				if err := scanner.Err(); err != nil {
-					logger.Error("Error reading file", zap.Error(err))
+					steplog.Error("Error reading file", zap.Error(err))
 				}
 			}
 		}
