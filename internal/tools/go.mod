@@ -10,7 +10,7 @@ require (
 	go.opentelemetry.io/collector/cmd/builder v0.120.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.120.0
 	golang.org/x/tools v0.30.0
-	honnef.co/go/tools v0.6.0
+	honnef.co/go/tools v0.6.1
 )
 
 require (
