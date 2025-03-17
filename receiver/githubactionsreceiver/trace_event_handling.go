@@ -174,9 +174,10 @@ func createSpan(scopeSpans ptrace.ScopeSpans, step *github.TaskStep, job *github
 	span.SetParentSpanID(parentSpanID)
 
 	var spanID pcommon.SpanID
-	if job.GetHeadBranch() == *defaultBranch {
-		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", true)
+	if defaultBranch != nil {
+		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", job.GetHeadBranch() == *defaultBranch)
 	} else {
+		logger.Debug("Default branch is nil, setting is_main to false")
 		span.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", false)
 	}
 
