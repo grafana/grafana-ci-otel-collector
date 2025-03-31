@@ -2,13 +2,15 @@ module github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver
 
 go 1.23.1
 
+toolchain go1.24.1
+
 require (
 	github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e
 	github.com/drone/drone-go v1.7.1
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-00010101000000-000000000000
 	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-00010101000000-000000000000
-	github.com/jackc/pgx/v5 v5.7.3
+	github.com/jackc/pgx/v5 v5.7.4
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v0.120.0
 	go.opentelemetry.io/collector/component/componenttest v0.120.0
