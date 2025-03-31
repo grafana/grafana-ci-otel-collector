@@ -41,7 +41,9 @@ jobs:
             ~/go/pkg/mod
             ~/.cache/go-build
             ./.tools
-          key: go-cache-${{ hashFiles('**/go.sum') }}
+          key: go-cache-${{ runner.OS }}-${{ runner.ARCH }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-cache-${{ runner.OS }}-${{ runner.ARCH }}-
 
       - name: Make install-tools
         if: steps.cache.outputs.cache-hit != 'true'
@@ -70,7 +72,9 @@ jobs:
             ~/go/pkg/mod
             ~/.cache/go-build
             ./.tools
-          key: go-cache-${{ hashFiles('**/go.sum') }}
+          key: go-cache-${{ runner.OS }}-${{ runner.ARCH }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-cache-${{ runner.OS }}-${{ runner.ARCH }}-
           fail-on-cache-miss: true
 
       - name: Check packages are up-to-date
@@ -124,7 +128,9 @@ jobs:
             ~/go/pkg/mod
             ~/.cache/go-build
             ./.tools
-          key: go-cache-${{ hashFiles('**/go.sum') }}
+          key: go-cache-${{ runner.OS }}-${{ runner.ARCH }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-cache-${{ runner.OS }}-${{ runner.ARCH }}-
           fail-on-cache-miss: true
 
       - name: Make test-all
