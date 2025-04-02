@@ -2,8 +2,6 @@ module github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiv
 
 go 1.23.1
 
-toolchain go1.24.1
-
 replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent => ../../internal/sharedcomponent
 
 require (
