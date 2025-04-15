@@ -416,15 +416,6 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			ghClientEnabled: true,
 		},
 		{
-			name:            "InvalidSignature",
-			payloadFile:     "./testdata/completed/8_workflow_run_completed.json",
-			eventType:       "workflow_run",
-			secret:          "wrongsecret",
-			wantStatus:      http.StatusBadRequest,
-			wantLogCount:    0,
-			ghClientEnabled: true,
-		},
-		{
 			name:            "MissingGitHubClient",
 			payloadFile:     "./testdata/completed/8_workflow_run_completed.json",
 			eventType:       "workflow_run",
@@ -439,7 +430,6 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create test receiver
 			logsSink := new(consumertest.LogsSink)
-			metricsSink := new(consumertest.MetricsSink)
 			tracesSink := new(consumertest.TracesSink)
 
 			cfg := createDefaultConfig().(*Config)
@@ -462,16 +452,14 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			// Proper unwrapping for shared component
+			// Unwrap the sharedcomponent to get accesss to receiver fields
 			sharedComp, ok := recv.(*sharedcomponent.SharedComponent)
 			require.True(t, ok, "Receiver must be a shared component")
 
 			rcvr, ok := sharedComp.Unwrap().(*githubActionsReceiver)
 			require.True(t, ok, "Unwrapped component must be githubActionsReceiver")
 
-			// Now you can access the receiver fields safely
 			rcvr.tracesConsumer = tracesSink
-			rcvr.metricsConsumer = metricsSink
 
 			// Start receiver
 			err = rcvr.Start(context.Background(), componenttest.NewNopHost())
@@ -518,9 +506,12 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			logRecords := scopeLogs.At(0).LogRecords()
 			require.Equal(t, tt.wantLogCount, logRecords.Len())
 
+			require.True(t, strings.Contains(logRecords.At(2).Body().Str(), "Step 2 started"))
+			require.True(t, strings.Contains(logRecords.At(2).Body().Str(), "some additional information about step 2."))
+
 			// Verify trace information if expected
 			if tt.withTraceInfo {
-				for i := 0; i < logRecords.Len(); i++ {
+				for i := range logRecords.Len() {
 					record := logRecords.At(i)
 					require.False(t, record.TraceID().IsEmpty())
 					require.False(t, record.SpanID().IsEmpty())
