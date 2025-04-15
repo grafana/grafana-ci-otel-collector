@@ -476,7 +476,10 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			// Start receiver
 			err = rcvr.Start(context.Background(), componenttest.NewNopHost())
 			require.NoError(t, err)
-			defer rcvr.Shutdown(context.Background())
+			defer func() {
+				err := rcvr.Shutdown(context.Background())
+				require.NoError(t, err)
+			}()
 
 			// Load test payload
 			payload, err := os.ReadFile(tt.payloadFile)
