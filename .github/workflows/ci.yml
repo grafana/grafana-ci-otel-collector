@@ -182,6 +182,7 @@ jobs:
           environment: prod # logging in to prod to pull the updater image from grafanalabs-global
 
       - id: 'submit-argowfs-deployment'
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: 'Submit Argo Workflows deployment'
         uses: grafana/shared-workflows/actions/trigger-argo-workflow@ec620d967ceebc9580cd630cba0151eabbd8f252
         with:
