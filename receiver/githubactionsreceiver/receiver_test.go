@@ -4,14 +4,26 @@
 package githubactionsreceiver
 
 import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-github/v62/github"
+	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
@@ -342,6 +354,221 @@ func TestResourceAndSpanAttributesCreation(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func TestLogsReceiverEndToEnd(t *testing.T) {
+	// Setup test secrets
+	testSecret := "testsecret123"
+	validSig := func(payload []byte) string {
+		mac := hmac.New(sha256.New, []byte(testSecret))
+		mac.Write(payload)
+		return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	}
+
+	// Create mock GitHub API server for logs download
+	var ghTestServer *httptest.Server
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The calling code expects to be redirected to the logs location.
+		if strings.HasSuffix(r.URL.Path, "/logs") {
+			w.Header().Set("Location", ghTestServer.URL+"/fetch")
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+		if r.URL.Path == "/fetch" {
+			createTestZip(w)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	ghTestServer = httptest.NewServer(handler)
+	defer ghTestServer.Close()
+
+	tests := []struct {
+		name            string
+		payloadFile     string
+		eventType       string
+		secret          string
+		wantStatus      int
+		wantLogCount    int
+		withTraceInfo   bool
+		ghClientEnabled bool
+	}{
+		{
+			name:            "ValidWorkflowRunEventWithLogs",
+			payloadFile:     "./testdata/completed/8_workflow_run_completed.json",
+			eventType:       "workflow_run",
+			secret:          testSecret,
+			wantStatus:      http.StatusAccepted,
+			wantLogCount:    4, // Expecting logs from test zip
+			withTraceInfo:   true,
+			ghClientEnabled: true,
+		},
+		{
+			name:            "NonCompletedEvent",
+			payloadFile:     "./testdata/in_progress/10_workflow_run_in_progress.json",
+			eventType:       "workflow_run",
+			secret:          testSecret,
+			wantStatus:      http.StatusNoContent,
+			wantLogCount:    0,
+			ghClientEnabled: true,
+		},
+		{
+			name:            "InvalidSignature",
+			payloadFile:     "./testdata/completed/8_workflow_run_completed.json",
+			eventType:       "workflow_run",
+			secret:          "wrongsecret",
+			wantStatus:      http.StatusBadRequest,
+			wantLogCount:    0,
+			ghClientEnabled: true,
+		},
+		{
+			name:            "MissingGitHubClient",
+			payloadFile:     "./testdata/completed/8_workflow_run_completed.json",
+			eventType:       "workflow_run",
+			secret:          testSecret,
+			wantStatus:      http.StatusAccepted,
+			wantLogCount:    0, // Shouldn't process logs without client
+			ghClientEnabled: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create test receiver
+			logsSink := new(consumertest.LogsSink)
+			metricsSink := new(consumertest.MetricsSink)
+			tracesSink := new(consumertest.TracesSink)
+
+			cfg := createDefaultConfig().(*Config)
+			cfg.Secret = tt.secret
+			cfg.Endpoint = "localhost:0" // Let OS choose port
+			cfg.ServerConfig.Endpoint = "localhost:0"
+
+			if tt.ghClientEnabled {
+				cfg.GitHubAPIConfig.Auth.Token = "testtoken"
+				cfg.GitHubAPIConfig.BaseURL = ghTestServer.URL
+				cfg.GitHubAPIConfig.UploadURL = ghTestServer.URL
+			}
+
+			// Create receiver with test consumers
+			recv, err := newLogsReceiver(
+				context.Background(),
+				receivertest.NewNopSettings(),
+				cfg,
+				logsSink,
+			)
+			require.NoError(t, err)
+
+			// Proper unwrapping for shared component
+			sharedComp, ok := recv.(*sharedcomponent.SharedComponent)
+			require.True(t, ok, "Receiver must be a shared component")
+
+			rcvr, ok := sharedComp.Unwrap().(*githubActionsReceiver)
+			require.True(t, ok, "Unwrapped component must be githubActionsReceiver")
+
+			// Now you can access the receiver fields safely
+			rcvr.tracesConsumer = tracesSink
+			rcvr.metricsConsumer = metricsSink
+
+			// Start receiver
+			err = rcvr.Start(context.Background(), componenttest.NewNopHost())
+			require.NoError(t, err)
+			defer rcvr.Shutdown(context.Background())
+
+			// Load test payload
+			payload, err := os.ReadFile(tt.payloadFile)
+			require.NoError(t, err)
+
+			// Create request
+			req := httptest.NewRequest("POST", "/ghaevents", bytes.NewReader(payload))
+			req.Header.Set("X-GitHub-Event", tt.eventType)
+			req.Header.Set("X-Hub-Signature-256", validSig(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			// Send request to receiver
+			w := httptest.NewRecorder()
+			rcvr.ServeHTTP(w, req)
+
+			// Verify HTTP response
+			require.Equal(t, tt.wantStatus, w.Code)
+
+			// Verify logs consumer
+			allLogs := logsSink.AllLogs()
+			if tt.wantLogCount == 0 {
+				require.Empty(t, allLogs)
+				return
+			}
+
+			require.Len(t, allLogs, 1)
+			logs := allLogs[0]
+
+			// Verify log contents
+			resourceLogs := logs.ResourceLogs()
+			require.Greater(t, resourceLogs.Len(), 0)
+
+			scopeLogs := resourceLogs.At(0).ScopeLogs()
+			require.Greater(t, scopeLogs.Len(), 0)
+
+			logRecords := scopeLogs.At(0).LogRecords()
+			require.Equal(t, tt.wantLogCount, logRecords.Len())
+
+			// Verify trace information if expected
+			if tt.withTraceInfo {
+				for i := 0; i < logRecords.Len(); i++ {
+					record := logRecords.At(i)
+					require.False(t, record.TraceID().IsEmpty())
+					require.False(t, record.SpanID().IsEmpty())
+				}
+			}
+
+			// Verify job attributes
+			attrs := resourceLogs.At(0).Resource().Attributes()
+			require.Equal(t, "foo/webhook-testing", attrs.AsRaw()["scm.git.repo"])
+		})
+	}
+}
+
+func createTestZip(w io.Writer) {
+	zw := zip.NewWriter(w)
+	defer zw.Close()
+
+	// Create test job directory
+	_, err := zw.Create("test-job/")
+	require.NoError(nil, err)
+
+	// Create step log files
+	steps := []struct {
+		number int
+		lines  []string
+	}{
+		{
+			number: 1,
+			lines: []string{
+				"2023-01-01T12:00:00Z Step 1 started",
+				"2023-01-01T12:00:05Z Step 1 completed",
+			},
+		},
+		{
+			number: 2,
+			lines: []string{
+				"2023-01-01T12:00:10Z Step 2 started",
+				"some additional information about step 2. this should be rolled into the previous log line.",
+				"2023-01-01T12:00:15Z Step 2 completed",
+			},
+		},
+	}
+
+	for _, step := range steps {
+		f, err := zw.Create(fmt.Sprintf("test-job/%d_step.log", step.number))
+		require.NoError(nil, err)
+
+		for _, line := range step.lines {
+			_, err := f.Write([]byte(line + "\n"))
+			require.NoError(nil, err)
+		}
 	}
 }
 
