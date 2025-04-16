@@ -113,10 +113,8 @@ metrics:
     enabled: true
     description: Build info.
     unit: "{build}"
-    sum:
+    gauge:
       value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
     attributes:
       [
         version,

@@ -16,9 +16,9 @@ metrics:
 
 Build info.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {build} | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| {build} | Gauge | Int |
 
 #### Attributes
 
