@@ -1,12 +1,16 @@
 default:
 all_set:
   metrics:
+    build.info:
+      enabled: true
     workflow.jobs.count:
       enabled: true
     workflow.runs.count:
       enabled: true
 none_set:
   metrics:
+    build.info:
+      enabled: false
     workflow.jobs.count:
       enabled: false
     workflow.runs.count:

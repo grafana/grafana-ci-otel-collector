@@ -61,6 +61,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordBuildInfoDataPoint(ts, 1, "version-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
 
 			defaultMetricsCount++
@@ -89,6 +93,23 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
+				case "build.info":
+					assert.False(t, validatedMetrics["build.info"], "Found a duplicate in the metrics slice: build.info")
+					validatedMetrics["build.info"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Build info.", ms.At(i).Description())
+					assert.Equal(t, "{build}", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("version")
+					assert.True(t, ok)
+					assert.EqualValues(t, "version-val", attrVal.Str())
 				case "workflow.jobs.count":
 					assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
 					validatedMetrics["workflow.jobs.count"] = true
