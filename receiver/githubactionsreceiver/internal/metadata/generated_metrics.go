@@ -187,6 +187,57 @@ var MapAttributeCiGithubWorkflowRunStatus = map[string]AttributeCiGithubWorkflow
 	"aborted":     AttributeCiGithubWorkflowRunStatusAborted,
 }
 
+type metricBuildInfo struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills build.info metric with initial data.
+func (m *metricBuildInfo) init() {
+	m.data.SetName("build.info")
+	m.data.SetDescription("Build info.")
+	m.data.SetUnit("{build}")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricBuildInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, versionAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("version", versionAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricBuildInfo) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricBuildInfo) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricBuildInfo(cfg MetricConfig) metricBuildInfo {
+	m := metricBuildInfo{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricWorkflowJobsCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -309,6 +360,7 @@ type MetricsBuilder struct {
 	metricsCapacity         int                  // maximum observed number of metrics per resource.
 	metricsBuffer           pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo               component.BuildInfo  // contains version information.
+	metricBuildInfo         metricBuildInfo
 	metricWorkflowJobsCount metricWorkflowJobsCount
 	metricWorkflowRunsCount metricWorkflowRunsCount
 }
@@ -336,6 +388,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		startTime:               pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:           pmetric.NewMetrics(),
 		buildInfo:               settings.BuildInfo,
+		metricBuildInfo:         newMetricBuildInfo(mbc.Metrics.BuildInfo),
 		metricWorkflowJobsCount: newMetricWorkflowJobsCount(mbc.Metrics.WorkflowJobsCount),
 		metricWorkflowRunsCount: newMetricWorkflowRunsCount(mbc.Metrics.WorkflowRunsCount),
 	}
@@ -403,6 +456,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName("github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricBuildInfo.emit(ils.Metrics())
 	mb.metricWorkflowJobsCount.emit(ils.Metrics())
 	mb.metricWorkflowRunsCount.emit(ils.Metrics())
 
@@ -424,6 +478,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	metrics := mb.metricsBuffer
 	mb.metricsBuffer = pmetric.NewMetrics()
 	return metrics
+}
+
+// RecordBuildInfoDataPoint adds a data point to build.info metric.
+func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int64, versionAttributeValue string) {
+	mb.metricBuildInfo.recordDataPoint(mb.startTime, ts, val, versionAttributeValue)
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.

@@ -24,6 +24,8 @@ require (
 	go.uber.org/zap v1.27.0
 )
 
+require github.com/prometheus/common v0.63.0
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

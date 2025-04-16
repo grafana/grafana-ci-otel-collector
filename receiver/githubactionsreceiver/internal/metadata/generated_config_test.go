@@ -25,6 +25,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					BuildInfo:         MetricConfig{Enabled: true},
 					WorkflowJobsCount: MetricConfig{Enabled: true},
 					WorkflowRunsCount: MetricConfig{Enabled: true},
 				},
@@ -34,6 +35,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					BuildInfo:         MetricConfig{Enabled: false},
 					WorkflowJobsCount: MetricConfig{Enabled: false},
 					WorkflowRunsCount: MetricConfig{Enabled: false},
 				},

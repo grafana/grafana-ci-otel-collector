@@ -72,6 +72,9 @@ attributes:
   ci.github.workflow.run.head_branch.is_main:
     description: Whether the head branch is the main branch
     type: bool
+  version:
+    description: The version of the cicd_o11y collector.
+    type: string
 
 metrics:
   workflow.jobs.count:
@@ -105,4 +108,14 @@ metrics:
         ci.github.workflow.run.status,
         ci.github.workflow.run.conclusion,
         ci.github.workflow.run.head_branch.is_main,
+      ]
+  build.info:
+    enabled: true
+    description: Build info.
+    unit: "{build}"
+    gauge:
+      value_type: int
+    attributes:
+      [
+        version,
       ]
