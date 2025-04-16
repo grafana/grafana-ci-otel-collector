@@ -9,9 +9,12 @@ RUN apk --update add --no-cache git make bash ca-certificates
 RUN make build
 
 # STAGE 2 - final image
-FROM scratch
+FROM alpine:3.20
 
 ARG BIN_PATH=/src/build/grafana-ci-otelcol
+
+# Ensure /tmp directory exists and set permissions
+RUN chmod 777 /tmp
 
 ARG UID=10001
 USER ${UID}
