@@ -176,77 +176,12 @@ jobs:
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
 
-      - name: Authenticate to GAR
-        uses: grafana/shared-workflows/actions/login-to-gar@main
+      - id: 'submit-argowfs-deployment'
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        name: 'Submit Argo Workflows deployment'
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@ec620d967ceebc9580cd630cba0151eabbd8f252
         with:
-          environment: prod # logging in to prod to pull the updater image from grafanalabs-global
-
-      - name: Update jsonnet (dev)
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
-        run: |
-          set -e -o pipefail
-
-          cat << EOF > config.json
-          {
-            "destination_branch": "master",
-            "git_author_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
-            "git_author_name": "updater-for-ci[bot]",
-            "git_committer_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
-            "git_committer_name": "updater-for-ci[bot]",
-            "pull_request_branch_prefix": "auto-merge/cicd-o11y/update-images/",
-            "pull_request_enabled": true,
-            "pull_request_existing_strategy": "replace",
-            "pull_request_message": "Created by scheduled GHA build ${{ steps.export-gha-url.outputs.gha_url }}\n",
-            "pull_request_title": "[Auto Merge]CI/CD O11y: Update dev image",
-            "repo_name": "deployment_tools",
-            "repo_owner": "grafana",
-            "update_jsonnet_attribute_configs": [
-              {
-                "file_path": "ksonnet/environments/cicd-o11y/images/dev.libsonnet",
-                "jsonnet_key": "image",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
-              }
-            ]
-          }
-          EOF
-
-          docker run --rm \
-          -e GITHUB_APP_ID="$GITHUB_APP_ID" \
-          -e GITHUB_APP_INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID" \
-          -e GITHUB_APP_PRIVATE_KEY="$GITHUB_APP_PRIVATE_KEY" \
-          -e CONFIG_JSON="$(cat config.json)" us-docker.pkg.dev/grafanalabs-global/docker-deployment-tools-prod/updater |& tee updater-output.log
-
-      - name: Update jsonnet (ops)
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
-        run: |
-          set -e -o pipefail
-
-          cat << EOF > config.json
-          {
-            "destination_branch": "master",
-            "git_author_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
-            "git_author_name": "updater-for-ci[bot]",
-            "git_committer_email": "119986603+updater-for-ci[bot]@users.noreply.github.com",
-            "git_committer_name": "updater-for-ci[bot]",
-            "pull_request_branch_prefix": "cicd-o11y/update-images/",
-            "pull_request_enabled": true,
-            "pull_request_existing_strategy": "replace",
-            "pull_request_message": "Created by scheduled GHA build ${{ steps.export-gha-url.outputs.gha_url }}\n",
-            "pull_request_title": "CI/CD O11y: Update ops image",
-            "repo_name": "deployment_tools",
-            "repo_owner": "grafana",
-            "update_jsonnet_attribute_configs": [
-              {
-                "file_path": "ksonnet/environments/cicd-o11y/images/ops.libsonnet",
-                "jsonnet_key": "image",
-                "jsonnet_value": "us-docker.pkg.dev/grafanalabs-dev/docker-grafana-ci-otel-collector-dev/grafana-ci-otel-collector:${{ github.sha }}"
-              }
-            ]
-          }
-          EOF
-
-          docker run --rm \
-          -e GITHUB_APP_ID="$GITHUB_APP_ID" \
-          -e GITHUB_APP_INSTALLATION_ID="$GITHUB_APP_INSTALLATION_ID" \
-          -e GITHUB_APP_PRIVATE_KEY="$GITHUB_APP_PRIVATE_KEY" \
-          -e CONFIG_JSON="$(cat config.json)" us-docker.pkg.dev/grafanalabs-global/docker-deployment-tools-prod/updater |& tee updater-output.log
+          namespace: 'release-cd'
+          workflow_template: 'cicd-o11y'
+          parameters: |
+            dockertag=${{ github.sha }}
