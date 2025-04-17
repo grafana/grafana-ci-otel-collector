@@ -52,8 +52,10 @@ func createResourceAttributes(resource pcommon.Resource, event interface{}, conf
 		attrs.PutStr("ci.github.workflow.job.started_at", e.GetWorkflowJob().GetStartedAt().Format(time.RFC3339))
 		attrs.PutStr("ci.github.workflow.job.status", e.GetWorkflowJob().GetStatus())
 
-		// Grafana self-hosted runners have a Group Name of default
-		if strings.ToLower(e.GetWorkflowJob().GetRunnerGroupName()) == "default" {
+		// Grafana self-hosted runners have a Group Name of Default (for prod) and Self-hosted (for dev)
+		// TODO: Update this to only look for self-hosted once we've deployed the change to our prod runners
+		rg := strings.ToLower(e.GetWorkflowJob().GetRunnerGroupName())
+		if rg == "default" || rg == "self-hosted" {
 			attrs.PutStr("ci.github.workflow.job.runner.ec2_instance_id", strings.Split(e.GetWorkflowJob().GetRunnerName(), "_")[1])
 		}
 
