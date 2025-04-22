@@ -21,168 +21,260 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// Logs larger than this will be truncated
+	maxLogEntryBytes = 1 * 1024 * 1024 // 1 MB
+)
+
+type logEntryBuilder struct {
+	currentBody       strings.Builder
+	currentParsedTime time.Time
+	currentStepNumber int64
+	hasCurrentEntry   bool
+}
+
+func (b *logEntryBuilder) reset() {
+	b.currentBody.Reset()
+	b.currentParsedTime = time.Time{}
+	b.currentStepNumber = 0
+	b.hasCurrentEntry = false
+}
+
 func eventToLogs(event interface{}, config *Config, ghClient *github.Client, logger *zap.Logger, withTraceInfo bool) (*plog.Logs, error) {
-	if e, ok := event.(*github.WorkflowRunEvent); ok {
-		log := logger.With()
-		if e.GetRepo() != nil {
-			log = log.With(
-				zap.String("repo_owner", e.GetRepo().GetOwner().GetLogin()),
-				zap.String("repo_name", e.GetRepo().GetName()),
-			)
-		}
-		if e.GetWorkflow() != nil {
-			log = log.With(
-				zap.String("workflow_path", e.GetWorkflow().GetPath()),
-			)
-		}
-		if e.GetWorkflowRun() != nil {
-			log = log.With(
-				zap.Int64("workflow_run_id", e.GetWorkflowRun().GetID()),
-				zap.Int("workflow_run_attempt", e.GetWorkflowRun().GetRunAttempt()),
-				zap.String("workflow_run_name", e.GetWorkflowRun().GetName()),
-				zap.String("workflow_url", e.GetWorkflowRun().GetWorkflowURL()),
-			)
-		}
-
-		if e.GetWorkflowRun().GetStatus() != "completed" {
-			log.Debug("Run not completed, skipping")
-			return nil, nil
-		}
-
-		traceID, _ := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
-
-		logs := plog.NewLogs()
-		allLogs := logs.ResourceLogs().AppendEmpty()
-		attrs := allLogs.Resource().Attributes()
-
-		setWorkflowRunEventAttributes(attrs, e, config)
-
-		url, _, err := ghClient.Actions.GetWorkflowRunAttemptLogs(context.Background(), e.GetRepo().GetOwner().GetLogin(), e.GetRepo().GetName(), e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt(), 10)
-
-		if err != nil {
-			log.Error("Failed to get logs", zap.Error(err))
-			return nil, err
-		}
-
-		out, err := os.CreateTemp("", "tmpfile-")
-		if err != nil {
-			log.Error("Failed to create temp file", zap.Error(err))
-			return nil, err
-		}
-		defer out.Close()
-		defer os.Remove(out.Name())
-
-		resp, err := http.Get(url.String())
-		if err != nil {
-			log.Error("Failed to get logs", zap.Error(err))
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		// Copy the response into the temp file
-		_, err = io.Copy(out, resp.Body)
-		if err != nil {
-			log.Error("Failed to copy response to temp file", zap.Error(err))
-			return nil, err
-		}
-
-		archive, err := zip.OpenReader(out.Name())
-		if err != nil {
-			log.Error("Failed to open zip file", zap.Error(err), zap.String("zip_file", out.Name()))
-			return nil, fmt.Errorf("failed to open zip file: %w", err)
-		}
-		defer archive.Close()
-
-		if archive.File == nil {
-			log.Error("Archive is empty", zap.String("zip_file", out.Name()))
-			return nil, fmt.Errorf("archive is empty")
-		}
-
-		// steps is a map of job names to a map of step numbers to file names
-		var jobs = make([]string, 0)
-		var files = make([]*zip.File, 0)
-
-		// first we get all the directories. each directory is a job
-		for _, f := range archive.File {
-			if f.FileInfo().IsDir() {
-				// if the file is a directory, then it's a job. each file in this directory is a step
-				jobs = append(jobs, f.Name[:len(f.Name)-1])
-			} else {
-				files = append(files, f)
-			}
-		}
-
-		for _, jobName := range jobs {
-			jobLogsScope := allLogs.ScopeLogs().AppendEmpty()
-			jobLogsScope.Scope().Attributes().PutStr("ci.github.workflow.job.name", jobName)
-
-			for _, logFile := range files {
-				if !strings.HasPrefix(logFile.Name, jobName) {
-					continue
-				}
-
-				fileNameWithoutDir := strings.TrimPrefix(logFile.Name, jobName+"/")
-				stepNumberStr := strings.Split(fileNameWithoutDir, "_")[0]
-				stepNumber, err := strconv.Atoi(stepNumberStr)
-				if err != nil {
-					log.Error("Invalid step number", zap.String("stepNumberStr", stepNumberStr), zap.Error(err))
-					continue
-				}
-
-				steplog := log.With(zap.Int("step_number", stepNumber))
-
-				spanID, err := generateStepSpanID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt(), jobName, int64(stepNumber))
-				if err != nil {
-					steplog.Error("Failed to generate span ID", zap.Error(err))
-					continue
-				}
-
-				ff, err := logFile.Open()
-				if err != nil {
-					steplog.Error("Failed to open file", zap.Error(err))
-					continue
-				}
-				defer ff.Close()
-
-				scanner := bufio.NewScanner(ff)
-				for scanner.Scan() {
-					lineText := scanner.Text()
-					if lineText == "" {
-						steplog.Debug("Skipping empty line")
-						continue
-					}
-
-					ts, line, ok := strings.Cut(lineText, " ")
-					if !ok {
-						steplog.Error("Failed to cut log line", zap.String("body", lineText))
-						continue
-					}
-
-					parsedTime, err := time.Parse(time.RFC3339, ts)
-					if err != nil {
-						steplog.Error("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
-						continue
-					}
-
-					record := jobLogsScope.LogRecords().AppendEmpty()
-					if withTraceInfo {
-						record.SetSpanID(spanID)
-						record.SetTraceID(traceID)
-					}
-					record.Attributes().PutInt("ci.github.workflow.job.step.number", int64(stepNumber))
-					record.SetTimestamp(pcommon.NewTimestampFromTime(parsedTime))
-					record.SetObservedTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-					record.Body().SetStr(line)
-				}
-
-				if err := scanner.Err(); err != nil {
-					steplog.Error("Error reading file", zap.Error(err))
-				}
-			}
-		}
-
-		return &logs, nil
+	e, ok := event.(*github.WorkflowRunEvent)
+	if !ok {
+		return nil, nil
 	}
 
-	return nil, nil
+	log := enrichLogger(logger, e)
+	if e.GetWorkflowRun().GetStatus() != "completed" {
+		log.Debug("Run not completed, skipping")
+		return nil, nil
+	}
+
+	zipReader, cleanup, err := getWorkflowRunLogsZip(context.Background(), ghClient, e, log)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	logs := plog.NewLogs()
+	resourceLogs := logs.ResourceLogs().AppendEmpty()
+	setWorkflowRunEventAttributes(resourceLogs.Resource().Attributes(), e, config)
+
+	traceID, _ := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
+	jobs, files := extractJobsAndFilesFromZip(zipReader)
+
+	for _, jobName := range jobs {
+		processJobLogs(jobName, files, resourceLogs, traceID, e, withTraceInfo, log)
+	}
+
+	return &logs, nil
+}
+
+func enrichLogger(logger *zap.Logger, e *github.WorkflowRunEvent) *zap.Logger {
+	log := logger.With(zap.Int64("workflow_run_id", e.GetWorkflowRun().GetID()))
+	if repo := e.GetRepo(); repo != nil {
+		log = log.With(
+			zap.String("repo_owner", repo.GetOwner().GetLogin()),
+			zap.String("repo_name", repo.GetName()),
+		)
+	}
+	if workflow := e.GetWorkflow(); workflow != nil {
+		log = log.With(zap.String("workflow_path", workflow.GetPath()))
+	}
+	return log.With(
+		zap.Int("workflow_run_attempt", e.GetWorkflowRun().GetRunAttempt()),
+		zap.String("workflow_run_name", e.GetWorkflowRun().GetName()),
+		zap.String("workflow_url", e.GetWorkflowRun().GetWorkflowURL()),
+	)
+}
+
+func getWorkflowRunLogsZip(ctx context.Context, ghClient *github.Client, e *github.WorkflowRunEvent, logger *zap.Logger) (*zip.Reader, func(), error) {
+	url, _, err := ghClient.Actions.GetWorkflowRunAttemptLogs(
+		ctx,
+		e.GetRepo().GetOwner().GetLogin(),
+		e.GetRepo().GetName(),
+		e.GetWorkflowRun().GetID(),
+		e.GetWorkflowRun().GetRunAttempt(),
+		10,
+	)
+	if err != nil {
+		logger.Error("Failed to get logs", zap.Error(err))
+		return nil, nil, err
+	}
+
+	tmpFile, err := downloadLogsToTempFile(url.String(), logger)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	zipReader, err := zip.OpenReader(tmpFile.Name())
+	if err != nil {
+		logger.Error("Failed to open zip file", zap.Error(err))
+		return nil, nil, fmt.Errorf("failed to open zip file: %w", err)
+	}
+
+	cleanup := func() {
+		tmpFile.Close()
+		zipReader.Close()
+		os.Remove(tmpFile.Name())
+	}
+
+	return &zipReader.Reader, cleanup, nil
+}
+
+func downloadLogsToTempFile(url string, logger *zap.Logger) (*os.File, error) {
+	out, err := os.CreateTemp("", "gh-logs-")
+	if err != nil {
+		logger.Error("Failed to create temp file", zap.Error(err))
+		return nil, err
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		out.Close()
+		logger.Error("Failed to download logs", zap.Error(err))
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		out.Close()
+		logger.Error("Failed to save logs to temp file", zap.Error(err))
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func extractJobsAndFilesFromZip(zipReader *zip.Reader) ([]string, []*zip.File) {
+	var jobs []string
+	var files []*zip.File
+
+	for _, f := range zipReader.File {
+		if f.FileInfo().IsDir() {
+			jobs = append(jobs, strings.TrimSuffix(f.Name, "/"))
+		} else {
+			files = append(files, f)
+		}
+	}
+	return jobs, files
+}
+
+func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.ResourceLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
+	jobLogsScope := resourceLogs.ScopeLogs().AppendEmpty()
+	jobLogsScope.Scope().Attributes().PutStr("ci.github.workflow.job.name", jobName)
+
+	for _, logFile := range files {
+		if !strings.HasPrefix(logFile.Name, jobName+"/") {
+			continue
+		}
+
+		processLogFile(logFile, jobName, jobLogsScope, traceID, e, withTraceInfo, logger)
+	}
+}
+
+func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
+	stepNumber, err := extractStepNumberFromFileName(logFile.Name, jobName)
+	if err != nil {
+		logger.Error("Invalid step number in filename", zap.String("filename", logFile.Name), zap.Error(err))
+		return
+	}
+
+	steplog := logger.With(zap.Int("step_number", stepNumber))
+	spanID, err := generateStepSpanID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt(), jobName, int64(stepNumber))
+	if err != nil {
+		steplog.Error("Failed to generate span ID", zap.Error(err))
+		return
+	}
+
+	fileReader, err := logFile.Open()
+	if err != nil {
+		steplog.Error("Failed to open log file", zap.Error(err))
+		return
+	}
+	defer fileReader.Close()
+
+	processLogEntries(fileReader, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo, steplog)
+}
+
+func extractStepNumberFromFileName(fileName, jobName string) (int, error) {
+	baseName := strings.TrimPrefix(fileName, jobName+"/")
+	parts := strings.SplitN(baseName, "_", 2)
+	return strconv.Atoi(parts[0])
+}
+
+func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pcommon.SpanID, traceID pcommon.TraceID, stepNumber int, withTraceInfo bool, logger *zap.Logger) {
+	var builder logEntryBuilder
+	scanner := bufio.NewScanner(reader)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+
+		parsedTime, rest, ok := parseTimestamp(line, logger)
+		if ok {
+			if builder.hasCurrentEntry {
+				finalizeLogEntry(&builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
+			}
+			builder = logEntryBuilder{
+				currentParsedTime: parsedTime,
+				currentStepNumber: int64(stepNumber),
+				hasCurrentEntry:   true,
+			}
+			builder.currentBody.WriteString(rest)
+		} else {
+			if !builder.hasCurrentEntry {
+				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
+				continue
+			}
+
+			if builder.currentBody.Len()+len(line)+1 > maxLogEntryBytes {
+				logger.Warn("Skipping line due to size limit", zap.Int("lineSize", len(line)))
+				continue
+			}
+
+			builder.currentBody.WriteString("\n")
+			builder.currentBody.WriteString(line)
+		}
+	}
+
+	if builder.hasCurrentEntry {
+		finalizeLogEntry(&builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
+	}
+
+	if err := scanner.Err(); err != nil {
+		logger.Error("Error reading log file", zap.Error(err))
+	}
+}
+
+func finalizeLogEntry(builder *logEntryBuilder, jobLogsScope plog.ScopeLogs, spanID pcommon.SpanID, traceID pcommon.TraceID, stepNumber int, withTraceInfo bool) {
+	record := jobLogsScope.LogRecords().AppendEmpty()
+	if withTraceInfo {
+		record.SetSpanID(spanID)
+		record.SetTraceID(traceID)
+	}
+	record.Attributes().PutInt("ci.github.workflow.job.step.number", int64(stepNumber))
+	record.SetTimestamp(pcommon.NewTimestampFromTime(builder.currentParsedTime))
+	record.SetObservedTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+	record.Body().SetStr(builder.currentBody.String())
+	builder.reset()
+}
+
+func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
+	ts, rest, ok := strings.Cut(line, " ")
+	if !ok {
+		return time.Time{}, "", false
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
+		return time.Time{}, "", false
+	}
+
+	return parsedTime, rest, true
 }
