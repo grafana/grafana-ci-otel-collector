@@ -267,7 +267,6 @@ func finalizeLogEntry(builder *logEntryBuilder, jobLogsScope plog.ScopeLogs, spa
 func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
 	ts, rest, ok := strings.Cut(line, " ")
 	if !ok {
-		logger.Error("Malformed log line", zap.String("line", line))
 		return time.Time{}, "", false
 	}
 
