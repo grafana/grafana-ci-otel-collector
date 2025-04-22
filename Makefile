@@ -18,7 +18,8 @@ endif
 
 .PHONY: build
 build: install-tools
-	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 $(OCB) --config config/manifest.yaml
+	VERSION="$$(git rev-parse HEAD)" && \
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 $(OCB) --config config/manifest.yaml --ldflags "-X github.com/prometheus/common/version.Version=$${VERSION}"
 
 .PHONY: build-debug
 build-debug: install-tools

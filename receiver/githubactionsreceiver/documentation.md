@@ -12,6 +12,20 @@ metrics:
     enabled: false
 ```
 
+### build.info
+
+Build info.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| {build} | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| version | The version of the cicd_o11y collector. | Any Str |
+
 ### workflow.jobs.count
 
 Number of jobs.

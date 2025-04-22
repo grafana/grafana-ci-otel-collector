@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-github/v62/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
+	"github.com/prometheus/common/version"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -25,12 +26,23 @@ type metricsHandler struct {
 var repoMap = sync.Map{}
 
 func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
-	return &metricsHandler{
+	settings.BuildInfo = component.BuildInfo{
+		Command:     "githubactionsreceiver",
+		Description: "GitHub Actions Receiver",
+		Version:     version.Version,
+	}
+	mh := &metricsHandler{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,
 		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
 		logger:   logger,
 	}
+
+	// Record build info metric
+	ts := pcommon.NewTimestampFromTime(time.Now())
+	mh.mb.RecordBuildInfoDataPoint(ts, 1, settings.BuildInfo.Version)
+
+	return mh
 }
 
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
