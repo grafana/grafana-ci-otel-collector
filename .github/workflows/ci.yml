@@ -175,6 +175,62 @@ jobs:
             GITHUB_APP_ID=updater-app:app-id
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
+      
+      - id: find-commit-pr
+        uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
+        name: Find PR for commit
+        with:
+          query: |
+            query associatedPRs($sha: String, $repo: String!, $owner: String!) {
+              repository(name: $repo, owner: $owner) {
+                object(expression: $sha) {
+                ... on Commit {
+                    associatedPullRequests(first: 5) {
+                      edges {
+                        node {
+                          number
+                          commits(first: 1) {
+                            edges {
+                              node {
+                                commit {
+                                  committedDate
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          variables: |
+            owner: ${{ github.event.repository.owner.name }}
+            repo: ${{ github.event.repository.name }}
+            sha: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: extract-pr-number
+        name: Extract PR number
+        env:
+          PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
+          FIRST_COMMIT_TS: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
+        run: |
+          if [ -z "${PR}" ]; then
+            echo "No PR found, skipping..."
+            echo "contextMessage=\"\"" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "This commit was from PR ${PR}"
+
+          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${{ github.event.repository.owner.name }}/${{ github.event.repository.name }}/pull/${PR})." >> "${GITHUB_OUTPUT}"
+          echo "number=${PR}" >> "${GITHUB_OUTPUT}"
+          TS=$(date -u --date ${FIRST_COMMIT_TS} +'%s')
+          echo "first-commit-ts=${TS}" >> "${GITHUB_OUTPUT}"
+          cat "${GITHUB_OUTPUT}"
 
       - id: 'submit-argowfs-deployment'
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
@@ -185,3 +241,4 @@ jobs:
           workflow_template: 'cicd-o11y'
           parameters: |
             dockertag=${{ github.sha }}
+            prCommentContext=${{ steps.extract-pr-number.outputs.contextMessage }}
