@@ -216,7 +216,7 @@ jobs:
               }
             }
           variables: |
-            owner: ${{ github.event.repository.owner.name }}
+            owner: ${{ github.repository_owner}}
             repo: ${{ github.event.repository.name }}
             sha: ${{ github.sha }}
         env:
@@ -236,7 +236,7 @@ jobs:
 
           echo "This commit was from PR ${PR}"
 
-          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${{ github.event.repository.owner.name }}/${{ github.event.repository.name }}/pull/${PR})." >> "${GITHUB_OUTPUT}"
+          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/pull/${PR})." >> "${GITHUB_OUTPUT}"
           echo "number=${PR}" >> "${GITHUB_OUTPUT}"
           TS=$(date -u --date ${FIRST_COMMIT_TS} +'%s')
           echo "first-commit-ts=${TS}" >> "${GITHUB_OUTPUT}"
