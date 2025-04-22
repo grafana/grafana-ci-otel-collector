@@ -153,8 +153,7 @@ jobs:
           # Only push to GAR on main branch pushes
           push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
           tags: |-
-            ${{ github.sha }}
-            "latest"
+            "phlope-otlphttp-test"
           context: "."
           image_name: "grafana-ci-otel-collector"
           environment: "dev"
