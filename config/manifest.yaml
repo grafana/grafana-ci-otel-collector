@@ -26,6 +26,7 @@ extensions:
   # Used for basic auth in production deployments for grafana cloud.
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.120.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.120.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.120.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.120.0
