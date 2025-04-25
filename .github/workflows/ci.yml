@@ -235,8 +235,8 @@ jobs:
       - id: extract-pr-number
         name: Extract PR number
         env:
-          PR: ${{ steps.find-commit-pr.outputs.data && fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
-          FIRST_COMMIT_TS: ${{ steps.find-commit-pr.outputs.data && fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
+          PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
+          FIRST_COMMIT_TS: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
         run: |
           if [ -z "${PR}" ]; then
             echo "No PR found, skipping..."
