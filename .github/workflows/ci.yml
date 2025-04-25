@@ -177,6 +177,7 @@ jobs:
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
       
       - id: find-commit-pr
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
         name: Find PR for commit
         with:
@@ -206,13 +207,14 @@ jobs:
               }
             }
           variables: |
-            owner: ${{ github.repository_owner}}
+            owner: ${{ github.repository_owner }}
             repo: ${{ github.event.repository.name }}
             sha: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - id: extract-pr-number
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: Extract PR number
         env:
           PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
@@ -223,7 +225,7 @@ jobs:
             echo "contextMessage=\"\"" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
-
+          
           echo "This commit was from PR ${PR}"
 
           echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/pull/${PR})." >> "${GITHUB_OUTPUT}"
