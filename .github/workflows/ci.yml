@@ -224,11 +224,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - id: extract-pr-number
-        # if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: Extract PR number
         env:
-          PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
-          FIRST_COMMIT_TS: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
+          PR: ${{ steps.find-commit-pr && fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
+          FIRST_COMMIT_TS: ${{ steps.find-commit-pr && fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
         run: |
           if [ -z "${PR}" ]; then
             echo "No PR found, skipping..."
