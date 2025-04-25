@@ -185,9 +185,18 @@ jobs:
             GITHUB_APP_ID=updater-app:app-id
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
-      
+  
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+    needs:
+      - lint
+      - test
+      - build-and-push
+    
+    steps:
       - id: find-commit-pr
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
         name: Find PR for commit
         with:
@@ -224,7 +233,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - id: extract-pr-number
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: Extract PR number
         env:
           PR: ${{ steps.find-commit-pr.outputs.data && fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
