@@ -148,7 +148,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Push to GAR
-        uses: grafana/shared-workflows/actions/push-to-gar-docker@main
+        uses: grafana/shared-workflows/actions/push-to-gar-docker@99afc12c9af11a4a8b89178197787e50b59d07f5 # push-to-gar-docker-v0.3.1
         with:
           # Only push to GAR on main branch pushes
           push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
@@ -169,7 +169,7 @@ jobs:
 
       - name: Get Vault secrets
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        uses: grafana/shared-workflows/actions/get-vault-secrets@28361cdb22223e5f1e34358c86c20908e7248760 # get-vault-secrets-v1.1.0
         with:
           common_secrets: |
             GITHUB_APP_ID=updater-app:app-id
