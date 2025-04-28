@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   install-tools:
@@ -139,6 +138,8 @@ jobs:
   build-and-push:
     name: Build & push
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     needs:
       - lint
       - test
