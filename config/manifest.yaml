@@ -28,8 +28,6 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.124.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.124.0
 
-
-
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.124.0
   - gomod: github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.1.0
