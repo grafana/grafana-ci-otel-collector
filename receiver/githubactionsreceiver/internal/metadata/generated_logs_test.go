@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/receiver/receivertest"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
 func TestLogsBuilderAppendLogRecord(t *testing.T) {
