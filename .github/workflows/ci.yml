@@ -189,7 +189,7 @@ jobs:
       - id: 'submit-argowfs-deployment'
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: 'Submit Argo Workflows deployment'
-        uses: grafana/shared-workflows/actions/trigger-argo-workflow@fd2e2da52d1a729ae0985fdf6ff85b33710381f9
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@fa48192dac470ae356b3f7007229f3ac28c48a25
         with:
           namespace: 'release-cd'
           workflow_template: 'cicd-o11y'
