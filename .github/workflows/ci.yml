@@ -186,12 +186,12 @@ jobs:
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
 
-      - id: 'submit-argowfs-deployment'
+      - id: "submit-argowfs-deployment"
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
-        name: 'Submit Argo Workflows deployment'
+        name: "Submit Argo Workflows deployment"
         uses: grafana/shared-workflows/actions/trigger-argo-workflow@fd2e2da52d1a729ae0985fdf6ff85b33710381f9
         with:
-          namespace: 'release-cd'
-          workflow_template: 'cicd-o11y'
+          namespace: "release-cd"
+          workflow_template: "cicd-o11y"
           parameters: |
             dockertag=${{ github.sha }}

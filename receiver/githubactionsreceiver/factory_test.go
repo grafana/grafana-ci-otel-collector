@@ -38,7 +38,7 @@ func TestCreateTracesReceiver(t *testing.T) {
 
 				_, err := newTracesReceiver(
 					context.Background(),
-					receivertest.NewNopSettings(),
+					receivertest.NewNopSettings(receivertest.NopType),
 					cfg,
 					consumertest.NewNop(),
 				)

@@ -11,6 +11,9 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+
+	"go.opentelemetry.io/collector/pdata/plog"
+	"time"
 )
 
 func TestLogsBuilderAppendLogRecord(t *testing.T) {
