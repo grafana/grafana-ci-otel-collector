@@ -115,7 +115,4 @@ metrics:
     unit: "{build}"
     gauge:
       value_type: int
-    attributes:
-      [
-        version,
-      ]
+    attributes: [version]

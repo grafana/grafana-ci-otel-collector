@@ -63,7 +63,7 @@ func TestNewReceiver(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			rec, err := newReceiver(receivertest.NewNopSettings(), &test.config)
+			rec, err := newReceiver(receivertest.NewNopSettings(receivertest.NopType), &test.config)
 			if test.err == nil {
 				require.NotNil(t, rec)
 			} else {
@@ -154,7 +154,7 @@ func TestWorkflowJobEventToMetrics(t *testing.T) {
 			event, err := github.ParseWebHook(test.eventType, payload)
 			require.NoError(t, err)
 
-			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
+			mh := newMetricsHandler(receivertest.NewNopSettings(receivertest.NopType), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
 						WorkflowJobsCount: metadata.MetricConfig{
@@ -205,7 +205,7 @@ func TestWorkflowRunEventToMetrics(t *testing.T) {
 			event, err := github.ParseWebHook(test.eventType, payload)
 			require.NoError(t, err)
 
-			mh := newMetricsHandler(receivertest.NewNopSettings(), &Config{
+			mh := newMetricsHandler(receivertest.NewNopSettings(receivertest.NopType), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
 						WorkflowRunsCount: metadata.MetricConfig{
@@ -446,7 +446,7 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			// Create receiver with test consumers
 			recv, err := newLogsReceiver(
 				context.Background(),
-				receivertest.NewNopSettings(),
+				receivertest.NewNopSettings(receivertest.NopType),
 				cfg,
 				logsSink,
 			)
