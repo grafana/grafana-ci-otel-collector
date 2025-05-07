@@ -70,6 +70,28 @@ var MapAttributeCiWorkflowItemStatus = map[string]AttributeCiWorkflowItemStatus{
 	"error":                   AttributeCiWorkflowItemStatusError,
 }
 
+var MetricsInfo = metricsInfo{
+	BuildsNumber: metricInfo{
+		Name: "builds_number",
+	},
+	RepoInfo: metricInfo{
+		Name: "repo_info",
+	},
+	RestartsTotal: metricInfo{
+		Name: "restarts_total",
+	},
+}
+
+type metricsInfo struct {
+	BuildsNumber  metricInfo
+	RepoInfo      metricInfo
+	RestartsTotal metricInfo
+}
+
+type metricInfo struct {
+	Name string
+}
+
 type metricBuildsNumber struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -333,7 +355,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	rm.SetSchemaUrl(conventions.SchemaURL)
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricBuildsNumber.emit(ils.Metrics())
