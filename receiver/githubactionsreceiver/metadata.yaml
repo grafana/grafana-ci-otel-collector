@@ -13,6 +13,11 @@ status:
     emeritus:
 
 resource_attributes:
+    attributes_config:
+      - action: index_label
+        attributes:
+          - ci.github.workflow.run.path
+          - ci.github.workflow.run.event
 
 attributes:
   ci.github.workflow.job.labels:
