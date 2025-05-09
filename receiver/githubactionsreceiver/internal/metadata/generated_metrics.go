@@ -187,6 +187,28 @@ var MapAttributeCiGithubWorkflowRunStatus = map[string]AttributeCiGithubWorkflow
 	"aborted":     AttributeCiGithubWorkflowRunStatusAborted,
 }
 
+var MetricsInfo = metricsInfo{
+	BuildInfo: metricInfo{
+		Name: "build.info",
+	},
+	WorkflowJobsCount: metricInfo{
+		Name: "workflow.jobs.count",
+	},
+	WorkflowRunsCount: metricInfo{
+		Name: "workflow.runs.count",
+	},
+}
+
+type metricsInfo struct {
+	BuildInfo         metricInfo
+	WorkflowJobsCount metricInfo
+	WorkflowRunsCount metricInfo
+}
+
+type metricInfo struct {
+	Name string
+}
+
 type metricBuildInfo struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -453,7 +475,7 @@ func WithStartTimeOverride(start pcommon.Timestamp) ResourceMetricsOption {
 func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricBuildInfo.emit(ils.Metrics())

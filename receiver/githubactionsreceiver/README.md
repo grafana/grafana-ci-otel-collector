@@ -108,9 +108,9 @@ Here's an example snippet from a configuration file (config.yaml) demonstrating 
 ```yaml
 receivers:
   githubactionsreceiver:
-    custom_service_name: 'github-com-myorg' # Completely overrides the default service name
-    service_name_prefix: 'foo-' # Prepended to the default service name (ignored if custom_service_name is set)
-    service_name_suffix: '-bar' # Appended to the default service name (ignored if custom_service_name is set)
+    custom_service_name: "github-com-myorg" # Completely overrides the default service name
+    service_name_prefix: "foo-" # Prepended to the default service name (ignored if custom_service_name is set)
+    service_name_suffix: "-bar" # Appended to the default service name (ignored if custom_service_name is set)
 ```
 
 ## GitHub webhooks
