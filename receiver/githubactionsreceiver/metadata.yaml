@@ -13,8 +13,8 @@ status:
     emeritus:
 
 resource_attributes:
-    attributes_config:
-      action: index_label
+  attributes_config:
+    - action: index_label
       attributes:
         - ci.github.workflow.run.path
         - ci.github.workflow.run.event
@@ -120,4 +120,7 @@ metrics:
     unit: "{build}"
     gauge:
       value_type: int
-    attributes: [version]
+    attributes:
+      [
+        version,
+      ]
