@@ -13,9 +13,13 @@ status:
     emeritus:
 
 resource_attributes:
-  ci.github.workflow.run.labels:
+  ci.github.workflow.run.path:
     enabled: true
-    description: Run labels.
+    description: Workflow run filepath.
+    type: string
+  ci.github.workflow.run.event:
+    enabled: true
+    description: Event that triggered the workflow run.
     type: string
 
 attributes:
