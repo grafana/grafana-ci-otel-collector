@@ -48,7 +48,7 @@ func TestMetricsBuilder(t *testing.T) {
 			start := pcommon.Timestamp(1_000_000_000)
 			ts := pcommon.Timestamp(1_000_001_000)
 			observedZapCore, observedLogs := observer.New(zap.WarnLevel)
-			settings := receivertest.NewNopSettingsWithType(receivertest.NopType)
+			settings := receivertest.NewNopSettings(receivertest.NopType)
 			settings.Logger = zap.New(observedZapCore)
 			mb := NewMetricsBuilder(loadMetricsBuilderConfig(t, tt.name), settings, WithStartTime(start))
 
@@ -109,13 +109,13 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
 					assert.True(t, ok)
-					assert.EqualValues(t, "skipped", attrVal.Str())
+					assert.Equal(t, "skipped", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("git.repo.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "git.repo.name-val", attrVal.Str())
+					assert.Equal(t, "git.repo.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("git.branch.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "git.branch.name-val", attrVal.Str())
+					assert.Equal(t, "git.branch.name-val", attrVal.Str())
 				case "repo_info":
 					assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
 					validatedMetrics["repo_info"] = true
@@ -132,13 +132,13 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
 					assert.True(t, ok)
-					assert.EqualValues(t, "skipped", attrVal.Str())
+					assert.Equal(t, "skipped", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("git.repo.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "git.repo.name-val", attrVal.Str())
+					assert.Equal(t, "git.repo.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("git.branch.name")
 					assert.True(t, ok)
-					assert.EqualValues(t, "git.branch.name-val", attrVal.Str())
+					assert.Equal(t, "git.branch.name-val", attrVal.Str())
 				case "restarts_total":
 					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
 					validatedMetrics["restarts_total"] = true
