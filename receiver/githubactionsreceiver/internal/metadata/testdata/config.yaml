@@ -7,7 +7,6 @@ all_set:
       enabled: true
     workflow.runs.count:
       enabled: true
-  logs:
     ci.github.workflow.run.path:
       enabled: true
     ci.github.workflow.run.event:
@@ -20,7 +19,6 @@ none_set:
       enabled: false
     workflow.runs.count:
       enabled: false
-  logs:
     ci.github.workflow.run.path:
       enabled: false
     ci.github.workflow.run.event:
