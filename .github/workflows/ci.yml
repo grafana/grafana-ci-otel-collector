@@ -161,7 +161,7 @@ jobs:
         uses: grafana/shared-workflows/actions/push-to-gar-docker@99afc12c9af11a4a8b89178197787e50b59d07f5 # push-to-gar-docker-v0.3.1
         with:
           # Only push to GAR on main branch pushes
-          push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+          push: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           tags: |-
             ${{ github.sha }}
             "latest"
@@ -170,7 +170,7 @@ jobs:
           environment: "dev"
 
       - name: Export GHA URL
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         id: export-gha-url
         shell: bash
         run: |
@@ -178,7 +178,7 @@ jobs:
           echo "gha_url=${GHA_URL}" >> "${GITHUB_OUTPUT}"
 
       - name: Get Vault secrets
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: grafana/shared-workflows/actions/get-vault-secrets@28361cdb22223e5f1e34358c86c20908e7248760 # get-vault-secrets-v1.1.0
         with:
           common_secrets: |
@@ -189,7 +189,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
     needs:
       - lint
       - test
