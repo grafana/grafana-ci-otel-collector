@@ -237,6 +237,8 @@ jobs:
         env:
           PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
           FIRST_COMMIT_TS: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
           if [ -z "${PR}" ]; then
             echo "No PR found, skipping..."
@@ -246,7 +248,7 @@ jobs:
           
           echo "This commit was from PR ${PR}"
 
-          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/pull/${PR})." >> "${GITHUB_OUTPUT}"
+          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${REPOSITORY_OWNER}/${REPOSITORY_NAME}/pull/${PR})." >> "${GITHUB_OUTPUT}"
           echo "number=${PR}" >> "${GITHUB_OUTPUT}"
           TS=$(date -u --date ${FIRST_COMMIT_TS} +'%s')
           echo "first-commit-ts=${TS}" >> "${GITHUB_OUTPUT}"
