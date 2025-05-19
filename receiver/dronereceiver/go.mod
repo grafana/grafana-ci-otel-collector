@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-00010101000000-000000000000
 	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-00010101000000-000000000000
-	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jackc/pgx/v5 v5.7.5
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.31.0
 	go.opentelemetry.io/collector/component/componenttest v0.125.0
