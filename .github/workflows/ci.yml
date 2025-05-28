@@ -179,7 +179,7 @@ jobs:
 
       - name: Get Vault secrets
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-        uses: grafana/shared-workflows/actions/get-vault-secrets@28361cdb22223e5f1e34358c86c20908e7248760 # get-vault-secrets-v1.1.0
+        uses: grafana/shared-workflows/actions/get-vault-secrets@99afc12c9af11a4a8b89178197787e50b59d07f5 # get-vault-secrets-v1.1.0
         with:
           common_secrets: |
             GITHUB_APP_ID=updater-app:app-id
@@ -257,7 +257,7 @@ jobs:
       - id: 'submit-argowfs-deployment'
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: 'Submit Argo Workflows deployment'
-        uses: grafana/shared-workflows/actions/trigger-argo-workflow@fa48192dac470ae356b3f7007229f3ac28c48a25
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@99afc12c9af11a4a8b89178197787e50b59d07f5
         with:
           namespace: 'release-cd'
           workflow_template: 'cicd-o11y'
