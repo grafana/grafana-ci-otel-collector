@@ -161,7 +161,7 @@ jobs:
         uses: grafana/shared-workflows/actions/push-to-gar-docker@99afc12c9af11a4a8b89178197787e50b59d07f5 # push-to-gar-docker-v0.3.1
         with:
           # Only push to GAR on main branch pushes
-          push: ${{ github.event_name == 'push' && github.ref_name == 'main' && 'true' || 'false' }}
+          push: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           tags: |-
             ${{ github.sha }}
             "latest"
@@ -170,7 +170,7 @@ jobs:
           environment: "dev"
 
       - name: Export GHA URL
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         id: export-gha-url
         shell: bash
         run: |
@@ -178,13 +178,81 @@ jobs:
           echo "gha_url=${GHA_URL}" >> "${GITHUB_OUTPUT}"
 
       - name: Get Vault secrets
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         uses: grafana/shared-workflows/actions/get-vault-secrets@28361cdb22223e5f1e34358c86c20908e7248760 # get-vault-secrets-v1.1.0
         with:
           common_secrets: |
             GITHUB_APP_ID=updater-app:app-id
             GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
             GITHUB_APP_PRIVATE_KEY=updater-app:private-key
+  
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    needs:
+      - lint
+      - test
+      - build-and-push
+    
+    steps:
+      - id: find-commit-pr
+        uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
+        name: Find PR for commit
+        with:
+          query: |
+            query associatedPRs($sha: String, $repo: String!, $owner: String!) {
+              repository(name: $repo, owner: $owner) {
+                object(expression: $sha) {
+                ... on Commit {
+                    associatedPullRequests(first: 5) {
+                      edges {
+                        node {
+                          number
+                          commits(first: 1) {
+                            edges {
+                              node {
+                                commit {
+                                  committedDate
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          variables: |
+            owner: ${{ github.repository_owner }}
+            repo: ${{ github.event.repository.name }}
+            sha: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: extract-pr-number
+        name: Extract PR number
+        env:
+          PR: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.number }}
+          FIRST_COMMIT_TS: ${{ fromjson(steps.find-commit-pr.outputs.data).repository.object.associatedPullRequests.edges[0].node.commits.edges[0].node.commit.committedDate }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -z "${PR}" ]; then
+            echo "No PR found, skipping..."
+            echo "contextMessage=\"\"" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          
+          echo "This commit was from PR ${PR}"
+
+          echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${REPOSITORY_OWNER}/${REPOSITORY_NAME}/pull/${PR})." >> "${GITHUB_OUTPUT}"
+          echo "number=${PR}" >> "${GITHUB_OUTPUT}"
+          TS=$(date -u --date ${FIRST_COMMIT_TS} +'%s')
+          echo "first-commit-ts=${TS}" >> "${GITHUB_OUTPUT}"
+          cat "${GITHUB_OUTPUT}"
 
       - id: 'submit-argowfs-deployment'
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
@@ -195,3 +263,4 @@ jobs:
           workflow_template: 'cicd-o11y'
           parameters: |
             dockertag=${{ github.sha }}
+            prCommentContext=${{ steps.extract-pr-number.outputs.contextMessage }}
