@@ -169,32 +169,18 @@ jobs:
           image_name: "grafana-ci-otel-collector"
           environment: "dev"
 
-      - name: Export GHA URL
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-        id: export-gha-url
-        shell: bash
-        run: |
-          GHA_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "gha_url=${GHA_URL}" >> "${GITHUB_OUTPUT}"
-
-      - name: Get Vault secrets
-        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-        uses: grafana/shared-workflows/actions/get-vault-secrets@28361cdb22223e5f1e34358c86c20908e7248760 # get-vault-secrets-v1.1.0
-        with:
-          common_secrets: |
-            GITHUB_APP_ID=updater-app:app-id
-            GITHUB_APP_INSTALLATION_ID=updater-app:app-installation-id
-            GITHUB_APP_PRIVATE_KEY=updater-app:private-key
-  
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    permissions:
+      id-token: write
+      contents: read
     needs:
       - lint
       - test
       - build-and-push
-    
+
     steps:
       - id: find-commit-pr
         uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
@@ -245,7 +231,7 @@ jobs:
             echo "contextMessage=\"\"" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
-          
+
           echo "This commit was from PR ${PR}"
 
           echo "contextMessage= This deployment was triggered by [this pull request](https://github.com/${REPOSITORY_OWNER}/${REPOSITORY_NAME}/pull/${PR})." >> "${GITHUB_OUTPUT}"
@@ -254,13 +240,13 @@ jobs:
           echo "first-commit-ts=${TS}" >> "${GITHUB_OUTPUT}"
           cat "${GITHUB_OUTPUT}"
 
-      - id: 'submit-argowfs-deployment'
+      - id: submit-argowfs-deployment
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
-        name: 'Submit Argo Workflows deployment'
+        name: Submit Argo Workflows deployment
         uses: grafana/shared-workflows/actions/trigger-argo-workflow@fa48192dac470ae356b3f7007229f3ac28c48a25
         with:
-          namespace: 'release-cd'
-          workflow_template: 'cicd-o11y'
+          namespace: release-cd
+          workflow_template: cicd-o11y
           parameters: |
             dockertag=${{ github.sha }}
             prCommentContext=${{ steps.extract-pr-number.outputs.contextMessage }}
