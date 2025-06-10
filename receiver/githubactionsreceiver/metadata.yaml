@@ -15,6 +15,9 @@ status:
 resource_attributes:
 
 attributes:
+  vcs.repository.name:
+    description: Repository name
+    type: string
   ci.github.workflow.job.labels:
     description: Job labels.
     type: string
@@ -84,6 +87,7 @@ metrics:
       aggregation_temporality: cumulative
     attributes:
       [
+        vcs.repository.name,
         ci.github.workflow.job.labels,
         ci.github.workflow.job.status,
         ci.github.workflow.job.conclusion,
@@ -99,6 +103,7 @@ metrics:
       aggregation_temporality: cumulative
     attributes:
       [
+        vcs.repository.name,
         ci.github.workflow.run.labels,
         ci.github.workflow.run.status,
         ci.github.workflow.run.conclusion,
