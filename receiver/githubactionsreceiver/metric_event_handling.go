@@ -105,14 +105,14 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 					}
 
 					storeInCache(repo, labels, s, c, 0)
-					m.mb.RecordWorkflowJobsCountDataPoint(now, 0, repo, labels, s, c, isMain)
+					m.mb.RecordWorkflowJobsCountDataPoint(now, 0, labels, s, c, isMain)
 				}
 
 			}
 		}
 
 		storeInCache(repo, labels, status, conclusion, curVal+1)
-		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion, isMain)
+		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, labels, status, conclusion, isMain)
 	}
 
 	return m.mb.Emit()
@@ -158,14 +158,14 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 					}
 
 					storeInCache(repo, "default", s, c, 0)
-					m.mb.RecordWorkflowRunsCountDataPoint(now, 0, repo, "default", s, c, isMain)
+					m.mb.RecordWorkflowRunsCountDataPoint(now, 0, "default", s, c, isMain)
 				}
 
 			}
 		}
 
 		storeInCache(repo, "default", status, conclusion, curVal+1)
-		m.mb.RecordWorkflowRunsCountDataPoint(now, curVal+1, repo, "default", status, conclusion, isMain)
+		m.mb.RecordWorkflowRunsCountDataPoint(now, curVal+1, "default", status, conclusion, isMain)
 	}
 
 	return m.mb.Emit()
