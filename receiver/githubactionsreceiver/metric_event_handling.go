@@ -115,7 +115,9 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, labels, status, conclusion, isMain)
 	}
 
-	return m.mb.Emit()
+	res := pcommon.NewResource()
+	res.Attributes().PutStr("vcs.repository.name", repo)
+	return m.mb.Emit(metadata.WithResource(res))
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
