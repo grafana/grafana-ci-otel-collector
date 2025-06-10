@@ -24,6 +24,11 @@ func eventToTraces(event interface{}, config *Config, logger *zap.Logger) (*ptra
 
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
+		if e == nil || e.GetRepo() == nil || e.GetWorkflowJob() == nil {
+			logger.Warn("Received malformed workflow job webhook event with nil fields, skipping trace processing")
+			return &traces, nil
+		}
+		
 		logger.Info("Processing WorkflowJobEvent", zap.Int64("job_id", e.WorkflowJob.GetID()), zap.String("job_name", e.GetWorkflowJob().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
 		jobResource := resourceSpans.Resource()
 		createResourceAttributes(jobResource, e, config, logger)
@@ -34,12 +39,20 @@ func eventToTraces(event interface{}, config *Config, logger *zap.Logger) (*ptra
 			return nil, fmt.Errorf("failed to generate trace ID: %w", err)
 		}
 
-		defaultBranch := e.GetRepo().DefaultBranch
+		var defaultBranch *string
+		if repo := e.GetRepo(); repo != nil {
+			defaultBranch = repo.DefaultBranch
+		}
 
 		parentSpanID := createParentSpan(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), traceID, logger)
 		processSteps(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), defaultBranch, traceID, parentSpanID, logger)
 
 	case *github.WorkflowRunEvent:
+		if e == nil || e.GetRepo() == nil || e.GetWorkflowRun() == nil {
+			logger.Warn("Received malformed workflow run webhook event with nil fields, skipping trace processing")
+			return &traces, nil
+		}
+		
 		logger.Info("Processing WorkflowRunEvent", zap.Int64("workflow_id", e.GetWorkflowRun().GetID()), zap.String("workflow_name", e.GetWorkflowRun().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
 		runResource := resourceSpans.Resource()
 

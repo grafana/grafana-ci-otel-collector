@@ -49,6 +49,11 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 }
 
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
+	if event == nil || event.GetRepo() == nil || event.GetWorkflowJob() == nil {
+		m.logger.Warn("Received malformed workflow job webhook event with nil fields, skipping")
+		return m.mb.Emit()
+	}
+	
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
@@ -88,11 +93,11 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		conclusion = metadata.AttributeCiGithubWorkflowJobConclusionNull
 	}
 
-	defaultBranch := event.GetRepo().DefaultBranch
 	var isMain bool
-
-	if event.GetWorkflowJob().GetHeadBranch() == *defaultBranch {
-		isMain = true
+	if repo := event.GetRepo(); repo.DefaultBranch != nil {
+		if event.GetWorkflowJob().GetHeadBranch() == *repo.DefaultBranch {
+			isMain = true
+		}
 	}
 
 	if actionOk {
@@ -127,6 +132,11 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
+	if event == nil || event.GetRepo() == nil || event.GetWorkflowRun() == nil {
+		m.logger.Warn("Received malformed workflow run webhook event with nil fields, skipping")
+		return m.mb.Emit()
+	}
+	
 	repo := event.GetRepo().GetFullName()
 
 	m.logger.Debug("Processing workflow_run event",
@@ -146,11 +156,11 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		conclusion = metadata.AttributeCiGithubWorkflowRunConclusionNull
 	}
 
-	defaultBranch := event.GetRepo().DefaultBranch
 	var isMain bool
-
-	if event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
-		isMain = true
+	if repo := event.GetRepo(); repo.DefaultBranch != nil {
+		if event.GetWorkflowRun().GetHeadBranch() == *repo.DefaultBranch {
+			isMain = true
+		}
 	}
 
 	if actionOk {

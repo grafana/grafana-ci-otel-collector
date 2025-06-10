@@ -12,10 +12,16 @@ import (
 )
 
 func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent, config *Config) {
+	if e == nil || e.GetRepo() == nil || e.GetWorkflowRun() == nil {
+		return // Skip attribute setting if fields are nil
+	}
+	
 	serviceName := generateServiceName(config, e.GetRepo().GetFullName())
 	attrs.PutStr("service.name", serviceName)
 
-	attrs.PutStr("ci.github.workflow.run.actor.login", e.GetWorkflowRun().GetActor().GetLogin())
+	if actor := e.GetWorkflowRun().GetActor(); actor != nil {
+		attrs.PutStr("ci.github.workflow.run.actor.login", actor.GetLogin())
+	}
 
 	attrs.PutStr("ci.github.workflow.run.conclusion", e.GetWorkflowRun().GetConclusion())
 	attrs.PutStr("ci.github.workflow.run.created_at", e.GetWorkflowRun().GetCreatedAt().Format(time.RFC3339))
@@ -44,8 +50,13 @@ func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent
 	attrs.PutInt("ci.github.workflow.run.run_attempt", int64(e.GetWorkflowRun().GetRunAttempt()))
 	attrs.PutStr("ci.github.workflow.run.run_started_at", e.GetWorkflowRun().RunStartedAt.Format(time.RFC3339))
 	attrs.PutStr("ci.github.workflow.run.status", e.GetWorkflowRun().GetStatus())
-	attrs.PutStr("ci.github.workflow.run.sender.login", e.GetSender().GetLogin())
-	attrs.PutStr("ci.github.workflow.run.triggering_actor.login", e.GetWorkflowRun().GetTriggeringActor().GetLogin())
+	if sender := e.GetSender(); sender != nil {
+		attrs.PutStr("ci.github.workflow.run.sender.login", sender.GetLogin())
+	}
+	
+	if triggeringActor := e.GetWorkflowRun().GetTriggeringActor(); triggeringActor != nil {
+		attrs.PutStr("ci.github.workflow.run.triggering_actor.login", triggeringActor.GetLogin())
+	}
 	attrs.PutStr("ci.github.workflow.run.updated_at", e.GetWorkflowRun().GetUpdatedAt().Format(time.RFC3339))
 
 	attrs.PutStr("ci.system", "github")
@@ -53,12 +64,19 @@ func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent
 	attrs.PutStr("scm.system", "git")
 
 	attrs.PutStr("scm.git.head_branch", e.GetWorkflowRun().GetHeadBranch())
-	attrs.PutStr("scm.git.head_commit.author.email", e.GetWorkflowRun().GetHeadCommit().GetAuthor().GetEmail())
-	attrs.PutStr("scm.git.head_commit.author.name", e.GetWorkflowRun().GetHeadCommit().GetAuthor().GetName())
-	attrs.PutStr("scm.git.head_commit.committer.email", e.GetWorkflowRun().GetHeadCommit().GetCommitter().GetEmail())
-	attrs.PutStr("scm.git.head_commit.committer.name", e.GetWorkflowRun().GetHeadCommit().GetCommitter().GetName())
-	attrs.PutStr("scm.git.head_commit.message", e.GetWorkflowRun().GetHeadCommit().GetMessage())
-	attrs.PutStr("scm.git.head_commit.timestamp", e.GetWorkflowRun().GetHeadCommit().GetTimestamp().Format(time.RFC3339))
+	
+	if headCommit := e.GetWorkflowRun().GetHeadCommit(); headCommit != nil {
+		if author := headCommit.GetAuthor(); author != nil {
+			attrs.PutStr("scm.git.head_commit.author.email", author.GetEmail())
+			attrs.PutStr("scm.git.head_commit.author.name", author.GetName())
+		}
+		if committer := headCommit.GetCommitter(); committer != nil {
+			attrs.PutStr("scm.git.head_commit.committer.email", committer.GetEmail())
+			attrs.PutStr("scm.git.head_commit.committer.name", committer.GetName())
+		}
+		attrs.PutStr("scm.git.head_commit.message", headCommit.GetMessage())
+		attrs.PutStr("scm.git.head_commit.timestamp", headCommit.GetTimestamp().Format(time.RFC3339))
+	}
 	attrs.PutStr("scm.git.head_sha", e.GetWorkflowRun().GetHeadSHA())
 
 	if len(e.GetWorkflowRun().PullRequests) > 0 {

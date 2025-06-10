@@ -46,6 +46,11 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 		return nil, nil
 	}
 
+	if e == nil || e.GetRepo() == nil || e.GetWorkflowRun() == nil {
+		logger.Warn("Received malformed workflow run webhook event with nil fields, skipping log processing")
+		return nil, nil
+	}
+
 	log := enrichLogger(logger, e)
 	if e.GetWorkflowRun().GetStatus() != "completed" {
 		log.Debug("Run not completed, skipping")
