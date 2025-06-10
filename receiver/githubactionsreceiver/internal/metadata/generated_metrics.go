@@ -277,7 +277,7 @@ func (m *metricWorkflowJobsCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
+func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
@@ -285,7 +285,6 @@ func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
@@ -334,7 +333,7 @@ func (m *metricWorkflowRunsCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue string, ciGithubWorkflowRunConclusionAttributeValue string, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
+func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue string, ciGithubWorkflowRunConclusionAttributeValue string, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
@@ -342,7 +341,6 @@ func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.run.labels", ciGithubWorkflowRunLabelsAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.run.status", ciGithubWorkflowRunStatusAttributeValue)
 	dp.Attributes().PutStr("ci.github.workflow.run.conclusion", ciGithubWorkflowRunConclusionAttributeValue)
@@ -508,13 +506,13 @@ func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.
-func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
-	mb.metricWorkflowJobsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String(), ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
+func (mb *MetricsBuilder) RecordWorkflowJobsCountDataPoint(ts pcommon.Timestamp, val int64, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue AttributeCiGithubWorkflowJobStatus, ciGithubWorkflowJobConclusionAttributeValue AttributeCiGithubWorkflowJobConclusion, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
+	mb.metricWorkflowJobsCount.recordDataPoint(mb.startTime, ts, val, ciGithubWorkflowJobLabelsAttributeValue, ciGithubWorkflowJobStatusAttributeValue.String(), ciGithubWorkflowJobConclusionAttributeValue.String(), ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
 }
 
 // RecordWorkflowRunsCountDataPoint adds a data point to workflow.runs.count metric.
-func (mb *MetricsBuilder) RecordWorkflowRunsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue AttributeCiGithubWorkflowRunStatus, ciGithubWorkflowRunConclusionAttributeValue AttributeCiGithubWorkflowRunConclusion, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
-	mb.metricWorkflowRunsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubWorkflowRunLabelsAttributeValue, ciGithubWorkflowRunStatusAttributeValue.String(), ciGithubWorkflowRunConclusionAttributeValue.String(), ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
+func (mb *MetricsBuilder) RecordWorkflowRunsCountDataPoint(ts pcommon.Timestamp, val int64, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue AttributeCiGithubWorkflowRunStatus, ciGithubWorkflowRunConclusionAttributeValue AttributeCiGithubWorkflowRunConclusion, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
+	mb.metricWorkflowRunsCount.recordDataPoint(mb.startTime, ts, val, ciGithubWorkflowRunLabelsAttributeValue, ciGithubWorkflowRunStatusAttributeValue.String(), ciGithubWorkflowRunConclusionAttributeValue.String(), ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

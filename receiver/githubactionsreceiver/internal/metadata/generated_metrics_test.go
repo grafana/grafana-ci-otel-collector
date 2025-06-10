@@ -65,11 +65,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
+			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.run.labels-val", AttributeCiGithubWorkflowRunStatusCompleted, AttributeCiGithubWorkflowRunConclusionSuccess, true)
+			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "ci.github.workflow.run.labels-val", AttributeCiGithubWorkflowRunStatusCompleted, AttributeCiGithubWorkflowRunConclusionSuccess, true)
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
@@ -122,10 +122,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("vcs.repository.name")
-					assert.True(t, ok)
-					assert.Equal(t, "vcs.repository.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.labels")
+					attrVal, ok := dp.Attributes().Get("ci.github.workflow.job.labels")
 					assert.True(t, ok)
 					assert.Equal(t, "ci.github.workflow.job.labels-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("ci.github.workflow.job.status")
@@ -151,10 +148,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("vcs.repository.name")
-					assert.True(t, ok)
-					assert.Equal(t, "vcs.repository.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.labels")
+					attrVal, ok := dp.Attributes().Get("ci.github.workflow.run.labels")
 					assert.True(t, ok)
 					assert.Equal(t, "ci.github.workflow.run.labels-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("ci.github.workflow.run.status")
