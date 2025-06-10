@@ -281,23 +281,35 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	// if a log consumer is set, process the event into logs
 	if gar.logsConsumer != nil {
+		gar.logger.Info("Log consumer is set, attempting to process logs",
+			zap.String("event_type", fmt.Sprintf("%T", event)))
+
 		if gar.ghClient == nil {
 			gar.logger.Error("GitHub token not provided, but a logs consumer is set. Logs will not be processed. Please provide a GitHub token.")
 		} else {
+			gar.logger.Info("GitHub client available, calling eventToLogs")
 			withTraceInfo := gar.tracesConsumer != nil && !traceErr
 
 			ld, err := eventToLogs(event, gar.config, gar.ghClient, gar.logger.Named("eventToLogs"), withTraceInfo)
 			if err != nil {
 				gar.logger.Error("Failed to process logs", zap.Error(err))
+			} else if ld == nil {
+				gar.logger.Info("eventToLogs returned nil (expected for non-completed runs or job events)")
+			} else {
+				gar.logger.Info("eventToLogs successful, consuming logs")
 			}
 
 			if ld != nil {
 				consumerErr := gar.logsConsumer.ConsumeLogs(ctx, *ld)
 				if consumerErr != nil {
 					gar.logger.Error("Failed to consume logs", zap.Error(consumerErr))
+				} else {
+					gar.logger.Info("Logs successfully consumed")
 				}
 			}
 		}
+	} else {
+		gar.logger.Info("No log consumer set, skipping log processing")
 	}
 
 	w.WriteHeader(http.StatusAccepted)

@@ -41,8 +41,11 @@ func (b *logEntryBuilder) reset() {
 }
 
 func eventToLogs(event interface{}, config *Config, ghClient *github.Client, logger *zap.Logger, withTraceInfo bool) (*plog.Logs, error) {
+	logger.Info("eventToLogs called", zap.String("event_type", fmt.Sprintf("%T", event)))
+
 	e, ok := event.(*github.WorkflowRunEvent)
 	if !ok {
+		logger.Info("Event is not WorkflowRunEvent, skipping logs", zap.String("actual_type", fmt.Sprintf("%T", event)))
 		return nil, nil
 	}
 
@@ -51,17 +54,37 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 		return nil, nil
 	}
 
+	repo := e.GetRepo().GetFullName()
+	workflowRunID := e.GetWorkflowRun().GetID()
+	status := e.GetWorkflowRun().GetStatus()
+	action := e.GetAction()
+
 	log := enrichLogger(logger, e)
-	if e.GetWorkflowRun().GetStatus() != "completed" {
-		log.Debug("Run not completed, skipping")
+	log.Info("Processing workflow run event for logs",
+		zap.String("repo", repo),
+		zap.Int64("workflow_run_id", workflowRunID),
+		zap.String("status", status),
+		zap.String("action", action))
+
+	if status != "completed" {
+		log.Info("Run not completed, skipping log collection",
+			zap.String("current_status", status))
 		return nil, nil
 	}
 
+	log.Info("Workflow run completed, attempting to fetch logs")
+
 	zipReader, cleanup, err := getWorkflowRunLogsZip(context.Background(), ghClient, e, log)
 	if err != nil {
+		log.Error("Failed to get workflow run logs zip",
+			zap.Error(err),
+			zap.String("repo", repo),
+			zap.Int64("workflow_run_id", workflowRunID))
 		return nil, err
 	}
 	defer cleanup()
+
+	log.Info("Successfully downloaded workflow run logs, processing...")
 
 	logs := plog.NewLogs()
 	resourceLogs := logs.ResourceLogs().AppendEmpty()
@@ -96,18 +119,38 @@ func enrichLogger(logger *zap.Logger, e *github.WorkflowRunEvent) *zap.Logger {
 }
 
 func getWorkflowRunLogsZip(ctx context.Context, ghClient *github.Client, e *github.WorkflowRunEvent, logger *zap.Logger) (*zip.Reader, func(), error) {
-	url, _, err := ghClient.Actions.GetWorkflowRunAttemptLogs(
+	owner := e.GetRepo().GetOwner().GetLogin()
+	repoName := e.GetRepo().GetName()
+	runID := e.GetWorkflowRun().GetID()
+	attempt := e.GetWorkflowRun().GetRunAttempt()
+
+	logger.Info("Requesting workflow run logs from GitHub API",
+		zap.String("owner", owner),
+		zap.String("repo", repoName),
+		zap.Int64("run_id", runID),
+		zap.Int("attempt", attempt))
+
+	url, response, err := ghClient.Actions.GetWorkflowRunAttemptLogs(
 		ctx,
-		e.GetRepo().GetOwner().GetLogin(),
-		e.GetRepo().GetName(),
-		e.GetWorkflowRun().GetID(),
-		e.GetWorkflowRun().GetRunAttempt(),
+		owner,
+		repoName,
+		runID,
+		attempt,
 		10,
 	)
 	if err != nil {
-		logger.Error("Failed to get logs", zap.Error(err))
+		logger.Error("GitHub API call failed for workflow run logs",
+			zap.Error(err),
+			zap.String("owner", owner),
+			zap.String("repo", repoName),
+			zap.Int64("run_id", runID),
+			zap.Int("attempt", attempt),
+			zap.Int("status_code", response.StatusCode))
 		return nil, nil, err
 	}
+
+	logger.Info("GitHub API call successful, downloading logs",
+		zap.String("download_url", url.String()))
 
 	tmpFile, err := downloadLogsToTempFile(url.String(), logger)
 	if err != nil {

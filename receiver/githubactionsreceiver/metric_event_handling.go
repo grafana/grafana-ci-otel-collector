@@ -51,7 +51,7 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowJob() == nil {
 		m.logger.Warn("Received malformed workflow job webhook event with nil fields, skipping")
-		return m.mb.Emit()
+		return pmetric.NewMetrics()
 	}
 
 	repo := event.GetRepo().GetFullName()
@@ -134,7 +134,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowRun() == nil {
 		m.logger.Warn("Received malformed workflow run webhook event with nil fields, skipping")
-		return m.mb.Emit()
+		return pmetric.NewMetrics()
 	}
 
 	repo := event.GetRepo().GetFullName()
