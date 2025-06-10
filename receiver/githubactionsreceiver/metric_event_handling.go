@@ -99,7 +99,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		curVal, found := loadFromCache(repo, labels, status, conclusion)
 
 		metricKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, status.String(), conclusion.String(), isMain)
-		
+
 		if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
 			if !found {
 				for _, s := range metadata.MapAttributeCiGithubWorkflowJobStatus {
@@ -157,7 +157,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		curVal, found := loadFromCache(repo, "default", status, conclusion)
 
 		metricKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", status.String(), conclusion.String(), isMain)
-		
+
 		if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
 			if !found {
 				for _, s := range metadata.MapAttributeCiGithubWorkflowRunStatus {
