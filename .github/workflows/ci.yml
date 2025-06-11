@@ -158,7 +158,7 @@ jobs:
           persist-credentials: false
 
       - name: Push to GAR
-        uses: grafana/shared-workflows/actions/push-to-gar-docker@99afc12c9af11a4a8b89178197787e50b59d07f5 # push-to-gar-docker-v0.3.1
+        uses: grafana/shared-workflows/actions/push-to-gar-docker@push-to-gar-docker/v0.5.1
         with:
           # Only push to GAR on main branch pushes
           push: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
@@ -243,7 +243,7 @@ jobs:
       - id: submit-argowfs-deployment
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' && true || false }}
         name: Submit Argo Workflows deployment
-        uses: grafana/shared-workflows/actions/trigger-argo-workflow@fa48192dac470ae356b3f7007229f3ac28c48a25
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@trigger-argo-workflow/v1.1.1
         with:
           namespace: release-cd
           workflow_template: cicd-o11y
