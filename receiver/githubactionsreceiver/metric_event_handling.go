@@ -53,7 +53,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		m.logger.Warn("Received malformed workflow job webhook event with nil fields, skipping")
 		return m.mb.Emit()
 	}
-	
+
 	repo := event.GetRepo().GetFullName()
 
 	labels := ""
@@ -136,7 +136,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		m.logger.Warn("Received malformed workflow run webhook event with nil fields, skipping")
 		return m.mb.Emit()
 	}
-	
+
 	repo := event.GetRepo().GetFullName()
 
 	m.logger.Debug("Processing workflow_run event",

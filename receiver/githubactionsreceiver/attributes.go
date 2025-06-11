@@ -15,7 +15,7 @@ func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent
 	if e == nil || e.GetRepo() == nil || e.GetWorkflowRun() == nil {
 		return // Skip attribute setting if fields are nil
 	}
-	
+
 	serviceName := generateServiceName(config, e.GetRepo().GetFullName())
 	attrs.PutStr("service.name", serviceName)
 
@@ -53,7 +53,7 @@ func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent
 	if sender := e.GetSender(); sender != nil {
 		attrs.PutStr("ci.github.workflow.run.sender.login", sender.GetLogin())
 	}
-	
+
 	if triggeringActor := e.GetWorkflowRun().GetTriggeringActor(); triggeringActor != nil {
 		attrs.PutStr("ci.github.workflow.run.triggering_actor.login", triggeringActor.GetLogin())
 	}
@@ -64,7 +64,7 @@ func setWorkflowRunEventAttributes(attrs pcommon.Map, e *github.WorkflowRunEvent
 	attrs.PutStr("scm.system", "git")
 
 	attrs.PutStr("scm.git.head_branch", e.GetWorkflowRun().GetHeadBranch())
-	
+
 	if headCommit := e.GetWorkflowRun().GetHeadCommit(); headCommit != nil {
 		if author := headCommit.GetAuthor(); author != nil {
 			attrs.PutStr("scm.git.head_commit.author.email", author.GetEmail())
