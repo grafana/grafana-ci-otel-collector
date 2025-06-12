@@ -47,6 +47,12 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 	}
 
 	log := enrichLogger(logger, e)
+	log.Debug("Processing WorkflowRunEvent for logs",
+		zap.String("status", e.GetWorkflowRun().GetStatus()),
+		zap.String("conclusion", e.GetWorkflowRun().GetConclusion()),
+		zap.Int64("run_id", e.GetWorkflowRun().GetID()),
+		zap.Int("run_attempt", e.GetWorkflowRun().GetRunAttempt()))
+
 	if e.GetWorkflowRun().GetStatus() != "completed" {
 		log.Debug("Run not completed, skipping")
 		return nil, nil
@@ -63,12 +69,18 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 	setWorkflowRunEventAttributes(resourceLogs.Resource().Attributes(), e, config)
 
 	traceID, _ := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
-	jobs, files := extractJobsAndFilesFromZip(zipReader)
+	jobs, files := extractJobsAndFilesFromZip(zipReader, log)
 
-	for _, jobName := range jobs {
+	log.Debug("Extracted jobs and files from zip", zap.Int("job_count", len(jobs)), zap.Int("file_count", len(files)))
+	log.Debug("Job names", zap.Any("job_names", jobs))
+
+	for i, jobName := range jobs {
+		log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
 		processJobLogs(jobName, files, resourceLogs, traceID, e, withTraceInfo, log)
+		log.Debug("Completed job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
 	}
 
+	log.Debug("All jobs processed", zap.Int("total_resource_logs", logs.ResourceLogs().Len()))
 	return &logs, nil
 }
 
@@ -148,17 +160,32 @@ func downloadLogsToTempFile(url string, logger *zap.Logger) (*os.File, error) {
 	return out, nil
 }
 
-func extractJobsAndFilesFromZip(zipReader *zip.Reader) ([]string, []*zip.File) {
+func extractJobsAndFilesFromZip(zipReader *zip.Reader, logger *zap.Logger) ([]string, []*zip.File) {
 	var jobs []string
 	var files []*zip.File
 
-	for _, f := range zipReader.File {
+	logger.Debug("Total files in zip", zap.Int("file_count", len(zipReader.File)))
+
+	for i, f := range zipReader.File {
+		logger.Debug("Zip entry", zap.Int("entry_index", i), zap.String("file_name", f.Name), zap.Bool("is_dir", f.FileInfo().IsDir()), zap.Uint64("uncompressed_size", f.UncompressedSize64))
+
 		if f.FileInfo().IsDir() {
+			// Old format: directories
 			jobs = append(jobs, strings.TrimSuffix(f.Name, "/"))
 		} else {
 			files = append(files, f)
+			if strings.Contains(f.Name, "/") {
+				jobName := strings.Split(f.Name, "/")[0]
+				logger.Debug("Extracted job name", zap.String("job_name", jobName), zap.String("file_name", f.Name))
+				jobs = append(jobs, jobName)
+				logger.Debug("Added job", zap.String("job_name", jobName), zap.Int("total_jobs", len(jobs)))
+			} else {
+				logger.Debug("File contains no '/', skipping job extraction", zap.String("file_name", f.Name))
+			}
 		}
 	}
+
+	logger.Debug("Extracted jobs and files", zap.Int("job_count", len(jobs)), zap.Int("file_count", len(files)))
 	return jobs, files
 }
 
@@ -170,9 +197,15 @@ func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.Resourc
 		if !strings.HasPrefix(logFile.Name, jobName+"/") {
 			continue
 		}
-
+		logger.Debug("Processing log file",
+			zap.String("job_name", jobName),
+			zap.String("file_name", logFile.Name))
 		processLogFile(logFile, jobName, jobLogsScope, traceID, e, withTraceInfo, logger)
 	}
+
+	logger.Debug("Completed job log processing",
+		zap.String("job_name", jobName),
+		zap.Int("log_records", jobLogsScope.LogRecords().Len()))
 }
 
 func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {

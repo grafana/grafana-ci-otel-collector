@@ -286,6 +286,9 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		} else {
 			withTraceInfo := gar.tracesConsumer != nil && !traceErr
 
+			gar.logger.Debug("Calling eventToLogs")
+			gar.logger.Debug("Event type being passed to eventToLogs", zap.String("event_type", fmt.Sprintf("%T", event)))
+
 			ld, err := eventToLogs(event, gar.config, gar.ghClient, gar.logger.Named("eventToLogs"), withTraceInfo)
 			if err != nil {
 				gar.logger.Error("Failed to process logs", zap.Error(err))
