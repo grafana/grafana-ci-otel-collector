@@ -49,7 +49,16 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 }
 
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
+	if event == nil || event.GetRepo() == nil || event.GetWorkflowJob() == nil {
+		m.logger.Debug("Received nil event or missing required fields")
+		return m.mb.Emit()
+	}
+
 	repo := event.GetRepo().GetFullName()
+	if repo == "" {
+		m.logger.Debug("Repository name is empty")
+		return m.mb.Emit()
+	}
 
 	labels := ""
 	if len(event.GetWorkflowJob().Labels) > 0 {
@@ -91,11 +100,12 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	defaultBranch := event.GetRepo().DefaultBranch
 	var isMain bool
 
-	if event.GetWorkflowJob().GetHeadBranch() == *defaultBranch {
+	if defaultBranch != nil && event.GetWorkflowJob().GetHeadBranch() == *defaultBranch {
 		isMain = true
 	}
 
-	if actionOk {
+	// Validate required fields before recording metrics
+	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
 		curVal, found := loadFromCache(repo, labels, status, conclusion)
 
 		metricKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, status.String(), conclusion.String(), isMain)
@@ -127,7 +137,16 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
+	if event == nil || event.GetRepo() == nil || event.GetWorkflowRun() == nil {
+		m.logger.Debug("Received nil event or missing required fields")
+		return m.mb.Emit()
+	}
+
 	repo := event.GetRepo().GetFullName()
+	if repo == "" {
+		m.logger.Debug("Repository name is empty")
+		return m.mb.Emit()
+	}
 
 	m.logger.Debug("Processing workflow_run event",
 		zap.String("repo", repo),
@@ -149,11 +168,12 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	defaultBranch := event.GetRepo().DefaultBranch
 	var isMain bool
 
-	if event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
+	if defaultBranch != nil && event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
 		isMain = true
 	}
 
-	if actionOk {
+	// Validate required fields before recording metrics
+	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
 		curVal, found := loadFromCache(repo, "default", status, conclusion)
 
 		metricKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", status.String(), conclusion.String(), isMain)
