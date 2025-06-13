@@ -261,8 +261,16 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 			builder.currentBody.WriteString(rest)
 		} else {
 			if !builder.hasCurrentEntry {
-				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
-				continue
+				if line != "" {
+					parts := strings.SplitN(line, "Z", 2)
+					parsedTime, _ := time.Parse(time.RFC3339, parts[0])
+					fmtLine := fmt.Sprintf(parsedTime.String(), strings.TrimSpace(parts[1]))
+					logger.Error("Orphaned log line without preceding timestamp", zap.String("line", fmtLine))
+					continue
+				} else {
+					logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
+					continue
+				}
 			}
 
 			if builder.currentBody.Len()+len(line)+1 > maxLogEntryBytes {
