@@ -260,7 +260,6 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 			}
 			builder.currentBody.WriteString(rest)
 		} else {
-			fmt.Println("\nTimestamp: ", parsedTime, "\nMsg: ", rest, "\nLine: ", line)
 			if !builder.hasCurrentEntry {
 				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
 				continue
