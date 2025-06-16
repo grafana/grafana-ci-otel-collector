@@ -261,16 +261,7 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 			builder.currentBody.WriteString(rest)
 		} else {
 			if !builder.hasCurrentEntry {
-				parts := strings.SplitN(line, " ", 2)
-				ts := strings.TrimSpace(strings.TrimPrefix(parts[0], "\uFEFF"))
-
-				t, err := time.Parse(time.RFC3339Nano, ts)
-				if err != nil {
-					logger.Error("Unable to parse string to RFC3339Nano")
-				}
-
-				fmtLine := fmt.Sprintf("%s %s", t.Format(time.RFC3339), parts[1])
-				logger.Error("Orphaned logline without preceding timestamp", zap.String("line", fmtLine))
+				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
 				continue
 			}
 
@@ -307,16 +298,40 @@ func finalizeLogEntry(builder *logEntryBuilder, jobLogsScope plog.ScopeLogs, spa
 }
 
 func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
+	var parsedTime time.Time
+	var err error
+
 	ts, rest, ok := strings.Cut(line, " ")
 	if !ok {
 		return time.Time{}, "", false
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, ts)
-	if err != nil {
-		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
-		return time.Time{}, "", false
+	if strings.Contains(ts, ".") {
+		parsedTime, err = parseOrphanedTimestamp(ts, logger)
+		if err != nil {
+			logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
+			return time.Time{}, "", false
+		}
+	} else {
+		parsedTime, err = time.Parse(time.RFC3339Nano, ts)
+		if err != nil {
+			logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
+			return time.Time{}, "", false
+		}
 	}
 
 	return parsedTime, rest, true
+}
+
+func parseOrphanedTimestamp(ts string, logger *zap.Logger) (time.Time, error) {
+	// Set custom format as timestamps received on orphaned processes are 7 digits rather than 9 as RFC3339Nano expects
+	const RFC3339SevenDigits = "2006-01-02T15:04:05.9999999Z"
+
+	cleaned := strings.TrimSpace(strings.TrimPrefix(ts, "\uFEFF"))
+
+	t, err := time.Parse(RFC3339SevenDigits, cleaned)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse timestamp: %w", err)
+	}
+	return t.Truncate(time.Second), nil
 }
