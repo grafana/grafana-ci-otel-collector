@@ -261,21 +261,17 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 			builder.currentBody.WriteString(rest)
 		} else {
 			if !builder.hasCurrentEntry {
-				if line != "" {
-					parts := strings.SplitN(line, " ", 2)
-					t, err := time.Parse(time.RFC3339Nano, parts[0])
-					if err != nil {
-						logger.Error("Unable to parse string to RFC3339Nano")
-					}
+				parts := strings.SplitN(line, " ", 2)
+				ts := strings.TrimSpace(strings.TrimPrefix(parts[0], "\uFEFF"))
 
-					fmtTime := t.Format(time.RFC3339)
-					fmtLine := fmt.Sprintf("%s %s", fmtTime, parts[1])
-					logger.Error("Orphaned logline without preceding timestamp", zap.String("line", fmtLine))
-					continue
-				} else {
-					logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
-					continue
+				t, err := time.Parse(time.RFC3339Nano, ts)
+				if err != nil {
+					logger.Error("Unable to parse string to RFC3339Nano")
 				}
+
+				fmtLine := fmt.Sprintf("%s %s", t.Format(time.RFC3339), parts[1])
+				logger.Error("Orphaned logline without preceding timestamp", zap.String("line", fmtLine))
+				continue
 			}
 
 			if builder.currentBody.Len()+len(line)+1 > maxLogEntryBytes {
