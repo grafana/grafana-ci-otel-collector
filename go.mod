@@ -14,7 +14,7 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent =>
 
 require (
 	github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.0.0-00010101000000-000000000000
-	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-00010101000000-000000000000
+	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250630100552-e482b7cce960
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
