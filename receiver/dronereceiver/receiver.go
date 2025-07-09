@@ -40,7 +40,7 @@ func newReceiver(params receiver.Settings,
 	config *Config) (*droneReceiver, error) {
 
 	transport := "http"
-	if config.TLSSetting != nil {
+	if config.TLS != nil {
 		transport = "https"
 	}
 
