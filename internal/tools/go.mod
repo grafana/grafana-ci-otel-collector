@@ -7,7 +7,7 @@ require (
 	github.com/google/osv-scanner v1.9.2
 	github.com/securego/gosec/v2 v2.22.5
 	go.opentelemetry.io/build-tools/crosslink v0.23.1
-	go.opentelemetry.io/collector/cmd/builder v0.127.0
+	go.opentelemetry.io/collector/cmd/builder v0.129.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.129.0
 	golang.org/x/tools v0.34.0
 	honnef.co/go/tools v0.6.1
