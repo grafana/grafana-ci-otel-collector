@@ -14,7 +14,7 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent =>
 
 require (
 	github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.0.0-20250630100552-e482b7cce960
-	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250708123157-7fd63c9bb347
+	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250709143647-9e225ee7fe9b
 )
 
 require (
