@@ -13,7 +13,7 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/semconv => ./inter
 replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent => ./internal/sharedcomponent
 
 require (
-	github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.0.0-20250630100552-e482b7cce960
+	github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.0.0-20250709143647-9e225ee7fe9b
 	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250709143647-9e225ee7fe9b
 )
 
@@ -38,7 +38,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250630100552-e482b7cce960 // indirect
 	github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent v0.0.0-20250630100552-e482b7cce960 // indirect
-	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250630100552-e482b7cce960 // indirect
+	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250709143647-9e225ee7fe9b // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
