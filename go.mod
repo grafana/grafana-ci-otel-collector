@@ -13,8 +13,8 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/semconv => ./inter
 replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent => ./internal/sharedcomponent
 
 require (
-	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250709143647-9e225ee7fe9b
 	github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.0.0-20250709143647-9e225ee7fe9b
+	github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.0.0-20250709143647-9e225ee7fe9b
 )
 
 require (
