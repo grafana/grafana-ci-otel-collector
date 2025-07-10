@@ -36,8 +36,8 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250630100552-e482b7cce960 // indirect
 	github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent v0.0.0-20250630100552-e482b7cce960 // indirect
+	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250630100552-e482b7cce960 // indirect
 	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250630100552-e482b7cce960 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
