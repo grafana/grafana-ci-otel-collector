@@ -6,7 +6,7 @@ require (
 	github.com/golangci/golangci-lint v1.64.8
 	github.com/google/osv-scanner v1.9.2
 	github.com/securego/gosec/v2 v2.22.5
-	go.opentelemetry.io/build-tools/crosslink v0.23.1
+	go.opentelemetry.io/build-tools/crosslink v0.24.0
 	go.opentelemetry.io/collector/cmd/builder v0.129.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.129.0
 	golang.org/x/tools v0.34.0
@@ -277,7 +277,7 @@ require (
 	go-simpler.org/musttag v0.13.0 // indirect
 	go-simpler.org/sloglint v0.9.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/build-tools v0.23.1 // indirect
+	go.opentelemetry.io/build-tools v0.24.0 // indirect
 	go.opentelemetry.io/collector/component v1.35.0 // indirect
 	go.opentelemetry.io/collector/confmap v1.35.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.35.0 // indirect
