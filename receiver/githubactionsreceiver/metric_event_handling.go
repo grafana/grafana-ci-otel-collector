@@ -191,15 +191,19 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 				prNumber = workflowRun.PullRequests[0].GetNumber()
 			}
 
-			m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain, int64(prNumber))
+			// Record Renovate PR metric for caching (include PR number to make it unique per PR)
+			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%t:%d", repo, prState.String(), isMain, prNumber)
+			if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
+				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain, int64(prNumber))
 
-			m.logger.Info("Recorded Renovate PR metric",
-				zap.String("repo", repo),
-				zap.String("state", prState.String()),
-				zap.Bool("is_targeting_main", isMain),
-				zap.Int("pr_number", prNumber),
-				zap.String("head_branch", workflowRun.GetHeadBranch()),
-			)
+				m.logger.Info("Recorded Renovate PR metric",
+					zap.String("repo", repo),
+					zap.String("state", prState.String()),
+					zap.Bool("is_targeting_main", isMain),
+					zap.Int("pr_number", prNumber),
+					zap.String("head_branch", workflowRun.GetHeadBranch()),
+				)
+			}
 		}
 	}
 
@@ -276,6 +280,11 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 	workflowRun := event.GetWorkflowRun()
 
 	// Check if this is from a PR
+	m.logger.Info("Checking PullRequests field",
+		zap.Int("pr_count", len(workflowRun.PullRequests)),
+		zap.String("event", event.GetWorkflowRun().GetEvent()),
+	)
+	
 	if len(workflowRun.PullRequests) == 0 {
 		return false
 	}
@@ -290,6 +299,12 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 
 	// Check for Renovate/Dependabot patterns in branch name, actor, or PR titles
 	isRenovate := strings.Contains(strings.ToLower(prAuthor), "renovate-sh-app[bot]")
+
+	m.logger.Info("Checking if PR is from Renovate",
+		zap.String("actor", prAuthor),
+		zap.Bool("is_renovate", isRenovate),
+		zap.Int("pr_count", len(workflowRun.PullRequests)),
+	)
 
 	return isRenovate
 }
