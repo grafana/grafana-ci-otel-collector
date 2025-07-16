@@ -148,13 +148,15 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		return m.mb.Emit()
 	}
 
-	m.logger.Debug("Processing workflow_run event",
+	m.logger.Info("Processing workflow_run event",
 		zap.String("repo", repo),
 		zap.Int64("id", event.GetWorkflowRun().GetID()),
 		zap.String("name", event.GetWorkflowRun().GetName()),
 		zap.String("action", event.GetAction()),
 		zap.String("status", event.GetWorkflowRun().GetStatus()),
 		zap.String("conclusion", event.GetWorkflowRun().GetConclusion()),
+		zap.String("event", event.GetWorkflowRun().GetEvent()),
+		zap.Int("run_attempt", event.GetWorkflowRun().GetRunAttempt()),
 	)
 
 	now := pcommon.NewTimestampFromTime(time.Now())
@@ -292,9 +294,14 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 	if actor != nil {
 		prAuthor = actor.GetLogin()
 	}
+	
+	m.logger.Info("Actor debug info",
+		zap.Bool("actor_is_nil", actor == nil),
+		zap.String("actor_login", prAuthor),
+	)
 
-	// Check for Renovate/Dependabot patterns in branch name, actor, or PR titles
-	isRenovate := strings.Contains(strings.ToLower(prAuthor), "renovate-sh-app[bot]")
+	// Check for Renovate patterns in actor name
+	isRenovate := strings.Contains(prAuthor, "renovate-sh-app[bot]")
 
 	m.logger.Info("Checking if PR is from Renovate",
 		zap.String("actor", prAuthor),
