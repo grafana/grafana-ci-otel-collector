@@ -42,7 +42,6 @@ require (
 	go.opentelemetry.io/otel/log v0.13.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 require (
