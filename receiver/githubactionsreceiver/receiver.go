@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -239,7 +240,7 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	case *github.WorkflowRunEvent:
-		if gar.metricsConsumer != nil && e.GetWorkflowRun().GetEvent() == "push" {
+		if gar.metricsConsumer != nil && (e.GetWorkflowRun().GetEvent() == "push" || (e.GetWorkflowRun().GetEvent() == "pull_request" && gar.metricsHandler.detectRenovatePR(e))) {
 			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowRunEventToMetrics(e))
 
 			if err != nil {
@@ -305,3 +306,4 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusAccepted)
 }
+
