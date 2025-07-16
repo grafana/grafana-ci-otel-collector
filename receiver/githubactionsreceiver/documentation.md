@@ -41,7 +41,6 @@ Number of Renovate pull requests.
 | vcs.repository.name | Repository name | Any Str |
 | ci.github.pr.state | Pull request state | Str: ``open``, ``closed`` |
 | ci.github.pr.target_branch.is_main | Whether the PR target branch is the main branch | Any Bool |
-| ci.github.pr.number | Pull request number | Any Int |
 
 ### workflow.jobs.count
 

@@ -65,7 +65,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordRenovatePrsCountDataPoint(ts, 1, "vcs.repository.name-val", AttributeCiGithubPrStateOpen, true, 19)
+			mb.RecordRenovatePrsCountDataPoint(ts, 1, "vcs.repository.name-val", AttributeCiGithubPrStateOpen, true)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -135,9 +135,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("ci.github.pr.target_branch.is_main")
 					assert.True(t, ok)
 					assert.True(t, attrVal.Bool())
-					attrVal, ok = dp.Attributes().Get("ci.github.pr.number")
-					assert.True(t, ok)
-					assert.EqualValues(t, 19, attrVal.Int())
 				case "workflow.jobs.count":
 					assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
 					validatedMetrics["workflow.jobs.count"] = true

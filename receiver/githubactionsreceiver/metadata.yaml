@@ -84,9 +84,6 @@ attributes:
   ci.github.pr.target_branch.is_main:
     description: Whether the PR target branch is the main branch
     type: bool
-  ci.github.pr.number:
-    description: Pull request number
-    type: int
 
 metrics:
   workflow.jobs.count:
@@ -141,5 +138,4 @@ metrics:
         vcs.repository.name,
         ci.github.pr.state,
         ci.github.pr.target_branch.is_main,
-        ci.github.pr.number,
       ]

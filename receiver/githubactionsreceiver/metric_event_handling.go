@@ -185,22 +185,15 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 				prState = metadata.AttributeCiGithubPrStateOpen
 			}
 
-			// Get PR number for unique identification
-			var prNumber int
-			if len(workflowRun.PullRequests) > 0 {
-				prNumber = workflowRun.PullRequests[0].GetNumber()
-			}
-
-			// Record Renovate PR metric for caching (include PR number to make it unique per PR)
-			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%t:%d", repo, prState.String(), isMain, prNumber)
+			// Record Renovate PR metric for caching (use run ID to make it unique per run)
+			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%t:%d", repo, prState.String(), isMain, workflowRun.GetID())
 			if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
-				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain, int64(prNumber))
+				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain)
 
 				m.logger.Info("Recorded Renovate PR metric",
 					zap.String("repo", repo),
 					zap.String("state", prState.String()),
 					zap.Bool("is_targeting_main", isMain),
-					zap.Int("pr_number", prNumber),
 					zap.String("head_branch", workflowRun.GetHeadBranch()),
 				)
 			}
@@ -279,13 +272,16 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 
 	workflowRun := event.GetWorkflowRun()
 
-	// Check if this is from a PR
+	// Check if this is from a PR event or push event (merged PR)
+	eventType := event.GetWorkflowRun().GetEvent()
 	m.logger.Info("Checking PullRequests field",
 		zap.Int("pr_count", len(workflowRun.PullRequests)),
-		zap.String("event", event.GetWorkflowRun().GetEvent()),
+		zap.String("event", eventType),
 	)
 
-	if len(workflowRun.PullRequests) == 0 {
+	// For push events, we don't have PR data but we can still detect Renovate by actor
+	// For pull_request events, we should have PR data
+	if eventType != "pull_request" && eventType != "push" {
 		return false
 	}
 
