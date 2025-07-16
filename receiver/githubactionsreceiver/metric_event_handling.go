@@ -193,7 +193,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 			m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain, int64(prNumber))
 
-			m.logger.Debug("Recorded Renovate PR metric",
+			m.logger.Info("Recorded Renovate PR metric",
 				zap.String("repo", repo),
 				zap.String("state", prState.String()),
 				zap.Bool("is_targeting_main", isMain),
