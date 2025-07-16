@@ -184,12 +184,12 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 			} else {
 				prState = metadata.AttributeCiGithubPrStateOpen
 			}
-			
+
 			// Record Renovate PR metric for caching
 			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%s:%t:%t", repo, prAuthor, prState.String(), isRenovate, isMain)
 			if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
 				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prAuthor, prState, isRenovate, isMain)
-				
+
 				m.logger.Debug("Recorded Renovate PR metric",
 					zap.String("repo", repo),
 					zap.String("author", prAuthor),
@@ -273,7 +273,7 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) (bool,
 	}
 
 	workflowRun := event.GetWorkflowRun()
-	
+
 	// Check if this is from a PR
 	if len(workflowRun.PullRequests) == 0 {
 		return false, ""
@@ -281,12 +281,12 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) (bool,
 
 	// Check PR title and head branch for Renovate patterns
 	actor := workflowRun.GetActor()
-	
+
 	var prAuthor string
 	if actor != nil {
 		prAuthor = actor.GetLogin()
 	}
-	
+
 	// Check for Renovate/Dependabot patterns in branch name, actor, or PR titles
 	isRenovate := strings.Contains(strings.ToLower(prAuthor), "renovate-sh-app[bot]")
 
