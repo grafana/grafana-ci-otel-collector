@@ -175,30 +175,31 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	workflowRun := event.GetWorkflowRun()
 	// Track only the first run attempt to avoid double counting due to restarts
 	if workflowRun.GetRunAttempt() == 1 {
-		isRenovate, prAuthor := m.detectRenovatePR(event)
+		isRenovate := m.detectRenovatePR(event)
 		if isRenovate {
-			// Determine PR state based on workflow run status
+			// Determine PR state based on branch: main = closed (merged), non-main = open
 			var prState metadata.AttributeCiGithubPrState
-			if workflowRun.GetStatus() == "completed" {
+			if isMain {
 				prState = metadata.AttributeCiGithubPrStateClosed
 			} else {
 				prState = metadata.AttributeCiGithubPrStateOpen
 			}
 
-			// Record Renovate PR metric for caching
-			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%s:%t:%t", repo, prAuthor, prState.String(), isRenovate, isMain)
-			if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
-				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prAuthor, prState, isRenovate, isMain)
-
-				m.logger.Debug("Recorded Renovate PR metric",
-					zap.String("repo", repo),
-					zap.String("author", prAuthor),
-					zap.String("state", prState.String()),
-					zap.Bool("is_renovate", isRenovate),
-					zap.Bool("is_targeting_main", isMain),
-					zap.String("head_branch", workflowRun.GetHeadBranch()),
-				)
+			// Get PR number for unique identification
+			var prNumber int
+			if len(workflowRun.PullRequests) > 0 {
+				prNumber = workflowRun.PullRequests[0].GetNumber()
 			}
+
+			m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain, int64(prNumber))
+
+			m.logger.Debug("Recorded Renovate PR metric",
+				zap.String("repo", repo),
+				zap.String("state", prState.String()),
+				zap.Bool("is_targeting_main", isMain),
+				zap.Int("pr_number", prNumber),
+				zap.String("head_branch", workflowRun.GetHeadBranch()),
+			)
 		}
 	}
 
@@ -267,16 +268,16 @@ func loadFromCache(repo, labels string, status interface{}, conclusion interface
 }
 
 // detectRenovatePR detects if a workflow run is from a Renovate PR
-func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) (bool, string) {
+func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 	if event == nil || event.GetWorkflowRun() == nil {
-		return false, ""
+		return false
 	}
 
 	workflowRun := event.GetWorkflowRun()
 
 	// Check if this is from a PR
 	if len(workflowRun.PullRequests) == 0 {
-		return false, ""
+		return false
 	}
 
 	// Check PR title and head branch for Renovate patterns
@@ -290,5 +291,5 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) (bool,
 	// Check for Renovate/Dependabot patterns in branch name, actor, or PR titles
 	isRenovate := strings.Contains(strings.ToLower(prAuthor), "renovate-sh-app[bot]")
 
-	return isRenovate, prAuthor
+	return isRenovate
 }

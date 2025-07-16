@@ -39,10 +39,9 @@ Number of Renovate pull requests.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | vcs.repository.name | Repository name | Any Str |
-| ci.github.pr.author | Pull request author | Any Str |
 | ci.github.pr.state | Pull request state | Str: ``open``, ``closed`` |
-| ci.github.pr.is_renovate | Whether the PR is created by Renovate | Any Bool |
 | ci.github.pr.target_branch.is_main | Whether the PR target branch is the main branch | Any Bool |
+| ci.github.pr.number | Pull request number | Any Int |
 
 ### workflow.jobs.count
 

@@ -75,21 +75,18 @@ attributes:
   version:
     description: The version of the cicd_o11y collector.
     type: string
-  ci.github.pr.author:
-    description: Pull request author
-    type: string
   ci.github.pr.state:
     description: Pull request state
     enum:
       - open
       - closed
     type: string
-  ci.github.pr.is_renovate:
-    description: Whether the PR is created by Renovate
-    type: bool
   ci.github.pr.target_branch.is_main:
     description: Whether the PR target branch is the main branch
     type: bool
+  ci.github.pr.number:
+    description: Pull request number
+    type: int
 
 metrics:
   workflow.jobs.count:
@@ -142,8 +139,7 @@ metrics:
     attributes:
       [
         vcs.repository.name,
-        ci.github.pr.author,
         ci.github.pr.state,
-        ci.github.pr.is_renovate,
         ci.github.pr.target_branch.is_main,
+        ci.github.pr.number,
       ]

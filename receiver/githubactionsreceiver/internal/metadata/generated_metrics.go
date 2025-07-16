@@ -307,7 +307,7 @@ func (m *metricRenovatePrsCount) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricRenovatePrsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrAuthorAttributeValue string, ciGithubPrStateAttributeValue string, ciGithubPrIsRenovateAttributeValue bool, ciGithubPrTargetBranchIsMainAttributeValue bool) {
+func (m *metricRenovatePrsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrStateAttributeValue string, ciGithubPrTargetBranchIsMainAttributeValue bool, ciGithubPrNumberAttributeValue int64) {
 	if !m.config.Enabled {
 		return
 	}
@@ -316,10 +316,9 @@ func (m *metricRenovatePrsCount) recordDataPoint(start pcommon.Timestamp, ts pco
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
 	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
-	dp.Attributes().PutStr("ci.github.pr.author", ciGithubPrAuthorAttributeValue)
 	dp.Attributes().PutStr("ci.github.pr.state", ciGithubPrStateAttributeValue)
-	dp.Attributes().PutBool("ci.github.pr.is_renovate", ciGithubPrIsRenovateAttributeValue)
 	dp.Attributes().PutBool("ci.github.pr.target_branch.is_main", ciGithubPrTargetBranchIsMainAttributeValue)
+	dp.Attributes().PutInt("ci.github.pr.number", ciGithubPrNumberAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -598,8 +597,8 @@ func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int
 }
 
 // RecordRenovatePrsCountDataPoint adds a data point to renovate.prs.count metric.
-func (mb *MetricsBuilder) RecordRenovatePrsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrAuthorAttributeValue string, ciGithubPrStateAttributeValue AttributeCiGithubPrState, ciGithubPrIsRenovateAttributeValue bool, ciGithubPrTargetBranchIsMainAttributeValue bool) {
-	mb.metricRenovatePrsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubPrAuthorAttributeValue, ciGithubPrStateAttributeValue.String(), ciGithubPrIsRenovateAttributeValue, ciGithubPrTargetBranchIsMainAttributeValue)
+func (mb *MetricsBuilder) RecordRenovatePrsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrStateAttributeValue AttributeCiGithubPrState, ciGithubPrTargetBranchIsMainAttributeValue bool, ciGithubPrNumberAttributeValue int64) {
+	mb.metricRenovatePrsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubPrStateAttributeValue.String(), ciGithubPrTargetBranchIsMainAttributeValue, ciGithubPrNumberAttributeValue)
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.
