@@ -284,7 +284,7 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 		zap.Int("pr_count", len(workflowRun.PullRequests)),
 		zap.String("event", event.GetWorkflowRun().GetEvent()),
 	)
-	
+
 	if len(workflowRun.PullRequests) == 0 {
 		return false
 	}
