@@ -7,8 +7,8 @@ require (
 	github.com/google/osv-scanner v1.9.2
 	github.com/securego/gosec/v2 v2.22.5
 	go.opentelemetry.io/build-tools/crosslink v0.24.0
-	go.opentelemetry.io/collector/cmd/builder v0.129.0
-	go.opentelemetry.io/collector/cmd/mdatagen v0.129.0
+	go.opentelemetry.io/collector/cmd/builder v0.130.0
+	go.opentelemetry.io/collector/cmd/mdatagen v0.130.0
 	golang.org/x/tools v0.35.0
 	honnef.co/go/tools v0.6.1
 )
@@ -156,6 +156,7 @@ require (
 	github.com/knadh/koanf/parsers/yaml v1.1.0 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
 	github.com/knadh/koanf/providers/env v1.1.0 // indirect
+	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
 	github.com/knadh/koanf/providers/file v1.2.0 // indirect
 	github.com/knadh/koanf/providers/fs v1.0.0 // indirect
 	github.com/knadh/koanf/v2 v2.2.1 // indirect
@@ -278,25 +279,25 @@ require (
 	go-simpler.org/sloglint v0.9.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/build-tools v0.24.0 // indirect
-	go.opentelemetry.io/collector/component v1.35.0 // indirect
-	go.opentelemetry.io/collector/confmap v1.35.0 // indirect
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.35.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.35.0 // indirect
-	go.opentelemetry.io/collector/filter v0.129.0 // indirect
-	go.opentelemetry.io/collector/internal/telemetry v0.129.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.35.0 // indirect
-	go.opentelemetry.io/contrib/bridges/otelzap v0.11.0 // indirect
+	go.opentelemetry.io/collector/component v1.36.0 // indirect
+	go.opentelemetry.io/collector/confmap v1.36.0 // indirect
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.36.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.36.0 // indirect
+	go.opentelemetry.io/collector/filter v0.130.0 // indirect
+	go.opentelemetry.io/collector/internal/telemetry v0.130.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.36.0 // indirect
+	go.opentelemetry.io/contrib/bridges/otelzap v0.12.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.36.0 // indirect
-	go.opentelemetry.io/otel/log v0.12.2 // indirect
-	go.opentelemetry.io/otel/metric v1.36.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
-	go.opentelemetry.io/otel/trace v1.36.0 // indirect
+	go.opentelemetry.io/otel v1.37.0 // indirect
+	go.opentelemetry.io/otel/log v0.13.0 // indirect
+	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
+	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.3 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/exp/typeparams v0.0.0-20250210185358-939b2ce775ac // indirect
