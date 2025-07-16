@@ -45,7 +45,7 @@ func newReceiver(
 	}
 
 	transport := "http"
-	if config.TLS != nil {
+	if config.TLS.HasValue() {
 		transport = "https"
 	}
 
