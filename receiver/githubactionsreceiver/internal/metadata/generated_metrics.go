@@ -11,6 +11,32 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
+// AttributeCiGithubPrState specifies the value ci.github.pr.state attribute.
+type AttributeCiGithubPrState int
+
+const (
+	_ AttributeCiGithubPrState = iota
+	AttributeCiGithubPrStateOpen
+	AttributeCiGithubPrStateClosed
+)
+
+// String returns the string representation of the AttributeCiGithubPrState.
+func (av AttributeCiGithubPrState) String() string {
+	switch av {
+	case AttributeCiGithubPrStateOpen:
+		return "open"
+	case AttributeCiGithubPrStateClosed:
+		return "closed"
+	}
+	return ""
+}
+
+// MapAttributeCiGithubPrState is a helper map of string to AttributeCiGithubPrState attribute value.
+var MapAttributeCiGithubPrState = map[string]AttributeCiGithubPrState{
+	"open":   AttributeCiGithubPrStateOpen,
+	"closed": AttributeCiGithubPrStateClosed,
+}
+
 // AttributeCiGithubWorkflowJobConclusion specifies the value ci.github.workflow.job.conclusion attribute.
 type AttributeCiGithubWorkflowJobConclusion int
 
@@ -191,6 +217,9 @@ var MetricsInfo = metricsInfo{
 	BuildInfo: metricInfo{
 		Name: "build.info",
 	},
+	RenovatePrsCount: metricInfo{
+		Name: "renovate.prs.count",
+	},
 	WorkflowJobsCount: metricInfo{
 		Name: "workflow.jobs.count",
 	},
@@ -201,6 +230,7 @@ var MetricsInfo = metricsInfo{
 
 type metricsInfo struct {
 	BuildInfo         metricInfo
+	RenovatePrsCount  metricInfo
 	WorkflowJobsCount metricInfo
 	WorkflowRunsCount metricInfo
 }
@@ -253,6 +283,63 @@ func (m *metricBuildInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricBuildInfo(cfg MetricConfig) metricBuildInfo {
 	m := metricBuildInfo{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricRenovatePrsCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills renovate.prs.count metric with initial data.
+func (m *metricRenovatePrsCount) init() {
+	m.data.SetName("renovate.prs.count")
+	m.data.SetDescription("Number of Renovate pull requests.")
+	m.data.SetUnit("{pr}")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricRenovatePrsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrAuthorAttributeValue string, ciGithubPrStateAttributeValue string, ciGithubPrIsRenovateAttributeValue bool, ciGithubPrTargetBranchIsMainAttributeValue bool) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
+	dp.Attributes().PutStr("ci.github.pr.author", ciGithubPrAuthorAttributeValue)
+	dp.Attributes().PutStr("ci.github.pr.state", ciGithubPrStateAttributeValue)
+	dp.Attributes().PutBool("ci.github.pr.is_renovate", ciGithubPrIsRenovateAttributeValue)
+	dp.Attributes().PutBool("ci.github.pr.target_branch.is_main", ciGithubPrTargetBranchIsMainAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricRenovatePrsCount) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricRenovatePrsCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricRenovatePrsCount(cfg MetricConfig) metricRenovatePrsCount {
+	m := metricRenovatePrsCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -383,6 +470,7 @@ type MetricsBuilder struct {
 	metricsBuffer           pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo               component.BuildInfo  // contains version information.
 	metricBuildInfo         metricBuildInfo
+	metricRenovatePrsCount  metricRenovatePrsCount
 	metricWorkflowJobsCount metricWorkflowJobsCount
 	metricWorkflowRunsCount metricWorkflowRunsCount
 }
@@ -411,6 +499,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		metricsBuffer:           pmetric.NewMetrics(),
 		buildInfo:               settings.BuildInfo,
 		metricBuildInfo:         newMetricBuildInfo(mbc.Metrics.BuildInfo),
+		metricRenovatePrsCount:  newMetricRenovatePrsCount(mbc.Metrics.RenovatePrsCount),
 		metricWorkflowJobsCount: newMetricWorkflowJobsCount(mbc.Metrics.WorkflowJobsCount),
 		metricWorkflowRunsCount: newMetricWorkflowRunsCount(mbc.Metrics.WorkflowRunsCount),
 	}
@@ -479,6 +568,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricBuildInfo.emit(ils.Metrics())
+	mb.metricRenovatePrsCount.emit(ils.Metrics())
 	mb.metricWorkflowJobsCount.emit(ils.Metrics())
 	mb.metricWorkflowRunsCount.emit(ils.Metrics())
 
@@ -505,6 +595,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 // RecordBuildInfoDataPoint adds a data point to build.info metric.
 func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int64, versionAttributeValue string) {
 	mb.metricBuildInfo.recordDataPoint(mb.startTime, ts, val, versionAttributeValue)
+}
+
+// RecordRenovatePrsCountDataPoint adds a data point to renovate.prs.count metric.
+func (mb *MetricsBuilder) RecordRenovatePrsCountDataPoint(ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubPrAuthorAttributeValue string, ciGithubPrStateAttributeValue AttributeCiGithubPrState, ciGithubPrIsRenovateAttributeValue bool, ciGithubPrTargetBranchIsMainAttributeValue bool) {
+	mb.metricRenovatePrsCount.recordDataPoint(mb.startTime, ts, val, vcsRepositoryNameAttributeValue, ciGithubPrAuthorAttributeValue, ciGithubPrStateAttributeValue.String(), ciGithubPrIsRenovateAttributeValue, ciGithubPrTargetBranchIsMainAttributeValue)
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.

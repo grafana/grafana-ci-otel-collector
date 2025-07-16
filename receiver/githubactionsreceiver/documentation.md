@@ -26,6 +26,24 @@ Build info.
 | ---- | ----------- | ------ |
 | version | The version of the cicd_o11y collector. | Any Str |
 
+### renovate.prs.count
+
+Number of Renovate pull requests.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| {pr} | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| vcs.repository.name | Repository name | Any Str |
+| ci.github.pr.author | Pull request author | Any Str |
+| ci.github.pr.state | Pull request state | Str: ``open``, ``closed`` |
+| ci.github.pr.is_renovate | Whether the PR is created by Renovate | Any Bool |
+| ci.github.pr.target_branch.is_main | Whether the PR target branch is the main branch | Any Bool |
+
 ### workflow.jobs.count
 
 Number of jobs.

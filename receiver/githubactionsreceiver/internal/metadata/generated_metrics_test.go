@@ -65,6 +65,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordRenovatePrsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.pr.author-val", AttributeCiGithubPrStateOpen, true, true)
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
 
 			defaultMetricsCount++
@@ -108,6 +112,35 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("version")
 					assert.True(t, ok)
 					assert.Equal(t, "version-val", attrVal.Str())
+				case "renovate.prs.count":
+					assert.False(t, validatedMetrics["renovate.prs.count"], "Found a duplicate in the metrics slice: renovate.prs.count")
+					validatedMetrics["renovate.prs.count"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Number of Renovate pull requests.", ms.At(i).Description())
+					assert.Equal(t, "{pr}", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("vcs.repository.name")
+					assert.True(t, ok)
+					assert.Equal(t, "vcs.repository.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.pr.author")
+					assert.True(t, ok)
+					assert.Equal(t, "ci.github.pr.author-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.pr.state")
+					assert.True(t, ok)
+					assert.Equal(t, "open", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("ci.github.pr.is_renovate")
+					assert.True(t, ok)
+					assert.True(t, attrVal.Bool())
+					attrVal, ok = dp.Attributes().Get("ci.github.pr.target_branch.is_main")
+					assert.True(t, ok)
+					assert.True(t, attrVal.Bool())
 				case "workflow.jobs.count":
 					assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
 					validatedMetrics["workflow.jobs.count"] = true
