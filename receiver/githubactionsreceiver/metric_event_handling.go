@@ -295,13 +295,31 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 		prAuthor = actor.GetLogin()
 	}
 	
-	m.logger.Info("Actor debug info",
+	// Get additional actor fields for debugging
+	sender := event.GetSender()
+	triggeringActor := workflowRun.GetTriggeringActor()
+	
+	var senderLogin, triggeringActorLogin string
+	if sender != nil {
+		senderLogin = sender.GetLogin()
+	}
+	if triggeringActor != nil {
+		triggeringActorLogin = triggeringActor.GetLogin()
+	}
+
+	m.logger.Info("Full actor debug info",
 		zap.Bool("actor_is_nil", actor == nil),
 		zap.String("actor_login", prAuthor),
+		zap.String("sender_login", senderLogin),
+		zap.String("triggering_actor_login", triggeringActorLogin),
+		zap.String("head_branch", workflowRun.GetHeadBranch()),
+		zap.String("workflow_event", workflowRun.GetEvent()),
 	)
 
 	// Check for Renovate patterns in actor name
-	isRenovate := strings.Contains(prAuthor, "renovate-sh-app[bot]")
+	isRenovate := strings.Contains(prAuthor, "renovate-sh-app[bot]") || 
+		strings.Contains(senderLogin, "renovate-sh-app[bot]") || 
+		strings.Contains(triggeringActorLogin, "renovate-sh-app[bot]")
 
 	m.logger.Info("Checking if PR is from Renovate",
 		zap.String("actor", prAuthor),
