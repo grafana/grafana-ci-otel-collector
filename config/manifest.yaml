@@ -21,6 +21,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.129.0
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.129.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.129.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.129.0
 
 extensions:
   # Used for basic auth in production deployments for grafana cloud.
