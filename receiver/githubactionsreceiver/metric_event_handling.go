@@ -298,6 +298,7 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 	// Get additional actor fields for debugging
 	sender := event.GetSender()
 	triggeringActor := workflowRun.GetTriggeringActor()
+	headCommitAuthorName := workflowRun.GetHeadCommit().GetAuthor().GetName()
 
 	var senderLogin, triggeringActorLogin string
 	if sender != nil {
@@ -314,6 +315,7 @@ func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
 		zap.String("triggering_actor_login", triggeringActorLogin),
 		zap.String("head_branch", workflowRun.GetHeadBranch()),
 		zap.String("workflow_event", workflowRun.GetEvent()),
+		zap.String("head_commit_author_name", headCommitAuthorName),
 	)
 
 	// Check for Renovate patterns in actor name
