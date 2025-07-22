@@ -161,10 +161,9 @@ jobs:
         uses: grafana/shared-workflows/actions/push-to-gar-docker@751820b271417d91fe8588816ed4296b311caa33 # v0.5.1
         with:
           # Only push to GAR on main branch pushes
-          push: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          push: true
           tags: |-
-            ${{ github.sha }}
-            "latest"
+            "productivity-test"
           context: "."
           image_name: "grafana-ci-otel-collector"
           environment: "dev"
