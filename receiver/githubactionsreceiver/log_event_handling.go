@@ -298,12 +298,15 @@ func finalizeLogEntry(builder *logEntryBuilder, jobLogsScope plog.ScopeLogs, spa
 }
 
 func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
+	var parsedTime time.Time
+	var err error
+
 	ts, rest, ok := strings.Cut(line, " ")
 	if !ok {
 		return time.Time{}, "", false
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, ts)
+	parsedTime, err = time.Parse(time.RFC3339Nano, ts)
 	if err != nil {
 		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
 		return time.Time{}, "", false
