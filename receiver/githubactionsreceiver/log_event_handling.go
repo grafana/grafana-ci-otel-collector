@@ -303,6 +303,7 @@ func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
 
 	ts, rest, ok := strings.Cut(line, " ")
 	if !ok {
+		logger.Debug("Failed to split logline by space", zap.String("line", line))
 		return time.Time{}, "", false
 	}
 
