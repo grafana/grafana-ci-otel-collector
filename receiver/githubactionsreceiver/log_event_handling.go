@@ -307,7 +307,7 @@ func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
 		return time.Time{}, "", false
 	}
 
-	parsedTime, err = time.Parse(time.RFC3339Nano, ts)
+	parsedTime, err = time.Parse(time.RFC3339Nano, strings.TrimSpace(strings.TrimPrefix(ts, "\uFEFF")))
 	if err != nil {
 		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
 		return time.Time{}, "", false
