@@ -306,41 +306,11 @@ func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
 		return time.Time{}, "", false
 	}
 
-	// GitHub logs can contain different formats depending on the step. We
-	// should support all three here:
-	switch len(ts) {
-	case 20:
-		parsedTime, err = time.Parse(time.RFC3339, ts)
-		if err != nil {
-			logger.Debug("Failed to parse timestamp (as RFC3339 nano)", zap.String("timestamp", ts), zap.Error(err))
-			return time.Time{}, "", false
-		}
-	case 28:
-		parsedTime, err = parseGitHub107Timestamp(ts)
-		if err != nil {
-			logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
-			return time.Time{}, "", false
-		}
-	default:
-		parsedTime, err = time.Parse(time.RFC3339Nano, ts)
-		if err != nil {
-			logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
-			return time.Time{}, "", false
-		}
+	parsedTime, err = time.Parse(time.RFC3339Nano, ts)
+	if err != nil {
+		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
+		return time.Time{}, "", false
 	}
 
 	return parsedTime, rest, true
-}
-
-func parseGitHub107Timestamp(ts string) (time.Time, error) {
-	// Set custom format as timestamps received on orphaned processes are 7 digits rather than 9 as RFC3339Nano expects
-	const RFC3339SevenDigits = "2006-01-02T15:04:05.9999999Z"
-
-	cleaned := strings.TrimSpace(strings.TrimPrefix(ts, "\uFEFF"))
-
-	t, err := time.Parse(RFC3339SevenDigits, cleaned)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse timestamp: %w", err)
-	}
-	return t.Truncate(time.Second), nil
 }
