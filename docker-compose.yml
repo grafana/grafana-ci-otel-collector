@@ -1,6 +1,6 @@
 services:
   tempo:
-    image: grafana/tempo:latest@sha256:feeb085b04c07e9a63f3247969a66cf1c69137a3143ee28615765dd2e9e5562c
+    image: grafana/tempo:latest@sha256:9f67d8600f64cee76041df1fb5d8e96a05cec21bb981e9041af3077a96eeeef4
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./config/tempo.yaml:/etc/tempo.yaml
