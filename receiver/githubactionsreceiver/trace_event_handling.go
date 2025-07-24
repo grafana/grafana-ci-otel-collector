@@ -24,7 +24,7 @@ func eventToTraces(event interface{}, config *Config, logger *zap.Logger) (*ptra
 
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
-		logger.Info("Processing WorkflowJobEvent", zap.Int64("job_id", e.WorkflowJob.GetID()), zap.String("job_name", e.GetWorkflowJob().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
+		logger.Debug("Processing WorkflowJobEvent", zap.Int64("job_id", e.WorkflowJob.GetID()), zap.String("job_name", e.GetWorkflowJob().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
 		jobResource := resourceSpans.Resource()
 		createResourceAttributes(jobResource, e, config, logger)
 
@@ -40,7 +40,7 @@ func eventToTraces(event interface{}, config *Config, logger *zap.Logger) (*ptra
 		processSteps(scopeSpans, e.GetWorkflowJob().Steps, e.GetWorkflowJob(), defaultBranch, traceID, parentSpanID, logger)
 
 	case *github.WorkflowRunEvent:
-		logger.Info("Processing WorkflowRunEvent", zap.Int64("workflow_id", e.GetWorkflowRun().GetID()), zap.String("workflow_name", e.GetWorkflowRun().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
+		logger.Debug("Processing WorkflowRunEvent", zap.Int64("workflow_id", e.GetWorkflowRun().GetID()), zap.String("workflow_name", e.GetWorkflowRun().GetName()), zap.String("repo", e.GetRepo().GetFullName()))
 		runResource := resourceSpans.Resource()
 
 		traceID, err := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
