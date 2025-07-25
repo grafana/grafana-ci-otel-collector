@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent
 
-go 1.23.1
+go 1.24.5
 
 require (
 	github.com/stretchr/testify v1.10.0
