@@ -6,11 +6,14 @@ package githubactionsreceiver
 import (
 	"archive/zip"
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -69,14 +72,15 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 	setWorkflowRunEventAttributes(resourceLogs.Resource().Attributes(), e, config)
 
 	traceID, _ := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
-	jobs, files := extractJobsAndFilesFromZip(zipReader, log)
+	jobs, filesByJob := extractJobsAndFilesFromZip(zipReader, log)
 
-	log.Debug("Extracted jobs and files from zip", zap.Int("job_count", len(jobs)), zap.Int("file_count", len(files)))
+	log.Debug("Extracted jobs and files from zip", zap.Int("job_count", len(jobs)))
 	log.Debug("Job names", zap.Any("job_names", jobs))
 
 	for i, jobName := range jobs {
 		log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
-		processJobLogs(jobName, files, resourceLogs, traceID, e, withTraceInfo, log)
+		jobFiles := filesByJob[jobName]
+		processJobLogs(jobName, jobFiles, resourceLogs, traceID, e, withTraceInfo, log)
 		log.Debug("Completed job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
 	}
 
@@ -174,9 +178,11 @@ func downloadLogsToTempFile(url string, logger *zap.Logger) (*os.File, error) {
 	return out, nil
 }
 
-func extractJobsAndFilesFromZip(zipReader *zip.Reader, logger *zap.Logger) ([]string, []*zip.File) {
-	var jobs []string
-	var files []*zip.File
+func extractJobsAndFilesFromZip(zipReader *zip.Reader, logger *zap.Logger) ([]string, map[string][]*zip.File) {
+	// Pre-allocate maps with reasonable capacity based on typical GitHub Actions workflows
+	estimatedJobs := min(len(zipReader.File)/10, 50) // Estimate ~10 files per job, max 50 jobs
+	jobSet := make(map[string]struct{}, estimatedJobs)
+	filesByJob := make(map[string][]*zip.File, estimatedJobs)
 
 	logger.Debug("Total files in zip", zap.Int("file_count", len(zipReader.File)))
 
@@ -185,36 +191,44 @@ func extractJobsAndFilesFromZip(zipReader *zip.Reader, logger *zap.Logger) ([]st
 
 		if f.FileInfo().IsDir() {
 			// Old format: directories
-			jobs = append(jobs, strings.TrimSuffix(f.Name, "/"))
+			jobName := strings.TrimSuffix(f.Name, "/")
+			jobSet[jobName] = struct{}{}
 		} else {
-			files = append(files, f)
-			if strings.Contains(f.Name, "/") {
-				jobName := strings.Split(f.Name, "/")[0]
+			if slashIdx := strings.IndexByte(f.Name, '/'); slashIdx != -1 {
+				jobName := f.Name[:slashIdx]
 				logger.Debug("Extracted job name", zap.String("job_name", jobName), zap.String("file_name", f.Name))
-				jobs = append(jobs, jobName)
-				logger.Debug("Added job", zap.String("job_name", jobName), zap.Int("total_jobs", len(jobs)))
+				jobSet[jobName] = struct{}{}
+				if filesByJob[jobName] == nil {
+					// Pre-allocate slice with reasonable capacity (typical job has ~10 steps)
+					filesByJob[jobName] = make([]*zip.File, 0, 10)
+				}
+				filesByJob[jobName] = append(filesByJob[jobName], f)
+				logger.Debug("Added job", zap.String("job_name", jobName), zap.Int("total_jobs", len(jobSet)))
 			} else {
 				logger.Debug("File contains no '/', skipping job extraction", zap.String("file_name", f.Name))
 			}
 		}
 	}
 
-	logger.Debug("Extracted jobs and files", zap.Int("job_count", len(jobs)), zap.Int("file_count", len(files)))
-	return jobs, files
+	// Convert map to sorted slice for consistent ordering
+	jobs := slices.Sorted(maps.Keys(jobSet))
+
+	logger.Debug("Extracted jobs and files", zap.Int("job_count", len(jobs)), zap.Int("total_files", len(zipReader.File)))
+	return jobs, filesByJob
 }
 
 func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.ResourceLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
 	jobLogsScope := resourceLogs.ScopeLogs().AppendEmpty()
 	jobLogsScope.Scope().Attributes().PutStr("ci.github.workflow.job.name", jobName)
 
+	// Reuse a single logEntryBuilder for all files in this job
+	var builder logEntryBuilder
+
 	for _, logFile := range files {
-		if !strings.HasPrefix(logFile.Name, jobName+"/") {
-			continue
-		}
 		logger.Debug("Processing log file",
 			zap.String("job_name", jobName),
 			zap.String("file_name", logFile.Name))
-		processLogFile(logFile, jobName, jobLogsScope, traceID, e, withTraceInfo, logger)
+		processLogFile(logFile, jobName, jobLogsScope, traceID, e, withTraceInfo, logger, &builder)
 	}
 
 	logger.Debug("Completed job log processing",
@@ -222,7 +236,7 @@ func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.Resourc
 		zap.Int("log_records", jobLogsScope.LogRecords().Len()))
 }
 
-func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
+func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger, builder *logEntryBuilder) {
 	stepNumber, err := extractStepNumberFromFileName(logFile.Name, jobName)
 	if err != nil {
 		logger.Error("Invalid step number in filename", zap.String("filename", logFile.Name), zap.Error(err))
@@ -247,39 +261,46 @@ func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLo
 		}
 	}()
 
-	processLogEntries(fileReader, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo, steplog)
+	processLogEntries(fileReader, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo, steplog, builder)
 }
 
 func extractStepNumberFromFileName(fileName, jobName string) (int, error) {
-	baseName := strings.TrimPrefix(fileName, jobName+"/")
-	parts := strings.SplitN(baseName, "_", 2)
-	return strconv.Atoi(parts[0])
+	prefixLen := len(jobName) + 1 // +1 for the "/"
+	if len(fileName) <= prefixLen {
+		return 0, fmt.Errorf("filename %q does not contain job prefix %q/", fileName, jobName)
+	}
+	baseName := fileName[prefixLen:]
+	underscoreIdx := strings.IndexByte(baseName, '_')
+	if underscoreIdx == -1 {
+		return strconv.Atoi(baseName)
+	}
+	return strconv.Atoi(baseName[:underscoreIdx])
 }
 
-func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pcommon.SpanID, traceID pcommon.TraceID, stepNumber int, withTraceInfo bool, logger *zap.Logger) {
-	var builder logEntryBuilder
+func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pcommon.SpanID, traceID pcommon.TraceID, stepNumber int, withTraceInfo bool, logger *zap.Logger, builder *logEntryBuilder) {
 	scanner := bufio.NewScanner(reader)
 
 	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
+		line := scanner.Bytes()
+		if len(line) == 0 {
 			continue
 		}
 
 		parsedTime, rest, ok := parseTimestamp(line, logger)
 		if ok {
 			if builder.hasCurrentEntry {
-				finalizeLogEntry(&builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
+				finalizeLogEntry(builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
 			}
-			builder = logEntryBuilder{
-				currentParsedTime: parsedTime,
-				currentStepNumber: int64(stepNumber),
-				hasCurrentEntry:   true,
-			}
-			builder.currentBody.WriteString(rest)
+
+			// Reuse the builder
+			builder.currentParsedTime = parsedTime
+			builder.currentStepNumber = int64(stepNumber)
+			builder.hasCurrentEntry = true
+			builder.currentBody.Reset()
+			builder.currentBody.Write(rest)
 		} else {
 			if !builder.hasCurrentEntry {
-				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
+				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", string(line)))
 				continue
 			}
 
@@ -288,13 +309,13 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 				continue
 			}
 
-			builder.currentBody.WriteString("\n")
-			builder.currentBody.WriteString(line)
+			builder.currentBody.WriteByte('\n')
+			builder.currentBody.Write(line)
 		}
 	}
 
 	if builder.hasCurrentEntry {
-		finalizeLogEntry(&builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
+		finalizeLogEntry(builder, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -315,19 +336,24 @@ func finalizeLogEntry(builder *logEntryBuilder, jobLogsScope plog.ScopeLogs, spa
 	builder.reset()
 }
 
-func parseTimestamp(line string, logger *zap.Logger) (time.Time, string, bool) {
+func parseTimestamp(line []byte, logger *zap.Logger) (time.Time, []byte, bool) {
 	var parsedTime time.Time
 	var err error
 
-	ts, rest, ok := strings.Cut(line, " ")
-	if !ok {
-		return time.Time{}, "", false
+	spaceIdx := bytes.IndexByte(line, ' ')
+	if spaceIdx == -1 {
+		return time.Time{}, nil, false
 	}
 
-	parsedTime, err = time.Parse(time.RFC3339, strings.TrimSpace(strings.TrimPrefix(ts, "\uFEFF")))
+	ts := line[:spaceIdx]
+	rest := line[spaceIdx+1:]
+
+	// Handle BOM and trim spaces
+	tsStr := strings.TrimSpace(strings.TrimPrefix(string(ts), "\uFEFF"))
+	parsedTime, err = time.Parse(time.RFC3339, tsStr)
 	if err != nil {
-		logger.Debug("Failed to parse timestamp", zap.String("timestamp", ts), zap.Error(err))
-		return time.Time{}, "", false
+		logger.Debug("Failed to parse timestamp", zap.String("timestamp", tsStr), zap.Error(err))
+		return time.Time{}, nil, false
 	}
 
 	return parsedTime, rest, true

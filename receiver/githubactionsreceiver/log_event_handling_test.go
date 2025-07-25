@@ -31,7 +31,7 @@ func TestParseTimestamp(t *testing.T) {
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
 			logger := zap.NewNop()
-			ts, _, ok := parseTimestamp(test.logline, logger)
+			ts, _, ok := parseTimestamp([]byte(test.logline), logger)
 			if test.expectError {
 				require.False(t, ok)
 			} else {
