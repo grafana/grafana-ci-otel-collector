@@ -128,9 +128,15 @@ func getWorkflowRunLogsZip(ctx context.Context, ghClient *github.Client, e *gith
 	}
 
 	cleanup := func() {
-		tmpFile.Close()
-		zipReader.Close()
-		os.Remove(tmpFile.Name())
+		if err := tmpFile.Close(); err != nil {
+			logger.Warn("Failed to close temp file", zap.Error(err))
+		}
+		if err := zipReader.Close(); err != nil {
+			logger.Warn("Failed to close zip reader", zap.Error(err))
+		}
+		if err := os.Remove(tmpFile.Name()); err != nil {
+			logger.Warn("Failed to remove temp file", zap.Error(err), zap.String("file", tmpFile.Name()))
+		}
 	}
 
 	return &zipReader.Reader, cleanup, nil
@@ -145,14 +151,22 @@ func downloadLogsToTempFile(url string, logger *zap.Logger) (*os.File, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		out.Close()
+		if closeErr := out.Close(); closeErr != nil {
+			logger.Warn("Failed to close temp file after HTTP error", zap.Error(closeErr))
+		}
 		logger.Error("Failed to download logs", zap.Error(err))
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Warn("Failed to close response body", zap.Error(err))
+		}
+	}()
 
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		out.Close()
+		if closeErr := out.Close(); closeErr != nil {
+			logger.Warn("Failed to close temp file after copy error", zap.Error(closeErr))
+		}
 		logger.Error("Failed to save logs to temp file", zap.Error(err))
 		return nil, err
 	}
@@ -227,7 +241,11 @@ func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLo
 		steplog.Error("Failed to open log file", zap.Error(err))
 		return
 	}
-	defer fileReader.Close()
+	defer func() {
+		if err := fileReader.Close(); err != nil {
+			steplog.Warn("Failed to close file reader", zap.Error(err))
+		}
+	}()
 
 	processLogEntries(fileReader, jobLogsScope, spanID, traceID, stepNumber, withTraceInfo, steplog)
 }

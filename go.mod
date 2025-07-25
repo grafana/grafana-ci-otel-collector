@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector
 
-go 1.23.1
+go 1.24.5
 
 replace github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver => ./receiver/dronereceiver
 
