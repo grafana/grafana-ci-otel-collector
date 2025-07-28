@@ -265,6 +265,7 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 		if line == "" {
 			continue
 		}
+		logger.Debug("line pre RFC3339 fmt:", zap.String("line", line))
 
 		parsedTime, rest, ok := parseTimestamp(line, logger)
 		if ok {
@@ -277,6 +278,7 @@ func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pco
 				hasCurrentEntry:   true,
 			}
 			builder.currentBody.WriteString(rest)
+			logger.Debug("line post RFC3339 fmt:", zap.String("line", line))
 		} else {
 			if !builder.hasCurrentEntry {
 				logger.Error("Orphaned log line without preceding timestamp", zap.String("line", line))
