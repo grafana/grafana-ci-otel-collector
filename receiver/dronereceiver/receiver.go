@@ -95,7 +95,7 @@ func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 	r.logger.Info("Starting Drone webhook server", zap.String("endpoint", endpoint))
 
 	r.httpServer = &http.Server{
-		Addr:              r.cfg.ServerConfig.Endpoint,
+		Addr:              r.cfg.Endpoint,
 		Handler:           r,
 		ReadHeaderTimeout: 20 * time.Second,
 	}
@@ -105,7 +105,7 @@ func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
 		defer r.shutdownWG.Done()
 
 		if errHTTP := r.httpServer.ListenAndServe(); !errors.Is(errHTTP, http.ErrServerClosed) && errHTTP != nil {
-			r.set.TelemetrySettings.Logger.Error("Server closed with error", zap.Error(errHTTP))
+			r.set.Logger.Error("Server closed with error", zap.Error(errHTTP))
 		}
 	}()
 

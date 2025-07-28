@@ -99,7 +99,7 @@ func handleEvent(evt WebhookEvent, config *Config, droneClient drone.Client, log
 	buildSpan.SetEndTimestamp(pcommon.Timestamp(build.Finished * 1000000000))
 
 	buildAttributes.PutStr(semconv.AttributeCIVendor, semconv.AttributeCIVendorDrone)
-	buildAttributes.PutStr(semconv.AttributeCIVersion, evt.System.Version)
+	buildAttributes.PutStr(semconv.AttributeCIVersion, evt.Version)
 
 	// --- VCS Info
 	// !FIXME: the scm property seems to always be empty, we fallback to GIT for now
