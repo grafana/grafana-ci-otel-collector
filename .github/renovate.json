@@ -1,0 +1,15 @@
+{
+  "packageRules": [
+    // These are internal repositories that do not need to be updated since
+    // already have replace statements in place. 
+    "matchPackageNames": [
+      "github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver",
+      "github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver",
+      "github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent",
+      "github.com/grafana/grafana-ci-otel-collector/internal/semconv",
+      "github.com/grafana/grafana-ci-otel-collector/internal/tools",
+      "github.com/grafana/grafana-ci-otel-collector/internal/traceutils"
+    ],
+    "enabled": false
+  ]
+}
