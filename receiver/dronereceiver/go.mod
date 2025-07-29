@@ -7,7 +7,7 @@ require (
 	github.com/drone/drone-go v1.7.1
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250724144144-eaa9d8fde20a
-	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250709143647-9e225ee7fe9b
+	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250728232919-9f7e4a6957de
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.35.0
