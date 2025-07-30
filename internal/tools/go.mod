@@ -6,7 +6,7 @@ require (
 	github.com/golangci/golangci-lint/v2 v2.3.0
 	github.com/google/osv-scanner v1.9.2
 	github.com/securego/gosec/v2 v2.22.7
-	go.opentelemetry.io/build-tools/crosslink v0.24.0
+	go.opentelemetry.io/build-tools/crosslink v0.26.0
 	go.opentelemetry.io/collector/cmd/builder v0.129.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.129.0
 	golang.org/x/tools v0.35.0
@@ -285,7 +285,7 @@ require (
 	go.augendre.info/arangolint v0.2.0 // indirect
 	go.augendre.info/fatcontext v0.8.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/build-tools v0.24.0 // indirect
+	go.opentelemetry.io/build-tools v0.26.0 // indirect
 	go.opentelemetry.io/collector/component v1.35.0 // indirect
 	go.opentelemetry.io/collector/confmap v1.35.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.35.0 // indirect
