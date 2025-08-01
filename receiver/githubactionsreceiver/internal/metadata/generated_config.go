@@ -28,6 +28,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 // MetricsConfig provides config for githubactions metrics.
 type MetricsConfig struct {
 	BuildInfo         MetricConfig `mapstructure:"build.info"`
+	RenovatePrsCount  MetricConfig `mapstructure:"renovate.prs.count"`
 	WorkflowJobsCount MetricConfig `mapstructure:"workflow.jobs.count"`
 	WorkflowRunsCount MetricConfig `mapstructure:"workflow.runs.count"`
 }
@@ -35,6 +36,9 @@ type MetricsConfig struct {
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
 		BuildInfo: MetricConfig{
+			Enabled: true,
+		},
+		RenovatePrsCount: MetricConfig{
 			Enabled: true,
 		},
 		WorkflowJobsCount: MetricConfig{

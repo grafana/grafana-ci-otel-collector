@@ -28,6 +28,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
 					BuildInfo:         MetricConfig{Enabled: true},
+					RenovatePrsCount:  MetricConfig{Enabled: true},
 					WorkflowJobsCount: MetricConfig{Enabled: true},
 					WorkflowRunsCount: MetricConfig{Enabled: true},
 				},
@@ -38,6 +39,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
 					BuildInfo:         MetricConfig{Enabled: false},
+					RenovatePrsCount:  MetricConfig{Enabled: false},
 					WorkflowJobsCount: MetricConfig{Enabled: false},
 					WorkflowRunsCount: MetricConfig{Enabled: false},
 				},

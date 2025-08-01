@@ -3,6 +3,8 @@ all_set:
   metrics:
     build.info:
       enabled: true
+    renovate.prs.count:
+      enabled: true
     workflow.jobs.count:
       enabled: true
     workflow.runs.count:
@@ -10,6 +12,8 @@ all_set:
 none_set:
   metrics:
     build.info:
+      enabled: false
+    renovate.prs.count:
       enabled: false
     workflow.jobs.count:
       enabled: false
