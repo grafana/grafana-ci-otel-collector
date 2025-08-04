@@ -22,9 +22,9 @@ Build info.
 
 #### Attributes
 
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| version | The version of the cicd_o11y collector. | Any Str |
+| Name | Description | Values | Optional |
+| ---- | ----------- | ------ | -------- |
+| version | The version of the cicd_o11y collector. | Any Str | false |
 
 ### workflow.jobs.count
 
@@ -36,13 +36,13 @@ Number of jobs.
 
 #### Attributes
 
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| vcs.repository.name | Repository name | Any Str |
-| ci.github.workflow.job.labels | Job labels. | Any Str |
-| ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` |
-| ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` |
-| ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool |
+| Name | Description | Values | Optional |
+| ---- | ----------- | ------ | -------- |
+| vcs.repository.name | Repository name | Any Str | false |
+| ci.github.workflow.job.labels | Job labels. | Any Str | false |
+| ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | false |
+| ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | false |
+| ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool | false |
 
 ### workflow.runs.count
 
@@ -54,10 +54,10 @@ Number of runs.
 
 #### Attributes
 
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| vcs.repository.name | Repository name | Any Str |
-| ci.github.workflow.run.labels | Run labels. | Any Str |
-| ci.github.workflow.run.status | Run status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` |
-| ci.github.workflow.run.conclusion | Run Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` |
-| ci.github.workflow.run.head_branch.is_main | Whether the head branch is the main branch | Any Bool |
+| Name | Description | Values | Optional |
+| ---- | ----------- | ------ | -------- |
+| vcs.repository.name | Repository name | Any Str | false |
+| ci.github.workflow.run.labels | Run labels. | Any Str | false |
+| ci.github.workflow.run.status | Run status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | false |
+| ci.github.workflow.run.conclusion | Run Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | false |
+| ci.github.workflow.run.head_branch.is_main | Whether the head branch is the main branch | Any Bool | false |
