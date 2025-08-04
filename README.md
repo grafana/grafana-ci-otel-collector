@@ -25,10 +25,10 @@ The following is a list of components that are included in the Grafana CI OTel C
 - [resourceprocessor][resourceprocessor]
 - [filterprocessor][filterprocessor]
 
-[attributesprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.129.0/processor/attributesprocessor
-[batchprocessor]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.129.0/processor/batchprocessor
-[resourceprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.129.0/processor/resourceprocessor
-[filterprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.129.0/processor/filterprocessor
+[attributesprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/attributesprocessor
+[batchprocessor]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.131.0/processor/batchprocessor
+[resourceprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/resourceprocessor
+[filterprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/filterprocessor
 
 ### Connectors
 
@@ -41,13 +41,11 @@ The following is a list of components that are included in the Grafana CI OTel C
 ### Exporters
 
 - [debugexporter][debugexporter]
-- [lokiexporter][lokiexporter]
 - [otlpexporter][otlpexporter]
 - [prometheusexporter][prometheusexporter]
 - [prometheusremotewriteexporter][prometheusremotewriteexporter]
 
 [debugexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.113.0/exporter/debugexporter
-[lokiexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.113.0/exporter/lokiexporter
 [otlpexporter]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.113.0/exporter/otlpexporter
 [prometheusexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.113.0/exporter/prometheusexporter
 [prometheusremotewriteexporter]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.113.0/exporter/prometheusremotewriteexporter
