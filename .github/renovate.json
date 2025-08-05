@@ -21,7 +21,7 @@
       "groupName": "otel",
       "groupSlug": "otel",
       "matchPackageNames": [
-        "go.opentelemetry.io/*"
+        "go.opentelemetry.io/**"
       ]
     }
   ]
