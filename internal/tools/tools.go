@@ -8,7 +8,7 @@ package tools // import "github.com/grafana/grafana-ci-otel-collector/internal/t
 
 import (
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
-	_ "github.com/google/osv-scanner/cmd/osv-scanner"
+	_ "github.com/google/osv-scanner/v2/cmd/osv-scanner"
 	_ "github.com/securego/gosec/v2/cmd/gosec"
 	_ "go.opentelemetry.io/build-tools/crosslink"
 	_ "go.opentelemetry.io/collector/cmd/builder"
