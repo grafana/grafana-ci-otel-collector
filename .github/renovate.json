@@ -12,6 +12,12 @@
       "enabled": false
     },
     {
+      "matchFileNames": [
+        "docker-compose.yml"
+      ],
+      "enabled": false
+    },
+    {
       "groupName": "otel",
       "groupSlug": "otel",
       "matchPackageNames": [

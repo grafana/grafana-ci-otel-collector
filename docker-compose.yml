@@ -1,6 +1,6 @@
 services:
   tempo:
-    image: grafana/tempo:latest@sha256:9f67d8600f64cee76041df1fb5d8e96a05cec21bb981e9041af3077a96eeeef4
+    image: grafana/tempo:latest
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./config/tempo.yaml:/etc/tempo.yaml
@@ -9,7 +9,7 @@ services:
       - "4317:4317" # otlp grpc
 
   prometheus:
-    image: prom/prometheus:latest@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    image: prom/prometheus:latest
     ports:
       - 9090:9090
     volumes:
@@ -20,7 +20,7 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
 
   loki:
-    image: grafana/loki:latest@sha256:3165cecce301ce5b9b6e3530284b080934a05cd5cafac3d3d82edcb887b45ecd
+    image: grafana/loki:latest
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - ./config/loki.yml:/etc/loki/loki-config.yaml
