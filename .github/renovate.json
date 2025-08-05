@@ -10,6 +10,13 @@
         "github.com/grafana/grafana-ci-otel-collector/internal/traceutils"
       ],
       "enabled": false
+    },
+    {
+      "groupName": "otel",
+      "groupSlug": "otel",
+      "matchPackageNames": [
+        "go.opentelemetry.io/*"
+      ]
     }
   ]
 }
