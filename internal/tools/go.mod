@@ -1,10 +1,10 @@
 module github.com/grafana/grafana-ci-otel-collector/internal/tools
 
-go 1.24.5
+go 1.24.6
 
 require (
 	github.com/golangci/golangci-lint/v2 v2.3.1
-	github.com/google/osv-scanner/v2 v2.2.0
+	github.com/google/osv-scanner/v2 v2.2.1
 	github.com/securego/gosec/v2 v2.22.7
 	go.opentelemetry.io/build-tools/crosslink v0.26.0
 	go.opentelemetry.io/collector/cmd/builder v0.131.0
