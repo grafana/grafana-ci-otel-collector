@@ -148,13 +148,15 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		return m.mb.Emit()
 	}
 
-	m.logger.Debug("Processing workflow_run event",
+	m.logger.Info("Processing workflow_run event",
 		zap.String("repo", repo),
 		zap.Int64("id", event.GetWorkflowRun().GetID()),
 		zap.String("name", event.GetWorkflowRun().GetName()),
 		zap.String("action", event.GetAction()),
 		zap.String("status", event.GetWorkflowRun().GetStatus()),
 		zap.String("conclusion", event.GetWorkflowRun().GetConclusion()),
+		zap.String("event", event.GetWorkflowRun().GetEvent()),
+		zap.Int("run_attempt", event.GetWorkflowRun().GetRunAttempt()),
 	)
 
 	now := pcommon.NewTimestampFromTime(time.Now())
@@ -170,6 +172,34 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 	if defaultBranch != nil && event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
 		isMain = true
+	}
+
+	workflowRun := event.GetWorkflowRun()
+	// Track only the first run attempt to avoid double counting due to restarts
+	if workflowRun.GetRunAttempt() == 1 {
+		isRenovate := m.detectRenovatePR(event)
+		if isRenovate {
+			// Determine PR state based on branch: main = closed (merged), non-main = open
+			var prState metadata.AttributeCiGithubPrState
+			if isMain {
+				prState = metadata.AttributeCiGithubPrStateClosed
+			} else {
+				prState = metadata.AttributeCiGithubPrStateOpen
+			}
+
+			// Record Renovate PR metric for caching (use run ID to make it unique per run)
+			metricKey := fmt.Sprintf("renovate_pr:%s:%s:%t:%d", repo, prState.String(), isMain, workflowRun.GetID())
+			if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
+				m.mb.RecordRenovatePrsCountDataPoint(now, 1, repo, prState, isMain)
+
+				m.logger.Info("Recorded Renovate PR metric",
+					zap.String("repo", repo),
+					zap.String("state", prState.String()),
+					zap.Bool("is_targeting_main", isMain),
+					zap.String("head_branch", workflowRun.GetHeadBranch()),
+				)
+			}
+		}
 	}
 
 	// Validate required fields before recording metrics
@@ -234,4 +264,70 @@ func loadFromCache(repo, labels string, status interface{}, conclusion interface
 	}
 
 	return value.(int64), true
+}
+
+// detectRenovatePR detects if a workflow run is from a Renovate PR
+func (m *metricsHandler) detectRenovatePR(event *github.WorkflowRunEvent) bool {
+	if event == nil || event.GetWorkflowRun() == nil {
+		return false
+	}
+
+	workflowRun := event.GetWorkflowRun()
+
+	// Check if this is from a PR event or push event (merged PR)
+	eventType := event.GetWorkflowRun().GetEvent()
+	m.logger.Info("Checking PullRequests field",
+		zap.Int("pr_count", len(workflowRun.PullRequests)),
+		zap.String("event", eventType),
+	)
+
+	// For push events, we don't have PR data but we can still detect Renovate by actor
+	// For pull_request events, we should have PR data
+	if eventType != "pull_request" && eventType != "push" {
+		return false
+	}
+
+	// Check PR title and head branch for Renovate patterns
+	actor := workflowRun.GetActor()
+
+	var prAuthor string
+	if actor != nil {
+		prAuthor = actor.GetLogin()
+	}
+
+	// Get additional actor fields for debugging
+	sender := event.GetSender()
+	triggeringActor := workflowRun.GetTriggeringActor()
+	headCommitAuthorName := workflowRun.GetHeadCommit().GetAuthor().GetName()
+
+	var senderLogin, triggeringActorLogin string
+	if sender != nil {
+		senderLogin = sender.GetLogin()
+	}
+	if triggeringActor != nil {
+		triggeringActorLogin = triggeringActor.GetLogin()
+	}
+
+	m.logger.Info("Full actor debug info",
+		zap.Bool("actor_is_nil", actor == nil),
+		zap.String("actor_login", prAuthor),
+		zap.String("sender_login", senderLogin),
+		zap.String("triggering_actor_login", triggeringActorLogin),
+		zap.String("head_branch", workflowRun.GetHeadBranch()),
+		zap.String("workflow_event", workflowRun.GetEvent()),
+		zap.String("head_commit_author_name", headCommitAuthorName),
+	)
+
+	// Check for Renovate patterns in actor name
+	isRenovate := strings.Contains(prAuthor, "renovate-sh-app[bot]") ||
+		strings.Contains(senderLogin, "renovate-sh-app[bot]") ||
+		strings.Contains(triggeringActorLogin, "renovate-sh-app[bot]")
+
+	m.logger.Info("Checking if PR is from Renovate",
+		zap.String("actor", prAuthor),
+		zap.Bool("is_renovate", isRenovate),
+		zap.Int("pr_count", len(workflowRun.PullRequests)),
+	)
+
+	return isRenovate
 }
