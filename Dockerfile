@@ -1,5 +1,5 @@
 # STAGE 1 - build
-FROM golang:1.25.0-alpine3.21@sha256:a92c1ab0ec17377c238fc4e21a404e3dc2e5e5bb54d3007ef35d576827da5f63 AS build
+FROM golang:1.25.0-alpine3.21@sha256:c8e1680f8002c64ddfba276a3c1f763097cb182402673143a89dcca4c107cf17 AS build
 WORKDIR /src
 
 COPY . .
