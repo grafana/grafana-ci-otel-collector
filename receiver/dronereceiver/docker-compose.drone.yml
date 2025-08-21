@@ -38,9 +38,9 @@ services:
     depends_on:
       - drone
   redis-server:
-    image: redis@sha256:f957ce918b51f3ac10414244bedd0043c47db44a819f98b9902af1bd9d0afcea
+    image: redis:8.2.1@sha256:cc2dfb8f5151da2684b4a09bd04b567f92d07591d91980eb3eca21df07e12760
   db:
-    image: postgres@sha256:0f9d52b237395d0512efd1e5493ac9bd60606839994422bba9bfa7ab3ddc32ea
+    image: postgres@sha256:29e0bb09c8e7e7fc265ea9f4367de9622e55bae6b0b97e7cce740c2d63c2ebc0
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
