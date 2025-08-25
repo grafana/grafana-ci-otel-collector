@@ -3,7 +3,7 @@ module github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent
 go 1.24.5
 
 require (
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	go.opentelemetry.io/collector/component v1.38.0
 	go.opentelemetry.io/collector/component/componenttest v0.132.0
 	go.uber.org/goleak v1.3.0
