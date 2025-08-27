@@ -4,7 +4,7 @@ go 1.24.6
 
 require (
 	github.com/golangci/golangci-lint/v2 v2.4.0
-	github.com/google/osv-scanner/v2 v2.2.1
+	github.com/google/osv-scanner/v2 v2.2.2
 	github.com/securego/gosec/v2 v2.22.8
 	go.opentelemetry.io/build-tools/crosslink v0.26.2
 	go.opentelemetry.io/collector/cmd/builder v0.133.0
@@ -160,7 +160,7 @@ require (
 	github.com/google/generative-ai-go v0.20.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.20.6 // indirect
-	github.com/google/osv-scalibr v0.3.2-0.20250731235936-b4e2f64ac4bd // indirect
+	github.com/google/osv-scalibr v0.3.2-0.20250812004447-f38f28e2746b // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
