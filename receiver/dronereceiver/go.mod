@@ -9,7 +9,7 @@ require (
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250724144144-eaa9d8fde20a
 	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250728232919-9f7e4a6957de
 	github.com/jackc/pgx/v5 v5.7.5
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.39.0
 	go.opentelemetry.io/collector/component/componenttest v0.133.0
 	go.opentelemetry.io/collector/config/confighttp v0.133.0

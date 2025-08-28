@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/google/uuid v1.6.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250724144144-eaa9d8fde20a
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.39.0
 )
 
