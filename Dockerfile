@@ -2,9 +2,19 @@
 FROM golang:1.25.0-alpine3.21@sha256:c8e1680f8002c64ddfba276a3c1f763097cb182402673143a89dcca4c107cf17 AS build
 WORKDIR /src
 
-COPY . .
-
 RUN apk --update add --no-cache git make bash ca-certificates
+
+# Copy all go.mod and go.sum files first for better caching
+COPY go.mod go.sum ./
+COPY internal/ internal/
+COPY receiver/ receiver/
+
+RUN go mod download
+
+# Copy only what's needed for build
+COPY config/ config/
+COPY .git/ .git/
+COPY Makefile* ./
 
 RUN make build
 
