@@ -1,0 +1,28 @@
+{
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver",
+        "github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver",
+        "github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent",
+        "github.com/grafana/grafana-ci-otel-collector/internal/semconv",
+        "github.com/grafana/grafana-ci-otel-collector/internal/tools",
+        "github.com/grafana/grafana-ci-otel-collector/internal/traceutils"
+      ],
+      "enabled": false
+    },
+    {
+      "matchFileNames": [
+        "docker-compose.yml"
+      ],
+      "enabled": false
+    },
+    {
+      "groupName": "otel",
+      "groupSlug": "otel",
+      "matchPackageNames": [
+        "go.opentelemetry.io/**"
+      ]
+    }
+  ]
+}

@@ -19,7 +19,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-github/v62/github"
+	"github.com/google/go-github/v74/github"
 	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
@@ -377,7 +377,7 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			return
 		}
 		if r.URL.Path == "/fetch" {
-			createTestZip(w)
+			createTestZip(t, w)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -435,7 +435,6 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 			cfg := createDefaultConfig().(*Config)
 			cfg.Secret = tt.secret
 			cfg.Endpoint = "localhost:0" // Let OS choose port
-			cfg.ServerConfig.Endpoint = "localhost:0"
 
 			if tt.ghClientEnabled {
 				cfg.GitHubAPIConfig.Auth.Token = "testtoken"
@@ -525,9 +524,12 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 	}
 }
 
-func createTestZip(w io.Writer) {
+func createTestZip(t *testing.T, w io.Writer) {
+	t.Helper()
 	zw := zip.NewWriter(w)
-	defer zw.Close()
+	defer func() {
+		require.NoError(t, zw.Close())
+	}()
 
 	// Create test job directory
 	_, err := zw.Create("test-job/")

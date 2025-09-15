@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v62/github"
+	"github.com/google/go-github/v74/github"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -45,7 +45,7 @@ func newReceiver(
 	}
 
 	transport := "http"
-	if config.TLS != nil {
+	if config.TLS.HasValue() {
 		transport = "https"
 	}
 
@@ -170,7 +170,7 @@ func (gar *githubActionsReceiver) Start(ctx context.Context, host component.Host
 	endpoint := fmt.Sprintf("%s%s", gar.config.Endpoint, gar.config.Path)
 	gar.logger.Info("Starting GithubActions server", zap.String("endpoint", endpoint))
 	gar.server = &http.Server{
-		Addr:              gar.config.ServerConfig.Endpoint,
+		Addr:              gar.config.Endpoint,
 		Handler:           gar,
 		ReadHeaderTimeout: 20 * time.Second,
 	}
@@ -180,7 +180,7 @@ func (gar *githubActionsReceiver) Start(ctx context.Context, host component.Host
 		defer gar.shutdownWG.Done()
 
 		if errHTTP := gar.server.ListenAndServe(); !errors.Is(errHTTP, http.ErrServerClosed) && errHTTP != nil {
-			gar.createSettings.TelemetrySettings.Logger.Error("Server closed with error", zap.Error(errHTTP))
+			gar.createSettings.Logger.Error("Server closed with error", zap.Error(errHTTP))
 		}
 	}()
 

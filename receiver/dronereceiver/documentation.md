@@ -24,11 +24,11 @@ Currently there's no way to differentiate between restarted builds and manually 
 
 #### Attributes
 
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
-| git.repo.name | Repository name | Any Str |
-| git.branch.name | Branch name | Any Str |
+| Name | Description | Values | Optional |
+| ---- | ----------- | ------ | -------- |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | false |
+| git.repo.name | Repository name | Any Str | false |
+| git.branch.name | Branch name | Any Str | false |
 
 ### repo_info
 
@@ -40,11 +40,11 @@ Repo status.
 
 #### Attributes
 
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` |
-| git.repo.name | Repository name | Any Str |
-| git.branch.name | Branch name | Any Str |
+| Name | Description | Values | Optional |
+| ---- | ----------- | ------ | -------- |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | false |
+| git.repo.name | Repository name | Any Str | false |
+| git.branch.name | Branch name | Any Str | false |
 
 ### restarts_total
 
