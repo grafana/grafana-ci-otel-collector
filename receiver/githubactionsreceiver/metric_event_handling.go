@@ -132,7 +132,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	result := m.mb.Emit()
 	// Clear the recorded tracking for next emission
-	m.recordedInThisEmission = sync.Map{}
+	m.recordedInThisEmission.Clear()
 	return result
 }
 
@@ -200,7 +200,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 	result := m.mb.Emit()
 	// Clear the recorded tracking for next emission
-	m.recordedInThisEmission = sync.Map{}
+	m.recordedInThisEmission.Clear()
 	return result
 }
 
