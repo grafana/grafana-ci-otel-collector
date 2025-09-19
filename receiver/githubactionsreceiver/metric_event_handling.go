@@ -22,8 +22,6 @@ type metricsHandler struct {
 	mb       *metadata.MetricsBuilder
 	cfg      *Config
 	logger   *zap.Logger
-	// Track what we've recorded in current emission to prevent duplicates
-	recordedInThisEmission sync.Map // key: string, value: bool
 }
 
 var repoMap = sync.Map{}
@@ -59,6 +57,10 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		m.logger.Debug("Repository name is empty")
 		return m.mb.Emit()
 	}
+
+	// Track what we've recorded in this emission to prevent duplicates
+	// Create new map per emission to avoid race condition
+	recorded := make(map[string]bool)
 
 	labels := ""
 	if len(event.GetWorkflowJob().Labels) > 0 {
@@ -110,7 +112,8 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 		metricKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, status.String(), conclusion.String(), isMain)
 
-		if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
+		if !recorded[metricKey] {
+			recorded[metricKey] = true
 			if !found {
 				for _, s := range metadata.MapAttributeCiGithubWorkflowJobStatus {
 					for _, c := range metadata.MapAttributeCiGithubWorkflowJobConclusion {
@@ -119,7 +122,8 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 						}
 						storeInCache(repo, labels, s, c, 0)
 						otherKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, s.String(), c.String(), isMain)
-						if _, recorded := m.recordedInThisEmission.LoadOrStore(otherKey, true); !recorded {
+						if !recorded[otherKey] {
+							recorded[otherKey] = true
 							m.mb.RecordWorkflowJobsCountDataPoint(now, 0, repo, labels, s, c, isMain)
 						}
 					}
@@ -130,10 +134,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		}
 	}
 
-	result := m.mb.Emit()
-	// Clear the recorded tracking for next emission
-	m.recordedInThisEmission.Clear()
-	return result
+	return m.mb.Emit()
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
@@ -147,6 +148,10 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		m.logger.Debug("Repository name is empty")
 		return m.mb.Emit()
 	}
+
+	// Track what we've recorded in this emission to prevent duplicates
+	// Create new map per emission to avoid race condition
+	recorded := make(map[string]bool)
 
 	m.logger.Debug("Processing workflow_run event",
 		zap.String("repo", repo),
@@ -178,7 +183,8 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 		metricKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", status.String(), conclusion.String(), isMain)
 
-		if _, alreadyRecorded := m.recordedInThisEmission.LoadOrStore(metricKey, true); !alreadyRecorded {
+		if !recorded[metricKey] {
+			recorded[metricKey] = true
 			if !found {
 				for _, s := range metadata.MapAttributeCiGithubWorkflowRunStatus {
 					for _, c := range metadata.MapAttributeCiGithubWorkflowRunConclusion {
@@ -187,7 +193,8 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 						}
 						storeInCache(repo, "default", s, c, 0)
 						otherKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", s.String(), c.String(), isMain)
-						if _, recorded := m.recordedInThisEmission.LoadOrStore(otherKey, true); !recorded {
+						if !recorded[otherKey] {
+							recorded[otherKey] = true
 							m.mb.RecordWorkflowRunsCountDataPoint(now, 0, repo, "default", s, c, isMain)
 						}
 					}
@@ -198,10 +205,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		}
 	}
 
-	result := m.mb.Emit()
-	// Clear the recorded tracking for next emission
-	m.recordedInThisEmission.Clear()
-	return result
+	return m.mb.Emit()
 }
 
 func storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
