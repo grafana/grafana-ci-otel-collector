@@ -40,7 +40,7 @@ services:
   redis-server:
     image: redis:8.2.1@sha256:acb90ced0bd769b7c04cb4c32c4494ba7b3e0ee068bdbfff0eeb0d31c2a21078
   db:
-    image: postgres@sha256:0f4f20021a065d114083d1b95d9fb89ad847cbc4c3cc9238417815c7df42350f
+    image: postgres@sha256:e1dc516c05e74a525757c079668f5de53855f5611b3971a6491586f2ffe05db7
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
