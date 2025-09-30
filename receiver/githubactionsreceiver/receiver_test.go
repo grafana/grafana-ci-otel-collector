@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -355,6 +356,54 @@ func TestResourceAndSpanAttributesCreation(t *testing.T) {
 
 		})
 	}
+}
+
+func TestReceiverWithAppAndEnterprise(t *testing.T) {
+	logsSink := new(consumertest.LogsSink)
+	ghTestServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}))
+	t.Cleanup(func() {
+		ghTestServer.Close()
+	})
+
+	cfg := createDefaultConfig().(*Config)
+	cfg.Endpoint = "localhost:0" // Let OS choose port
+
+	tmpDir := t.TempDir()
+	pkPath := filepath.Join(tmpDir, "private-key.dat")
+	require.NoError(t, os.WriteFile(pkPath, []byte(`-----BEGIN PRIVATE KEY-----
+MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEA2VSTKXeFpfXPIzsb
+xdaegmusCFe+5IawGOdSJ7/Ca7/7it4FnT9QfLwLNdR2qrNLdOzfsYHSZjkFXaIs
+cGPDvwIDAQABAkBqnhIf+rHHLCL1Pq8uTE6w3s+jvCA7DlRfs0PbmjhwEPQFBEOH
+zOluI3xhI3E0cJXhLJQ2ydtxC+tq1A2Kz+eRAiEA/J8HB8qvB/51c7gg+mkw70lx
+fqD+ro9M1rOeBcuukycCIQDcPLZA699lYWurLViBAqnX2iZqvm9cB/np7S76V23J
+qQIhANq6NrQgYfxh7gAL5UHr4lrNFF+3tcwed0FOs/wAp17xAiAWoS5g8VudASud
+BSXI68sj4Mh9w1+R50fon3RqSL2BMQIgI/blZZM+Hf1YHbDY8KfrKuLUtoiz6ePQ
+jQgTMp1cZEM=
+-----END PRIVATE KEY-----
+`), 0644))
+
+	cfg.GitHubAPIConfig.Auth.AppID = 123
+	cfg.GitHubAPIConfig.Auth.InstallationID = 123
+	cfg.GitHubAPIConfig.Auth.PrivateKeyPath = pkPath
+	cfg.GitHubAPIConfig.BaseURL = ghTestServer.URL
+	cfg.GitHubAPIConfig.UploadURL = ghTestServer.URL
+
+	// Create receiver with test consumers
+	recv, err := newLogsReceiver(
+		context.Background(),
+		receivertest.NewNopSettings(receivertest.NopType),
+		cfg,
+		logsSink,
+	)
+	require.NoError(t, err)
+	sharedComp, ok := recv.(*sharedcomponent.SharedComponent)
+	require.True(t, ok, "Receiver must be a shared component")
+
+	rcvr, ok := sharedComp.Unwrap().(*githubActionsReceiver)
+	require.True(t, ok, "Unwrapped component must be githubActionsReceiver")
+
+	require.Equal(t, ghTestServer.URL+"/api/v3/", rcvr.ghitr.BaseURL)
 }
 
 func TestLogsReceiverEndToEnd(t *testing.T) {
