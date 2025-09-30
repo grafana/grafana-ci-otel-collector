@@ -21,7 +21,7 @@ require (
 
 require (
 	github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e // indirect
-	github.com/bradleyfalzon/ghinstallation/v2 v2.16.0 // indirect
+	github.com/bradleyfalzon/ghinstallation/v2 v2.17.0 // indirect
 	github.com/drone/drone-go v1.7.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250903184740-5d135037bd4d // indirect
@@ -33,7 +33,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/go-github/v72 v72.0.0 // indirect
 	github.com/google/go-github/v75 v75.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/go-tpm v0.9.6 // indirect
