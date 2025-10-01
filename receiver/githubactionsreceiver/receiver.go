@@ -34,6 +34,7 @@ type githubActionsReceiver struct {
 	logger          *zap.Logger
 	obsrecv         *receiverhelper.ObsReport
 	ghClient        *github.Client
+	ghitr           *ghinstallation.Transport
 }
 
 func newReceiver(
@@ -61,10 +62,23 @@ func newReceiver(
 
 	var ghClient *github.Client
 	var httpClient *http.Client
+	var itr *ghinstallation.Transport
 	if config.GitHubAPIConfig.Auth.AppID != 0 && config.GitHubAPIConfig.Auth.InstallationID != 0 && config.GitHubAPIConfig.Auth.PrivateKeyPath != "" {
-		itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, config.GitHubAPIConfig.Auth.AppID, config.GitHubAPIConfig.Auth.InstallationID, config.GitHubAPIConfig.Auth.PrivateKeyPath)
+		itr, err = ghinstallation.NewKeyFromFile(http.DefaultTransport, config.GitHubAPIConfig.Auth.AppID, config.GitHubAPIConfig.Auth.InstallationID, config.GitHubAPIConfig.Auth.PrivateKeyPath)
 		if err != nil {
 			return nil, err
+		}
+
+		if config.GitHubAPIConfig.BaseURL != "" && config.GitHubAPIConfig.UploadURL != "" {
+			// The BaseURL should point to the /api/v3 prefix. We can use the
+			// WithEnterpriseURLs helper for that which does validation and
+			// proper suffixing if necessary.
+			tmp := github.NewTokenClient(context.Background(), "")
+			tmp, err = tmp.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
+			if err != nil {
+				return nil, fmt.Errorf("enterprise URLs are invalid: %w", err)
+			}
+			itr.BaseURL = tmp.BaseURL.String()
 		}
 
 		httpClient = &http.Client{Transport: itr}
@@ -88,6 +102,7 @@ func newReceiver(
 		logger:         params.Logger,
 		obsrecv:        obsrecv,
 		ghClient:       ghClient,
+		ghitr:          itr,
 		metricsHandler: *newMetricsHandler(params, config, params.Logger.Named("metricsHandler")),
 	}
 
