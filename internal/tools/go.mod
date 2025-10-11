@@ -4,7 +4,7 @@ go 1.24.6
 
 require (
 	github.com/golangci/golangci-lint/v2 v2.5.0
-	github.com/google/osv-scanner/v2 v2.2.2
+	github.com/google/osv-scanner/v2 v2.2.3
 	github.com/securego/gosec/v2 v2.22.9
 	go.opentelemetry.io/build-tools/crosslink v0.28.1
 	go.opentelemetry.io/collector/cmd/builder v0.136.0
@@ -18,15 +18,15 @@ require (
 	4d63.com/gochecknoglobals v0.2.2 // indirect
 	cloud.google.com/go v0.121.2 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
-	cloud.google.com/go/compute/metadata v0.8.0 // indirect
+	cloud.google.com/go/compute/metadata v0.8.4 // indirect
 	codeberg.org/chavacava/garif v0.2.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
-	deps.dev/api/v3 v3.0.0-20250729065307-991cf8720f82 // indirect
-	deps.dev/api/v3alpha v0.0.0-20250630145910-0bba51f925b0 // indirect
-	deps.dev/util/maven v0.0.0-20250729065307-991cf8720f82 // indirect
-	deps.dev/util/pypi v0.0.0-20250630145910-0bba51f925b0 // indirect
-	deps.dev/util/resolve v0.0.0-20250729065307-991cf8720f82 // indirect
-	deps.dev/util/semver v0.0.0-20250729065307-991cf8720f82 // indirect
+	deps.dev/api/v3 v3.0.0-20250917073939-6ff3dd7d2eea // indirect
+	deps.dev/api/v3alpha v0.0.0-20250903005441-604c45d5b44b // indirect
+	deps.dev/util/maven v0.0.0-20250917073939-6ff3dd7d2eea // indirect
+	deps.dev/util/pypi v0.0.0-20250903005441-604c45d5b44b // indirect
+	deps.dev/util/resolve v0.0.0-20250917073939-6ff3dd7d2eea // indirect
+	deps.dev/util/semver v0.0.0-20250917073939-6ff3dd7d2eea // indirect
 	dev.gaijin.team/go/exhaustruct/v4 v4.0.0 // indirect
 	dev.gaijin.team/go/golib v0.6.0 // indirect
 	github.com/4meepo/tagalign v1.4.3 // indirect
@@ -77,11 +77,11 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charithe/durationcheck v0.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.21.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.6 // indirect
+	github.com/charmbracelet/bubbletea v1.3.10 // indirect
 	github.com/charmbracelet/colorprofile v0.3.1 // indirect
 	github.com/charmbracelet/glamour v0.10.0 // indirect
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834 // indirect
-	github.com/charmbracelet/x/ansi v0.9.3 // indirect
+	github.com/charmbracelet/x/ansi v0.10.1 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20250711012602-b1f986320f7e // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
@@ -162,7 +162,7 @@ require (
 	github.com/golangci/unconvert v0.0.0-20250410112200-a129a6e6413e // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-containerregistry v0.20.6 // indirect
-	github.com/google/osv-scalibr v0.3.2-0.20250812004447-f38f28e2746b // indirect
+	github.com/google/osv-scalibr v0.3.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
@@ -253,8 +253,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
 	github.com/opencontainers/selinux v1.12.0 // indirect
-	github.com/ossf/osv-schema/bindings/go v0.0.0-20250804010012-a529c42c15de // indirect
-	github.com/owenrumney/go-sarif/v3 v3.2.1 // indirect
+	github.com/ossf/osv-schema/bindings/go v0.0.0-20250926044009-f6ae0b6bae32 // indirect
+	github.com/owenrumney/go-sarif/v3 v3.2.3 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/pandatix/go-cvss v0.6.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
@@ -316,6 +316,7 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/timakin/bodyclose v0.0.0-20241222091800-1db5c5ca4d67 // indirect
 	github.com/timonwong/loggercheck v0.11.0 // indirect
+	github.com/tink-crypto/tink-go/v2 v2.4.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/tomarrell/wrapcheck/v2 v2.11.0 // indirect
@@ -323,7 +324,7 @@ require (
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect
 	github.com/ultraware/funlen v0.2.0 // indirect
 	github.com/ultraware/whitespace v0.2.0 // indirect
-	github.com/urfave/cli/v3 v3.3.8 // indirect
+	github.com/urfave/cli/v3 v3.4.1 // indirect
 	github.com/uudashr/gocognit v1.2.0 // indirect
 	github.com/uudashr/iface v1.4.1 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
@@ -372,6 +373,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/telemetry v0.0.0-20250908211612-aef8a434d053 // indirect
@@ -394,7 +396,7 @@ require (
 	modernc.org/sqlite v1.38.0 // indirect
 	mvdan.cc/gofumpt v0.9.1 // indirect
 	mvdan.cc/unparam v0.0.0-20250301125049-0df0534333a4 // indirect
-	osv.dev/bindings/go v0.0.0-20250731024040-0ecbb9ee94cb // indirect
+	osv.dev/bindings/go v0.0.0-20250929041518-3b73304a1688 // indirect
 	sigs.k8s.io/yaml v1.5.0 // indirect
 	www.velocidex.com/golang/regparser v0.0.0-20250203141505-31e704a67ef7 // indirect
 )
