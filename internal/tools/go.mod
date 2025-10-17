@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	github.com/golangci/golangci-lint/v2 v2.5.0
 	github.com/google/osv-scanner/v2 v2.2.3
-	github.com/securego/gosec/v2 v2.22.9
+	github.com/securego/gosec/v2 v2.22.10
 	go.opentelemetry.io/build-tools/crosslink v0.28.1
 	go.opentelemetry.io/collector/cmd/builder v0.137.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.137.0
@@ -57,7 +57,7 @@ require (
 	github.com/alingse/asasalint v0.0.11 // indirect
 	github.com/alingse/nilnesserr v0.2.0 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20250211213226-cce56d595160 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.12.0 // indirect
+	github.com/anthropics/anthropic-sdk-go v1.13.0 // indirect
 	github.com/ashanbrown/forbidigo/v2 v2.1.0 // indirect
 	github.com/ashanbrown/makezero/v2 v2.0.1 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
@@ -381,7 +381,7 @@ require (
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/vuln v1.1.4 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	google.golang.org/genai v1.25.0 // indirect
+	google.golang.org/genai v1.30.0 // indirect
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
