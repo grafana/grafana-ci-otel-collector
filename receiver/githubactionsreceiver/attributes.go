@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v75/github"
+	"github.com/google/go-github/v76/github"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
