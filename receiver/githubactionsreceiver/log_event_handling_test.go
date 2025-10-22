@@ -41,3 +41,51 @@ func TestParseTimestamp(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractStepNumberFromFileName(t *testing.T) {
+	tests := map[string]struct {
+		fileName      string
+		jobName       string
+		expectedStep  int
+		expectError   bool
+		errorContains string
+	}{
+		"step number with underscore": {
+			fileName:     "test/2_Run tests.txt",
+			jobName:      "test",
+			expectedStep: 2,
+		},
+		"system.txt file should be skipped": {
+			fileName:      "Shellcheck scripts/system.txt",
+			jobName:       "Shellcheck scripts",
+			expectError:   true,
+			errorContains: "skipping system file",
+		},
+		"job name with spaces": {
+			fileName:     "Build and Test/1_Setup.txt",
+			jobName:      "Build and Test",
+			expectedStep: 1,
+		},
+		"invalid step number": {
+			fileName:      "build/abc_Invalid.txt",
+			jobName:       "build",
+			expectError:   true,
+			errorContains: "invalid syntax",
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			stepNum, err := extractStepNumberFromFileName(test.fileName, test.jobName)
+			if test.expectError {
+				require.Error(t, err)
+				if test.errorContains != "" {
+					require.Contains(t, err.Error(), test.errorContains)
+				}
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, test.expectedStep, stepNum)
+			}
+		})
+	}
+}

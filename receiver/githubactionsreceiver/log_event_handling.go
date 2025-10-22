@@ -239,7 +239,11 @@ func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.Resourc
 func processLogFile(logFile *zip.File, jobName string, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger, builder *logEntryBuilder) {
 	stepNumber, err := extractStepNumberFromFileName(logFile.Name, jobName)
 	if err != nil {
-		logger.Error("Invalid step number in filename", zap.String("filename", logFile.Name), zap.Error(err))
+		if strings.Contains(err.Error(), "skipping system file") {
+			logger.Debug("Skipping system file", zap.String("filename", logFile.Name))
+		} else {
+			logger.Error("Invalid step number in filename", zap.String("filename", logFile.Name), zap.Error(err))
+		}
 		return
 	}
 
@@ -270,6 +274,14 @@ func extractStepNumberFromFileName(fileName, jobName string) (int, error) {
 		return 0, fmt.Errorf("filename %q does not contain job prefix %q/", fileName, jobName)
 	}
 	baseName := fileName[prefixLen:]
+
+	// Skip system files that don't follow the step number pattern
+	// Seems like it's a bug in with GitHub Actions since it arbitrarily started
+	// appearing in Aug 2025.
+	if baseName == "system.txt" {
+		return 0, fmt.Errorf("skipping system file: %q", fileName)
+	}
+
 	underscoreIdx := strings.IndexByte(baseName, '_')
 	if underscoreIdx == -1 {
 		return strconv.Atoi(baseName)
