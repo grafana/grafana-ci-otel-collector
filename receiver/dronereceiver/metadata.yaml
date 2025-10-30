@@ -14,7 +14,7 @@ tests:
 status:
   class: receiver
   stability:
-    development: [logs, traces, metrics]
+    deprecated: [logs, traces, metrics]
   distributions:
     - grafana-ci-otel-collector
   codeowners:
