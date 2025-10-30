@@ -7,11 +7,12 @@ The Grafana CI OTel Collector is a distribution of the Open Telemetry collector 
 The following is a list of components that are included in the Grafana CI OTel Collector.
 
 <mark>**Highlighted**</mark> components are currently being developed by us.
+<s>**Stricken**</s> components were previously being developed by us, but are now deprecated.
 
 ### Receivers
 
 - [otlpreceiver][otlpreceiver]
-- <mark>**[dronereceiver][dronereceiver]**</mark>
+- <s>**[dronereceiver][dronereceiver]**</s>
 - <mark>**[githubactionsreceiver][githubactionsreceiver]**</mark>
 
 [otlpreceiver]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.113.0/receiver/otlpreceiver
