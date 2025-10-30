@@ -15,6 +15,16 @@ status:
   class: receiver
   stability:
     deprecated: [logs, traces, metrics]
+  deprecation:
+    logs:
+      migration: "fork for long term use"
+      date: "2025-10-30"
+    traces:
+      migration: "fork for long term use"
+      date: "2025-10-30"
+    metrics:
+      migration: "fork for long term use"
+      date: "2025-10-30"
   distributions:
     - grafana-ci-otel-collector
   codeowners:
