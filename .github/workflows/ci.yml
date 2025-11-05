@@ -153,7 +153,7 @@ jobs:
           persist-credentials: false
 
       - name: Push to GAR
-        uses: grafana/shared-workflows/actions/push-to-gar-docker@96e4673a3d86dbbd332f3251c21a4c1299baa714 # push-to-gar-docker/v0.6.1
+        uses: grafana/shared-workflows/actions/push-to-gar-docker@c4ce052b1bd67c22f4b834feb31e10aeede84e65
         with:
           # Only push to GAR on main branch pushes
           push: true
