@@ -15,21 +15,6 @@ status:
 resource_attributes:
 
 attributes:
-  ci.github.workflow.job.labels:
-    description: Job labels.
-    type: string
-  vcs.repository.name:
-    description: Repository name
-    type: string
-  ci.github.workflow.job.status:
-    description: Job status
-    enum:
-      - completed
-      - in_progress
-      - queued
-      - waiting
-      - aborted
-    type: string
   ci.github.workflow.job.conclusion:
     description: Job Conclusion
     enum:
@@ -45,11 +30,11 @@ attributes:
   ci.github.workflow.job.head_branch.is_main:
     description: Whether the head branch is the main branch
     type: bool
-  ci.github.workflow.run.labels:
-    description: Run labels.
+  ci.github.workflow.job.labels:
+    description: Job labels.
     type: string
-  ci.github.workflow.run.status:
-    description: Run status
+  ci.github.workflow.job.status:
+    description: Job status
     enum:
       - completed
       - in_progress
@@ -72,6 +57,21 @@ attributes:
   ci.github.workflow.run.head_branch.is_main:
     description: Whether the head branch is the main branch
     type: bool
+  ci.github.workflow.run.labels:
+    description: Run labels.
+    type: string
+  ci.github.workflow.run.status:
+    description: Run status
+    enum:
+      - completed
+      - in_progress
+      - queued
+      - waiting
+      - aborted
+    type: string
+  vcs.repository.name:
+    description: Repository name
+    type: string
   version:
     description: The version of the cicd_o11y collector.
     type: string
