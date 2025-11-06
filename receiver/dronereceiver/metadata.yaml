@@ -49,11 +49,11 @@ attributes:
         error,
       ]
     type: string
-  git.repo.name:
-    description: Repository name
-    type: string
   git.branch.name:
     description: Branch name
+    type: string
+  git.repo.name:
+    description: Repository name
     type: string
 
 metrics:
