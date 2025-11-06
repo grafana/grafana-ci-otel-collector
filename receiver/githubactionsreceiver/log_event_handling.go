@@ -292,6 +292,9 @@ func extractStepNumberFromFileName(fileName, jobName string) (int, error) {
 func processLogEntries(reader io.Reader, jobLogsScope plog.ScopeLogs, spanID pcommon.SpanID, traceID pcommon.TraceID, stepNumber int, withTraceInfo bool, logger *zap.Logger, builder *logEntryBuilder) {
 	scanner := bufio.NewScanner(reader)
 
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, maxLogEntryBytes)
+
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) == 0 {
