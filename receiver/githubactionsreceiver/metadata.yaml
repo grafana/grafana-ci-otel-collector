@@ -77,6 +77,13 @@ attributes:
     type: string
 
 metrics:
+  build.info:
+    enabled: true
+    description: Build info.
+    unit: "{build}"
+    gauge:
+      value_type: int
+    attributes: [version]
   workflow.jobs.count:
     enabled: true
     description: Number of jobs.
@@ -109,10 +116,3 @@ metrics:
         ci.github.workflow.run.conclusion,
         ci.github.workflow.run.head_branch.is_main,
       ]
-  build.info:
-    enabled: true
-    description: Build info.
-    unit: "{build}"
-    gauge:
-      value_type: int
-    attributes: [version]
