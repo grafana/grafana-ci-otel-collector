@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - id: find-commit-pr
-        uses: octokit/graphql-action@8ad880e4d437783ea2ab17010324de1075228110 # v2.3.2
+        uses: octokit/graphql-action@abaeca7ba4f0325d63b8de7ef943c2418d161b93 # v3.0.0
         name: Find PR for commit
         with:
           query: |
