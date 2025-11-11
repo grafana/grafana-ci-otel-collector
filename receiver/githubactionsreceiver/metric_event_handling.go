@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v77/github"
+	"github.com/google/go-github/v78/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/prometheus/common/version"
 	"go.opentelemetry.io/collector/component"
