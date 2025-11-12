@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v77/github"
+	"github.com/google/go-github/v78/github"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
