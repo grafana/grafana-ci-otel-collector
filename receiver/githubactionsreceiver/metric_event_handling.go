@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/go-github/v78/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/common/version"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -24,7 +24,21 @@ type metricsHandler struct {
 	logger   *zap.Logger
 }
 
-var repoMap = sync.Map{}
+const metricsMaxCacheSize = 50000
+
+var cache *lru.Cache[string, int64]
+
+func init() {
+	var err error
+	cache, err = lru.New[string, int64](metricsMaxCacheSize)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize cache: %v", err))
+	}
+}
+
+func cacheKey(repo, labels string, status, conclusion interface{}) string {
+	return fmt.Sprintf("%s:%s:%v:%v", repo, labels, status, conclusion)
+}
 
 func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
 	settings.BuildInfo = component.BuildInfo{
@@ -209,33 +223,11 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 }
 
 func storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
-	labelsMap, _ := repoMap.LoadOrStore(repo, &sync.Map{})
-	statusesMap, _ := labelsMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
-	conclusionsMap, _ := statusesMap.(*sync.Map).LoadOrStore(status, &sync.Map{})
-	conclusionsMap.(*sync.Map).Store(conclusion, value)
+	key := cacheKey(repo, labels, status, conclusion)
+	cache.Add(key, value)
 }
 
-// Helper function to load values from the nested sync.Map structure
 func loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
-	labelsMap, ok := repoMap.Load(repo)
-	if !ok {
-		return 0, false
-	}
-
-	statusesMap, ok := labelsMap.(*sync.Map).Load(labels)
-	if !ok {
-		return 0, false
-	}
-
-	conclusionsMap, ok := statusesMap.(*sync.Map).Load(status)
-	if !ok {
-		return 0, false
-	}
-
-	value, ok := conclusionsMap.(*sync.Map).Load(conclusion)
-	if !ok {
-		return 0, false
-	}
-
-	return value.(int64), true
+	key := cacheKey(repo, labels, status, conclusion)
+	return cache.Get(key)
 }
