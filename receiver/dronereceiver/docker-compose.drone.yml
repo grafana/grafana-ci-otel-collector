@@ -1,6 +1,6 @@
 services:
   drone:
-    image: drone/drone:latest@sha256:6ab2720edca76f285fa8664eeaa26d38337bda8724ebe15af1dbe7e6e7f1365b
+    image: drone/drone:latest
     depends_on:
       db:
         condition: service_healthy
@@ -27,7 +27,7 @@ services:
       - DRONE_STATUS_NAME=continuous-integration/drone-local-${GH_HANDLE}
   runner:
     platform: "linux/amd64"
-    image: drone/drone-runner-docker:linux-amd64@sha256:402c2762581bf67c6afd07f536639c00d34030abe737e7d5eea3e027c355a072
+    image: drone/drone-runner-docker:linux-amd64
     environment:
       - DRONE_RPC_HOST=drone
       - DRONE_RPC_PROTO=http
@@ -38,9 +38,9 @@ services:
     depends_on:
       - drone
   redis-server:
-    image: redis:8.2.3@sha256:5c7c0445ed86918cb9efb96d95a6bfc03ed2059fe2c5f02b4d74f477ffe47915
+    image: redis:8.2.3
   db:
-    image: postgres@sha256:41fc5342eefba6cc2ccda736aaf034bbbb7c3df0fdb81516eba1ba33f360162c
+    image: postgres:18.1
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres

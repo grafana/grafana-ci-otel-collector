@@ -13,9 +13,10 @@
     },
     {
       "matchFileNames": [
-        "docker-compose.yml"
+        "docker-compose.yml",
+        "docker-compose.drone.yml"
       ],
-      "enabled": false
+      "pinDigests": false
     },
     {
       "groupName": "otel",
