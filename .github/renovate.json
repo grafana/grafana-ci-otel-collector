@@ -12,11 +12,19 @@
       "enabled": false
     },
     {
-      "matchFileNames": [
-        "docker-compose.yml",
-        "docker-compose.drone.yml"
+      "matchManagers": [
+        "docker-compose"
       ],
       "pinDigests": false
+    },
+    {
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "pinDigest"
+      ],
+      "enabled": false
     },
     {
       "groupName": "otel",
