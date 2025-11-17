@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func resetCache() {
-	var err error
-	cache, err = lru.New[string, int64](metricsMaxCacheSize)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to reset cache: %v", err))
+func newTestMetricsHandler(t *testing.T) *metricsHandler {
+	t.Helper()
+	cache, err := lru.New[string, int64](metricsMaxCacheSize)
+	require.NoError(t, err)
+	return &metricsHandler{
+		cache: cache,
 	}
 }
 
@@ -104,9 +105,10 @@ func TestCacheStoreAndLoad(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			storeInCache(test.repo, test.labels, test.status, test.conclusion, test.value)
+			handler := newTestMetricsHandler(t)
+			handler.storeInCache(test.repo, test.labels, test.status, test.conclusion, test.value)
 
-			loadedValue, found := loadFromCache(test.repo, test.labels, test.status, test.conclusion)
+			loadedValue, found := handler.loadFromCache(test.repo, test.labels, test.status, test.conclusion)
 			require.True(t, found)
 			require.Equal(t, test.value, loadedValue)
 		})
@@ -114,59 +116,60 @@ func TestCacheStoreAndLoad(t *testing.T) {
 }
 
 func TestCacheLoadNonExistent(t *testing.T) {
-	value, found := loadFromCache("nonexistent/repo", "ubuntu-latest", "completed", "success")
+	handler := newTestMetricsHandler(t)
+	value, found := handler.loadFromCache("nonexistent/repo", "ubuntu-latest", "completed", "success")
 	require.False(t, found)
 	require.Equal(t, int64(0), value)
 }
 
 func TestCacheUpdate(t *testing.T) {
-	resetCache()
+	handler := newTestMetricsHandler(t)
 
 	repo := "grafana/grafana"
 	labels := "ubuntu-latest"
 	status := "completed"
 	conclusion := "success"
 
-	storeInCache(repo, labels, status, conclusion, 100)
+	handler.storeInCache(repo, labels, status, conclusion, 100)
 
-	value, found := loadFromCache(repo, labels, status, conclusion)
+	value, found := handler.loadFromCache(repo, labels, status, conclusion)
 	require.True(t, found)
 	require.Equal(t, int64(100), value)
 
 	// Update value
-	storeInCache(repo, labels, status, conclusion, 150)
+	handler.storeInCache(repo, labels, status, conclusion, 150)
 
-	value, found = loadFromCache(repo, labels, status, conclusion)
+	value, found = handler.loadFromCache(repo, labels, status, conclusion)
 	require.True(t, found)
 	require.Equal(t, int64(150), value)
 }
 
 func TestCacheLRUEviction(t *testing.T) {
-	resetCache()
+	handler := newTestMetricsHandler(t)
 
 	entriesToAdd := 1000
 
 	for i := range entriesToAdd {
 		repo := fmt.Sprintf("test-repo-%d", i)
-		storeInCache(repo, "ubuntu-latest", "completed", "success", int64(i))
+		handler.storeInCache(repo, "ubuntu-latest", "completed", "success", int64(i))
 	}
 
 	oldRepo := "grafana/loki"
-	storeInCache(oldRepo, "ubuntu-latest", "completed", "success", 999)
+	handler.storeInCache(oldRepo, "ubuntu-latest", "completed", "success", 999)
 
-	value, found := loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
+	value, found := handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
 	require.True(t, found)
 	require.Equal(t, int64(999), value)
 
 	// Access again to make it recently used
-	_, found = loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
+	_, found = handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
 	require.True(t, found)
 
-	require.Greater(t, cache.Len(), 0)
+	require.Greater(t, handler.cache.Len(), 0)
 }
 
 func TestCacheMultipleReposAndLabels(t *testing.T) {
-	resetCache()
+	handler := newTestMetricsHandler(t)
 
 	repos := []string{"grafana/grafana", "grafana/tempo", "grafana/loki"}
 	labels := []string{"ubuntu-latest", "macos-latest", "self-hosted"}
@@ -179,7 +182,7 @@ func TestCacheMultipleReposAndLabels(t *testing.T) {
 			for _, status := range statuses {
 				for _, conclusion := range conclusions {
 					count++
-					storeInCache(repo, label, status, conclusion, count)
+					handler.storeInCache(repo, label, status, conclusion, count)
 				}
 			}
 		}
@@ -191,7 +194,7 @@ func TestCacheMultipleReposAndLabels(t *testing.T) {
 			for _, status := range statuses {
 				for _, conclusion := range conclusions {
 					count++
-					value, found := loadFromCache(repo, label, status, conclusion)
+					value, found := handler.loadFromCache(repo, label, status, conclusion)
 					require.True(t, found, "Failed to find: %s, %s, %s, %s", repo, label, status, conclusion)
 					require.Equal(t, count, value)
 				}
@@ -201,7 +204,7 @@ func TestCacheMultipleReposAndLabels(t *testing.T) {
 }
 
 func TestCacheIncrement(t *testing.T) {
-	resetCache()
+	handler := newTestMetricsHandler(t)
 
 	repo := "grafana/grafana"
 	labels := "ubuntu-latest"
@@ -209,21 +212,21 @@ func TestCacheIncrement(t *testing.T) {
 	conclusion := "success"
 
 	// Not found
-	curVal, found := loadFromCache(repo, labels, status, conclusion)
+	curVal, found := handler.loadFromCache(repo, labels, status, conclusion)
 	require.False(t, found)
 	require.Equal(t, int64(0), curVal)
 
 	// Store first event
-	storeInCache(repo, labels, status, conclusion, 1)
+	handler.storeInCache(repo, labels, status, conclusion, 1)
 
 	// Found
-	curVal, found = loadFromCache(repo, labels, status, conclusion)
+	curVal, found = handler.loadFromCache(repo, labels, status, conclusion)
 	require.True(t, found)
 	require.Equal(t, int64(1), curVal)
 
 	// Increment
-	storeInCache(repo, labels, status, conclusion, curVal+1)
-	curVal, found = loadFromCache(repo, labels, status, conclusion)
+	handler.storeInCache(repo, labels, status, conclusion, curVal+1)
+	curVal, found = handler.loadFromCache(repo, labels, status, conclusion)
 	require.True(t, found)
 	require.Equal(t, int64(2), curVal)
 }
