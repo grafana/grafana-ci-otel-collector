@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/go-github/v78/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/common/version"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -22,9 +22,14 @@ type metricsHandler struct {
 	mb       *metadata.MetricsBuilder
 	cfg      *Config
 	logger   *zap.Logger
+	cache    *lru.Cache[string, int64]
 }
 
-var repoMap = sync.Map{}
+const metricsMaxCacheSize = 50000
+
+func cacheKey(repo, labels string, status, conclusion interface{}) string {
+	return fmt.Sprintf("%s:%s:%v:%v", repo, labels, status, conclusion)
+}
 
 func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
 	settings.BuildInfo = component.BuildInfo{
@@ -32,11 +37,18 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		Description: "GitHub Actions Receiver",
 		Version:     version.Version,
 	}
+
+	cache, err := lru.New[string, int64](metricsMaxCacheSize)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize cache: %v", err))
+	}
+
 	mh := &metricsHandler{
 		cfg:      cfg,
 		settings: settings.TelemetrySettings,
 		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
 		logger:   logger,
+		cache:    cache,
 	}
 
 	// Record build info metric
@@ -108,7 +120,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
-		curVal, found := loadFromCache(repo, labels, status, conclusion)
+		curVal, found := m.loadFromCache(repo, labels, status, conclusion)
 
 		metricKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, status.String(), conclusion.String(), isMain)
 
@@ -120,7 +132,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 						if s == status && c == conclusion {
 							continue
 						}
-						storeInCache(repo, labels, s, c, 0)
+						m.storeInCache(repo, labels, s, c, 0)
 						otherKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, s.String(), c.String(), isMain)
 						if !recorded[otherKey] {
 							recorded[otherKey] = true
@@ -129,7 +141,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 					}
 				}
 			}
-			storeInCache(repo, labels, status, conclusion, curVal+1)
+			m.storeInCache(repo, labels, status, conclusion, curVal+1)
 			m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion, isMain)
 		}
 	}
@@ -179,7 +191,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
-		curVal, found := loadFromCache(repo, "default", status, conclusion)
+		curVal, found := m.loadFromCache(repo, "default", status, conclusion)
 
 		metricKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", status.String(), conclusion.String(), isMain)
 
@@ -191,7 +203,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 						if s == status && c == conclusion {
 							continue
 						}
-						storeInCache(repo, "default", s, c, 0)
+						m.storeInCache(repo, "default", s, c, 0)
 						otherKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", s.String(), c.String(), isMain)
 						if !recorded[otherKey] {
 							recorded[otherKey] = true
@@ -200,7 +212,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 					}
 				}
 			}
-			storeInCache(repo, "default", status, conclusion, curVal+1)
+			m.storeInCache(repo, "default", status, conclusion, curVal+1)
 			m.mb.RecordWorkflowRunsCountDataPoint(now, curVal+1, repo, "default", status, conclusion, isMain)
 		}
 	}
@@ -208,34 +220,12 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	return m.mb.Emit()
 }
 
-func storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
-	labelsMap, _ := repoMap.LoadOrStore(repo, &sync.Map{})
-	statusesMap, _ := labelsMap.(*sync.Map).LoadOrStore(labels, &sync.Map{})
-	conclusionsMap, _ := statusesMap.(*sync.Map).LoadOrStore(status, &sync.Map{})
-	conclusionsMap.(*sync.Map).Store(conclusion, value)
+func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
+	key := cacheKey(repo, labels, status, conclusion)
+	m.cache.Add(key, value)
 }
 
-// Helper function to load values from the nested sync.Map structure
-func loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
-	labelsMap, ok := repoMap.Load(repo)
-	if !ok {
-		return 0, false
-	}
-
-	statusesMap, ok := labelsMap.(*sync.Map).Load(labels)
-	if !ok {
-		return 0, false
-	}
-
-	conclusionsMap, ok := statusesMap.(*sync.Map).Load(status)
-	if !ok {
-		return 0, false
-	}
-
-	value, ok := conclusionsMap.(*sync.Map).Load(conclusion)
-	if !ok {
-		return 0, false
-	}
-
-	return value.(int64), true
+func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
+	key := cacheKey(repo, labels, status, conclusion)
+	return m.cache.Get(key)
 }
