@@ -73,7 +73,7 @@ func newReceiver(
 			// The BaseURL should point to the /api/v3 prefix. We can use the
 			// WithEnterpriseURLs helper for that which does validation and
 			// proper suffixing if necessary.
-			tmp := github.NewTokenClient(context.Background(), "")
+			tmp := github.NewClient(nil).WithAuthToken("")
 			tmp, err = tmp.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
 			if err != nil {
 				return nil, fmt.Errorf("enterprise URLs are invalid: %w", err)
