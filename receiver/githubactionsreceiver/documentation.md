@@ -16,48 +16,48 @@ metrics:
 
 Build info.
 
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| {build} | Gauge | Int |
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {build} | Gauge | Int | Development |
 
 #### Attributes
 
-| Name | Description | Values | Optional |
+| Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
-| version | The version of the cicd_o11y collector. | Any Str | false |
+| version | The version of the cicd_o11y collector. | Any Str | Recommended |
 
 ### workflow.jobs.count
 
 Number of jobs.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {job} | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {job} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Optional |
+| Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
-| vcs.repository.name | Repository name | Any Str | false |
-| ci.github.workflow.job.labels | Job labels. | Any Str | false |
-| ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | false |
-| ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | false |
-| ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool | false |
+| vcs.repository.name | Repository name | Any Str | Recommended |
+| ci.github.workflow.job.labels | Job labels. | Any Str | Recommended |
+| ci.github.workflow.job.status | Job status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | Recommended |
+| ci.github.workflow.job.conclusion | Job Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | Recommended |
+| ci.github.workflow.job.head_branch.is_main | Whether the head branch is the main branch | Any Bool | Recommended |
 
 ### workflow.runs.count
 
 Number of runs.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {run} | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {run} | Sum | Int | Cumulative | true | Development |
 
 #### Attributes
 
-| Name | Description | Values | Optional |
+| Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
-| vcs.repository.name | Repository name | Any Str | false |
-| ci.github.workflow.run.labels | Run labels. | Any Str | false |
-| ci.github.workflow.run.status | Run status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | false |
-| ci.github.workflow.run.conclusion | Run Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | false |
-| ci.github.workflow.run.head_branch.is_main | Whether the head branch is the main branch | Any Bool | false |
+| vcs.repository.name | Repository name | Any Str | Recommended |
+| ci.github.workflow.run.labels | Run labels. | Any Str | Recommended |
+| ci.github.workflow.run.status | Run status | Str: ``completed``, ``in_progress``, ``queued``, ``waiting``, ``aborted`` | Recommended |
+| ci.github.workflow.run.conclusion | Run Conclusion | Str: ``success``, ``failure``, ``cancelled``, ``neutral``, ``null``, ``skipped``, ``timed_out``, ``action_required`` | Recommended |
+| ci.github.workflow.run.head_branch.is_main | Whether the head branch is the main branch | Any Bool | Recommended |
