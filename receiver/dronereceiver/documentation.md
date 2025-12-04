@@ -18,38 +18,38 @@ Number of builds.
 
 Currently there's no way to differentiate between restarted builds and manually triggered builds. This means builds started manually (i.e. via Drone UI or via APis) will count towards this metric should they run against a branch for which a build has already been executed.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {build} | Sum | Int | Cumulative | false |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {build} | Sum | Int | Cumulative | false | Development |
 
 #### Attributes
 
-| Name | Description | Values | Optional |
+| Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | false |
-| git.repo.name | Repository name | Any Str | false |
-| git.branch.name | Branch name | Any Str | false |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended |
+| git.repo.name | Repository name | Any Str | Recommended |
+| git.branch.name | Branch name | Any Str | Recommended |
 
 ### repo_info
 
 Repo status.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {repository} | Sum | Int | Cumulative | false |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {repository} | Sum | Int | Cumulative | false | Development |
 
 #### Attributes
 
-| Name | Description | Values | Optional |
+| Name | Description | Values | Requirement Level |
 | ---- | ----------- | ------ | -------- |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | false |
-| git.repo.name | Repository name | Any Str | false |
-| git.branch.name | Branch name | Any Str | false |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended |
+| git.repo.name | Repository name | Any Str | Recommended |
+| git.branch.name | Branch name | Any Str | Recommended |
 
 ### restarts_total
 
 Total number build restarts.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| {restart} | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| {restart} | Sum | Int | Cumulative | true | Development |

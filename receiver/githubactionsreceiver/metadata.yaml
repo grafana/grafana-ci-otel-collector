@@ -79,6 +79,8 @@ attributes:
 metrics:
   build.info:
     enabled: true
+    stability:
+      level: development
     description: Build info.
     unit: "{build}"
     gauge:
@@ -86,6 +88,8 @@ metrics:
     attributes: [version]
   workflow.jobs.count:
     enabled: true
+    stability:
+      level: development
     description: Number of jobs.
     unit: "{job}"
     sum:
@@ -102,6 +106,8 @@ metrics:
       ]
   workflow.runs.count:
     enabled: true
+    stability:
+      level: development
     description: Number of runs.
     unit: "{run}"
     sum:
