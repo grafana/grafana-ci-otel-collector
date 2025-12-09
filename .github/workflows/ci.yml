@@ -162,7 +162,7 @@ jobs:
             "latest"
           context: "."
           image_name: "grafana-ci-otel-collector"
-          environment: "dev"
+          environment: "prod"
 
   deploy:
     name: Deploy
