@@ -9,9 +9,25 @@ concurrency:
 on:
   pull_request:
     branches: [main]
+    changes:
+      - config/**
+      - internal/**
+      - receiver/**
+      - Dockerfile
+      - Makefile*
+      - go.*
+      - golangci.yaml
 
   push:
     branches: [main]
+    changes:
+      - config/**
+      - internal/**
+      - receiver/**
+      - Dockerfile
+      - Makefile*
+      - go.*
+      - golangci.yaml
 
 permissions:
   contents: read
