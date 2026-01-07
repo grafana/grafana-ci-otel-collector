@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/golangci/golangci-lint/v2 v2.7.2
 	github.com/google/osv-scanner/v2 v2.3.0
-	github.com/securego/gosec/v2 v2.22.11-0.20251204091113-daccba6b93d7
+	github.com/securego/gosec/v2 v2.22.11
 	go.opentelemetry.io/build-tools/crosslink v0.29.0
 	go.opentelemetry.io/collector/cmd/builder v0.141.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.141.0
@@ -265,6 +265,7 @@ require (
 	github.com/nishanths/exhaustive v0.12.0 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect
 	github.com/nunnatsa/ginkgolinter v0.21.2 // indirect
+	github.com/openai/openai-go/v3 v3.8.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
@@ -399,7 +400,7 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/vuln v1.1.4 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	google.golang.org/genai v1.36.0 // indirect
+	google.golang.org/genai v1.37.0 // indirect
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251111163417-95abcf5c77ba // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251103181224-f26f9409b101 // indirect
