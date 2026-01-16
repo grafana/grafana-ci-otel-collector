@@ -171,7 +171,7 @@ jobs:
           persist-credentials: false
 
       - name: Push to GAR
-        uses: grafana/shared-workflows/actions/push-to-gar-docker@96e4673a3d86dbbd332f3251c21a4c1299baa714 # push-to-gar-docker/v0.6.1
+        uses: grafana/shared-workflows/actions/push-to-gar-docker@b46aa1062bcadeb6b887540bd18046cf289cd2c0 # push-to-gar-docker/v0.7.0
         with:
           # Only push to GAR on main branch pushes
           push: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
