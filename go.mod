@@ -2,7 +2,7 @@ module github.com/grafana/grafana-ci-otel-collector
 
 go 1.24.6
 
-toolchain go1.25.6
+toolchain go1.26.0
 
 replace github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver => ./receiver/dronereceiver
 
