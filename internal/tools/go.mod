@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	github.com/golangci/golangci-lint/v2 v2.8.0
 	github.com/google/osv-scanner/v2 v2.3.2
-	github.com/securego/gosec/v2 v2.22.11
+	github.com/securego/gosec/v2 v2.23.0
 	go.opentelemetry.io/build-tools/crosslink v0.29.0
 	go.opentelemetry.io/collector/cmd/builder v0.141.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.141.0
@@ -61,7 +61,7 @@ require (
 	github.com/alingse/nilnesserr v0.2.0 // indirect
 	github.com/anchore/go-lzo v0.1.0 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20250211213226-cce56d595160 // indirect
-	github.com/anthropics/anthropic-sdk-go v1.19.0 // indirect
+	github.com/anthropics/anthropic-sdk-go v1.22.0 // indirect
 	github.com/ashanbrown/forbidigo/v2 v2.3.0 // indirect
 	github.com/ashanbrown/makezero/v2 v2.1.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
@@ -267,7 +267,7 @@ require (
 	github.com/nishanths/exhaustive v0.12.0 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect
 	github.com/nunnatsa/ginkgolinter v0.21.2 // indirect
-	github.com/openai/openai-go/v3 v3.8.1 // indirect
+	github.com/openai/openai-go/v3 v3.18.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
@@ -401,7 +401,7 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/vuln v1.1.4 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	google.golang.org/genai v1.37.0 // indirect
+	google.golang.org/genai v1.45.0 // indirect
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251222181119-0a764e51fe1b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251213004720-97cd9d5aeac2 // indirect
