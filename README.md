@@ -25,11 +25,13 @@ The following is a list of components that are included in the Grafana CI OTel C
 - [batchprocessor][batchprocessor]
 - [resourceprocessor][resourceprocessor]
 - [filterprocessor][filterprocessor]
+- [transformprocessor][transformprocessor]
 
 [attributesprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/attributesprocessor
 [batchprocessor]: https://github.com/open-telemetry/opentelemetry-collector/tree/v0.131.0/processor/batchprocessor
 [resourceprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/resourceprocessor
 [filterprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/filterprocessor
+[transformprocessor]: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.131.0/processor/transformprocessor
 
 ### Connectors
 
