@@ -91,11 +91,11 @@ func verifySignature(resp http.ResponseWriter, req *http.Request, secret string)
 }
 
 func (r *droneReceiver) Start(_ context.Context, host component.Host) error {
-	endpoint := fmt.Sprintf("%s%s", r.cfg.Endpoint, r.cfg.Path)
+	endpoint := fmt.Sprintf("%s%s", r.cfg.NetAddr.Endpoint, r.cfg.Path)
 	r.logger.Info("Starting Drone webhook server", zap.String("endpoint", endpoint))
 
 	r.httpServer = &http.Server{
-		Addr:              r.cfg.Endpoint,
+		Addr:              r.cfg.NetAddr.Endpoint,
 		Handler:           r,
 		ReadHeaderTimeout: 20 * time.Second,
 	}

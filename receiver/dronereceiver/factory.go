@@ -6,6 +6,7 @@ import (
 	"github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/scraper"
@@ -24,7 +25,10 @@ func createDefaultConfig() component.Config {
 		ControllerConfig:     cfg,
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
-			Endpoint: defaultBindEndpoint,
+			NetAddr: confignet.AddrConfig{
+				Transport: confignet.TransportTypeTCP,
+				Endpoint:  defaultBindEndpoint,
+			},
 		},
 		Path:   defaultPath,
 		Secret: "",
@@ -69,7 +73,7 @@ func newMetricsReceiver(_ context.Context, set receiver.Settings, rConf componen
 
 	return scraperhelper.NewMetricsController(
 		&cfg.ControllerConfig, set, consumer,
-		scraperhelper.AddScraper(metadata.Type, scraper),
+		scraperhelper.AddMetricsScraper(metadata.Type, scraper),
 	)
 }
 
