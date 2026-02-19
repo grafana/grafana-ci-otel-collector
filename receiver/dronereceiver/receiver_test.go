@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
@@ -91,7 +92,10 @@ func TestNewReceiver(t *testing.T) {
 			desc: "User defined config success",
 			config: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				Secret: "mysecret",
 			},

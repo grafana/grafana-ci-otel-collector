@@ -253,6 +253,7 @@ func (m *metricBuildInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricBuildInfo(cfg MetricConfig) metricBuildInfo {
 	m := metricBuildInfo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -310,6 +311,7 @@ func (m *metricWorkflowJobsCount) emit(metrics pmetric.MetricSlice) {
 
 func newMetricWorkflowJobsCount(cfg MetricConfig) metricWorkflowJobsCount {
 	m := metricWorkflowJobsCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -367,6 +369,7 @@ func (m *metricWorkflowRunsCount) emit(metrics pmetric.MetricSlice) {
 
 func newMetricWorkflowRunsCount(cfg MetricConfig) metricWorkflowRunsCount {
 	m := metricWorkflowRunsCount{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()

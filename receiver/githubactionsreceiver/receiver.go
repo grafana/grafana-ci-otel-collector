@@ -41,7 +41,7 @@ func newReceiver(
 	params receiver.Settings,
 	config *Config,
 ) (*githubActionsReceiver, error) {
-	if config.Endpoint == "" {
+	if config.NetAddr.Endpoint == "" {
 		return nil, errMissingEndpoint
 	}
 
@@ -182,10 +182,10 @@ func newMetricsReceiver(
 }
 
 func (gar *githubActionsReceiver) Start(ctx context.Context, host component.Host) error {
-	endpoint := fmt.Sprintf("%s%s", gar.config.Endpoint, gar.config.Path)
+	endpoint := fmt.Sprintf("%s%s", gar.config.NetAddr.Endpoint, gar.config.Path)
 	gar.logger.Info("Starting GithubActions server", zap.String("endpoint", endpoint))
 	gar.server = &http.Server{
-		Addr:              gar.config.Endpoint,
+		Addr:              gar.config.NetAddr.Endpoint,
 		Handler:           gar,
 		ReadHeaderTimeout: 20 * time.Second,
 	}

@@ -6,6 +6,7 @@ package githubactionsreceiver // import "github.com/grafana/grafana-ci-otel-coll
 import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/receiver"
 
 	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
@@ -35,7 +36,10 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
-			Endpoint: defaultBindEndpoint,
+			NetAddr: confignet.AddrConfig{
+				Transport: confignet.TransportTypeTCP,
+				Endpoint:  defaultBindEndpoint,
+			},
 		},
 		Path:   defaultPath,
 		Secret: "",

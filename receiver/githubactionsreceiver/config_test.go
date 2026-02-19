@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
@@ -29,7 +30,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errMissingEndpointFromConfig,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "",
+					},
 				},
 			},
 		},
@@ -38,7 +42,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: nil,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				Secret: "mysecret",
 			},
@@ -48,7 +55,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errAuthMethod,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					Auth: GitHubAPIAuthConfig{
@@ -65,7 +75,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errMissingAppID,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					Auth: GitHubAPIAuthConfig{
@@ -80,7 +93,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errMissingInstallationID,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					Auth: GitHubAPIAuthConfig{
@@ -95,7 +111,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errMissingPrivateKeyPath,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					Auth: GitHubAPIAuthConfig{
@@ -110,7 +129,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errBaseURLAndUploadURL,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					UploadURL: "upload",
@@ -122,7 +144,10 @@ func TestValidateConfig(t *testing.T) {
 			expect: errBaseURLAndUploadURL,
 			conf: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				GitHubAPIConfig: GitHubAPIConfig{
 					BaseURL: "base",
@@ -157,7 +182,10 @@ func TestLoadConfig(t *testing.T) {
 	expect := &Config{
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
-			Endpoint: "localhost:8080",
+			NetAddr: confignet.AddrConfig{
+				Transport: confignet.TransportTypeTCP,
+				Endpoint:  "localhost:8080",
+			},
 		},
 		Path:   "/ghaevents",
 		Secret: "mysecret",

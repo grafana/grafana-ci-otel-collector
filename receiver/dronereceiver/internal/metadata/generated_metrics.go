@@ -140,6 +140,7 @@ func (m *metricBuildsNumber) emit(metrics pmetric.MetricSlice) {
 
 func newMetricBuildsNumber(cfg MetricConfig) metricBuildsNumber {
 	m := metricBuildsNumber{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -195,6 +196,7 @@ func (m *metricRepoInfo) emit(metrics pmetric.MetricSlice) {
 
 func newMetricRepoInfo(cfg MetricConfig) metricRepoInfo {
 	m := metricRepoInfo{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -246,6 +248,7 @@ func (m *metricRestartsTotal) emit(metrics pmetric.MetricSlice) {
 
 func newMetricRestartsTotal(cfg MetricConfig) metricRestartsTotal {
 	m := metricRestartsTotal{config: cfg}
+
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()

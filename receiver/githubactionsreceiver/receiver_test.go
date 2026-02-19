@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -54,7 +55,10 @@ func TestNewReceiver(t *testing.T) {
 			desc: "User defined config success",
 			config: Config{
 				ServerConfig: confighttp.ServerConfig{
-					Endpoint: "localhost:8080",
+					NetAddr: confignet.AddrConfig{
+						Transport: confignet.TransportTypeTCP,
+						Endpoint:  "localhost:8080",
+					},
 				},
 				Secret: "mysecret",
 			},
@@ -367,7 +371,7 @@ func TestReceiverWithAppAndEnterprise(t *testing.T) {
 	})
 
 	cfg := createDefaultConfig().(*Config)
-	cfg.Endpoint = "localhost:0" // Let OS choose port
+	cfg.NetAddr.Endpoint = "localhost:0" // Let OS choose port
 
 	tmpDir := t.TempDir()
 	pkPath := filepath.Join(tmpDir, "private-key.dat")
@@ -483,7 +487,7 @@ func TestLogsReceiverEndToEnd(t *testing.T) {
 
 			cfg := createDefaultConfig().(*Config)
 			cfg.Secret = tt.secret
-			cfg.Endpoint = "localhost:0" // Let OS choose port
+			cfg.NetAddr.Endpoint = "localhost:0" // Let OS choose port
 
 			if tt.ghClientEnabled {
 				cfg.GitHubAPIConfig.Auth.Token = "testtoken"
