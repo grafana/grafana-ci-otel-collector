@@ -150,7 +150,7 @@ func BenchmarkEventToLogs(b *testing.B) {
 
 			// Benchmark
 			b.ReportAllocs()
-			sink := &consumertest.LogsSink{}
+			sink := consumertest.NewNop()
 			for b.Loop() {
 				_ = eventToLogs(context.Background(), event, cfg, ghClient, sink, logger, true)
 			}
