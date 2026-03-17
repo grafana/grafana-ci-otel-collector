@@ -6,6 +6,7 @@ package githubactionsreceiver
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/google/go-github/v84/github"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.uber.org/zap"
 )
 
@@ -148,8 +150,9 @@ func BenchmarkEventToLogs(b *testing.B) {
 
 			// Benchmark
 			b.ReportAllocs()
+			sink := &consumertest.LogsSink{}
 			for b.Loop() {
-				_, _ = eventToLogs(event, cfg, ghClient, logger, true)
+				_ = eventToLogs(context.Background(), event, cfg, ghClient, sink, logger, true)
 			}
 		})
 	}
