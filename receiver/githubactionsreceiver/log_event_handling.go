@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -76,6 +77,7 @@ func eventToLogs(ctx context.Context, event interface{}, config *Config, ghClien
 	log.Debug("Extracted jobs and files from zip", zap.Int("job_count", len(jobs)))
 	log.Debug("Job names", zap.Any("job_names", jobs))
 
+	var errs []error
 	for i, jobName := range jobs {
 		log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
 
@@ -88,8 +90,11 @@ func eventToLogs(ctx context.Context, event interface{}, config *Config, ghClien
 		processJobLogs(jobName, filesByJob[jobName], resourceLogs, traceID, e, withTraceInfo, log)
 
 		if logs.LogRecordCount() > 0 {
-			if consumerErr := logsConsumer.ConsumeLogs(ctx, logs); consumerErr != nil {
-				log.Error("Failed to consume logs for job", zap.String("job_name", jobName), zap.Error(consumerErr))
+			err := logsConsumer.ConsumeLogs(ctx, logs)
+			if err != nil {
+				err = fmt.Errorf("job %q: %w", jobName, err)
+				log.Error("Failed to consume logs for job", zap.String("job_name", jobName), zap.Error(err))
+				errs = append(errs, err)
 			}
 		}
 
@@ -97,7 +102,7 @@ func eventToLogs(ctx context.Context, event interface{}, config *Config, ghClien
 	}
 
 	log.Debug("All jobs processed", zap.Int("job_count", len(jobs)))
-	return nil
+	return errors.Join(errs...)
 }
 
 func enrichLogger(logger *zap.Logger, e *github.WorkflowRunEvent) *zap.Logger {
@@ -132,7 +137,7 @@ func getWorkflowRunLogsZip(ctx context.Context, ghClient *github.Client, e *gith
 		return nil, nil, err
 	}
 
-	tmpFile, err := downloadLogsToTempFile(url.String(), logger)
+	tmpFile, err := downloadLogsToTempFile(ctx, url.String(), logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -158,14 +163,23 @@ func getWorkflowRunLogsZip(ctx context.Context, ghClient *github.Client, e *gith
 	return &zipReader.Reader, cleanup, nil
 }
 
-func downloadLogsToTempFile(url string, logger *zap.Logger) (*os.File, error) {
+func downloadLogsToTempFile(ctx context.Context, url string, logger *zap.Logger) (*os.File, error) {
 	out, err := os.CreateTemp("", "gh-logs-")
 	if err != nil {
 		logger.Error("Failed to create temp file", zap.Error(err))
 		return nil, err
 	}
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		if closeErr := out.Close(); closeErr != nil {
+			logger.Warn("Failed to close temp file after request creation error", zap.Error(closeErr))
+		}
+		logger.Error("Failed to create request", zap.Error(err))
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if closeErr := out.Close(); closeErr != nil {
 			logger.Warn("Failed to close temp file after HTTP error", zap.Error(closeErr))
