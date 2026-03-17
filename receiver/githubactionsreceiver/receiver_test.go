@@ -24,6 +24,7 @@ import (
 	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/confignet"
@@ -31,7 +32,11 @@ import (
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
@@ -639,6 +644,164 @@ func attributeValueToString(attr pcommon.Value) string {
 	default:
 		return "<Unknown Value Type>"
 	}
+}
+
+func TestObsReportMetrics(t *testing.T) {
+	testSecret := "testsecret123"
+	validSig := func(payload []byte) string {
+		mac := hmac.New(sha256.New, []byte(testSecret))
+		mac.Write(payload)
+		return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	}
+
+	// Create mock GitHub API server for logs download
+	var ghTestServer *httptest.Server
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/logs") {
+			w.Header().Set("Location", ghTestServer.URL+"/fetch")
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+		if r.URL.Path == "/fetch" {
+			createTestZip(t, w)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+	ghTestServer = httptest.NewServer(handler)
+	defer ghTestServer.Close()
+
+	// Set up telemetry capture
+	tt := componenttest.NewTelemetry()
+	t.Cleanup(func() { require.NoError(t, tt.Shutdown(context.Background())) })
+	settings := receiver.Settings{
+		ID:                component.MustNewID("githubactions"),
+		TelemetrySettings: tt.NewTelemetrySettings(),
+		BuildInfo:         component.NewDefaultBuildInfo(),
+	}
+
+	cfg := createDefaultConfig().(*Config)
+	cfg.Secret = testSecret
+	cfg.NetAddr.Endpoint = "localhost:0"
+	cfg.GitHubAPIConfig.Auth.Token = "testtoken"
+	cfg.GitHubAPIConfig.BaseURL = ghTestServer.URL
+	cfg.GitHubAPIConfig.UploadURL = ghTestServer.URL
+
+	tracesSink := new(consumertest.TracesSink)
+	logsSink := new(consumertest.LogsSink)
+	metricsSink := new(consumertest.MetricsSink)
+
+	rcvr, err := newReceiver(settings, cfg)
+	require.NoError(t, err)
+	rcvr.tracesConsumer = tracesSink
+	rcvr.logsConsumer = logsSink
+	rcvr.metricsConsumer = metricsSink
+
+	err = rcvr.Start(context.Background(), componenttest.NewNopHost())
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, rcvr.Shutdown(context.Background()))
+	}()
+
+	// Send a completed workflow_job event (produces metrics + traces)
+	jobPayload, err := os.ReadFile("./testdata/completed/5_workflow_job_completed.json")
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("POST", "/ghaevents", bytes.NewReader(jobPayload))
+	req.Header.Set("X-GitHub-Event", "workflow_job")
+	req.Header.Set("X-Hub-Signature-256", validSig(jobPayload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	rcvr.ServeHTTP(w, req)
+	require.Equal(t, http.StatusAccepted, w.Code)
+
+	// Send a completed workflow_run event with event=push (produces metrics + traces + logs)
+	runPayload, err := os.ReadFile("./testdata/completed/8_workflow_run_completed.json")
+	require.NoError(t, err)
+
+	req = httptest.NewRequest("POST", "/ghaevents", bytes.NewReader(runPayload))
+	req.Header.Set("X-GitHub-Event", "workflow_run")
+	req.Header.Set("X-Hub-Signature-256", validSig(runPayload))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	rcvr.ServeHTTP(w, req)
+	require.Equal(t, http.StatusAccepted, w.Code)
+
+	// Verify consumers received data
+	require.NotEmpty(t, tracesSink.AllTraces())
+	require.NotEmpty(t, logsSink.AllLogs())
+	require.NotEmpty(t, metricsSink.AllMetrics())
+
+	// Count expected items
+	var expectedSpans int
+	for _, td := range tracesSink.AllTraces() {
+		expectedSpans += td.SpanCount()
+	}
+	var expectedLogRecords int
+	for _, ld := range logsSink.AllLogs() {
+		expectedLogRecords += ld.LogRecordCount()
+	}
+	var expectedMetricPoints int
+	for _, md := range metricsSink.AllMetrics() {
+		expectedMetricPoints += md.DataPointCount()
+	}
+
+	// Assert otelcol_receiver_accepted_spans
+	gotSpans, err := tt.GetMetric("otelcol_receiver_accepted_spans")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, metricdata.Metrics{
+		Name:        "otelcol_receiver_accepted_spans",
+		Description: "Number of spans successfully pushed into the pipeline. [Alpha]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints: []metricdata.DataPoint[int64]{{
+				Attributes: attribute.NewSet(
+					attribute.String("receiver", "githubactions"),
+					attribute.String("transport", "http")),
+				Value: int64(expectedSpans),
+			}},
+		},
+	}, gotSpans, metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreExemplars())
+
+	// Assert otelcol_receiver_accepted_metric_points
+	gotMetrics, err := tt.GetMetric("otelcol_receiver_accepted_metric_points")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, metricdata.Metrics{
+		Name:        "otelcol_receiver_accepted_metric_points",
+		Description: "Number of metric points successfully pushed into the pipeline. [Alpha]",
+		Unit:        "{datapoints}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints: []metricdata.DataPoint[int64]{{
+				Attributes: attribute.NewSet(
+					attribute.String("receiver", "githubactions"),
+					attribute.String("transport", "http")),
+				Value: int64(expectedMetricPoints),
+			}},
+		},
+	}, gotMetrics, metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreExemplars())
+
+	// Assert otelcol_receiver_accepted_log_records
+	gotLogs, err := tt.GetMetric("otelcol_receiver_accepted_log_records")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, metricdata.Metrics{
+		Name:        "otelcol_receiver_accepted_log_records",
+		Description: "Number of log records successfully pushed into the pipeline. [Alpha]",
+		Unit:        "{records}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints: []metricdata.DataPoint[int64]{{
+				Attributes: attribute.NewSet(
+					attribute.String("receiver", "githubactions"),
+					attribute.String("transport", "http")),
+				Value: int64(expectedLogRecords),
+			}},
+		},
+	}, gotLogs, metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreExemplars())
 }
 
 func getPtr(str string) *string {

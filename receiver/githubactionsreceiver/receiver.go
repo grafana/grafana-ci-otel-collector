@@ -13,6 +13,7 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v84/github"
+	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -241,7 +242,10 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch e := event.(type) {
 	case *github.WorkflowJobEvent:
 		if gar.metricsConsumer != nil {
-			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowJobEventToMetrics(e))
+			metrics := gar.metricsHandler.workflowJobEventToMetrics(e)
+			metricsCtx := gar.obsrecv.StartMetricsOp(ctx)
+			err := gar.metricsConsumer.ConsumeMetrics(metricsCtx, metrics)
+			gar.obsrecv.EndMetricsOp(metricsCtx, metadata.Type.String(), metrics.DataPointCount(), err)
 
 			if err != nil {
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
@@ -255,7 +259,10 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		}
 	case *github.WorkflowRunEvent:
 		if gar.metricsConsumer != nil && e.GetWorkflowRun().GetEvent() == "push" {
-			err := gar.metricsConsumer.ConsumeMetrics(ctx, gar.metricsHandler.workflowRunEventToMetrics(e))
+			metrics := gar.metricsHandler.workflowRunEventToMetrics(e)
+			metricsCtx := gar.obsrecv.StartMetricsOp(ctx)
+			err := gar.metricsConsumer.ConsumeMetrics(metricsCtx, metrics)
+			gar.obsrecv.EndMetricsOp(metricsCtx, metadata.Type.String(), metrics.DataPointCount(), err)
 
 			if err != nil {
 				gar.logger.Error("Failed to consume metrics", zap.Error(err))
@@ -286,7 +293,9 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 		if td != nil {
 			// Pass the traces to the nextConsumer
-			consumerErr := gar.tracesConsumer.ConsumeTraces(ctx, *td)
+			tracesCtx := gar.obsrecv.StartTracesOp(ctx)
+			consumerErr := gar.tracesConsumer.ConsumeTraces(tracesCtx, *td)
+			gar.obsrecv.EndTracesOp(tracesCtx, metadata.Type.String(), td.SpanCount(), consumerErr)
 			if consumerErr != nil {
 				traceErr = true
 				gar.logger.Debug("Failed to process traces", zap.Error(consumerErr))
@@ -310,7 +319,9 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			}
 
 			if ld != nil {
-				consumerErr := gar.logsConsumer.ConsumeLogs(ctx, *ld)
+				logsCtx := gar.obsrecv.StartLogsOp(ctx)
+				consumerErr := gar.logsConsumer.ConsumeLogs(logsCtx, *ld)
+				gar.obsrecv.EndLogsOp(logsCtx, metadata.Type.String(), ld.LogRecordCount(), consumerErr)
 				if consumerErr != nil {
 					gar.logger.Error("Failed to consume logs", zap.Error(consumerErr))
 				}
