@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v84/github"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
@@ -43,10 +44,12 @@ func (b *logEntryBuilder) reset() {
 	b.hasCurrentEntry = false
 }
 
-func eventToLogs(event interface{}, config *Config, ghClient *github.Client, logger *zap.Logger, withTraceInfo bool) (*plog.Logs, error) {
+// eventToLogs processes a WorkflowRunEvent and streams log records to the consumer
+// one job at a time, avoiding accumulating the entire workflow's logs in memory.
+func eventToLogs(ctx context.Context, event interface{}, config *Config, ghClient *github.Client, logsConsumer consumer.Logs, logger *zap.Logger, withTraceInfo bool) error {
 	e, ok := event.(*github.WorkflowRunEvent)
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	log := enrichLogger(logger, e)
@@ -58,18 +61,14 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 
 	if e.GetWorkflowRun().GetStatus() != "completed" {
 		log.Debug("Run not completed, skipping")
-		return nil, nil
+		return nil
 	}
 
-	zipReader, cleanup, err := getWorkflowRunLogsZip(context.Background(), ghClient, e, log)
+	zipReader, cleanup, err := getWorkflowRunLogsZip(ctx, ghClient, e, log)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer cleanup()
-
-	logs := plog.NewLogs()
-	resourceLogs := logs.ResourceLogs().AppendEmpty()
-	setWorkflowRunEventAttributes(resourceLogs.Resource().Attributes(), e, config)
 
 	traceID, _ := generateTraceID(e.GetWorkflowRun().GetID(), e.GetWorkflowRun().GetRunAttempt())
 	jobs, filesByJob := extractJobsAndFilesFromZip(zipReader, log)
@@ -79,13 +78,26 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 
 	for i, jobName := range jobs {
 		log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
-		jobFiles := filesByJob[jobName]
-		processJobLogs(jobName, jobFiles, resourceLogs, traceID, e, withTraceInfo, log)
+
+		// Build a Logs payload for this single job and flush it immediately,
+		// so we never hold more than one job's worth of log records in memory.
+		logs := plog.NewLogs()
+		resourceLogs := logs.ResourceLogs().AppendEmpty()
+		setWorkflowRunEventAttributes(resourceLogs.Resource().Attributes(), e, config)
+
+		processJobLogs(jobName, filesByJob[jobName], resourceLogs, traceID, e, withTraceInfo, log)
+
+		if logs.LogRecordCount() > 0 {
+			if consumerErr := logsConsumer.ConsumeLogs(ctx, logs); consumerErr != nil {
+				log.Error("Failed to consume logs for job", zap.String("job_name", jobName), zap.Error(consumerErr))
+			}
+		}
+
 		log.Debug("Completed job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
 	}
 
-	log.Debug("All jobs processed", zap.Int("total_resource_logs", logs.ResourceLogs().Len()))
-	return &logs, nil
+	log.Debug("All jobs processed", zap.Int("job_count", len(jobs)))
+	return nil
 }
 
 func enrichLogger(logger *zap.Logger, e *github.WorkflowRunEvent) *zap.Logger {

@@ -313,18 +313,12 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			gar.logger.Debug("Calling eventToLogs")
 			gar.logger.Debug("Event type being passed to eventToLogs", zap.String("event_type", fmt.Sprintf("%T", event)))
 
-			ld, err := eventToLogs(event, gar.config, gar.ghClient, gar.logger.Named("eventToLogs"), withTraceInfo)
+			logsCtx := gar.obsrecv.StartLogsOp(ctx)
+			// Log record count is not known here since logs are streamed per-job directly to the consumer.
+			err := eventToLogs(logsCtx, event, gar.config, gar.ghClient, gar.logsConsumer, gar.logger.Named("eventToLogs"), withTraceInfo)
+			gar.obsrecv.EndLogsOp(logsCtx, metadata.Type.String(), 0, err)
 			if err != nil {
 				gar.logger.Error("Failed to process logs", zap.Error(err))
-			}
-
-			if ld != nil {
-				logsCtx := gar.obsrecv.StartLogsOp(ctx)
-				consumerErr := gar.logsConsumer.ConsumeLogs(logsCtx, *ld)
-				gar.obsrecv.EndLogsOp(logsCtx, metadata.Type.String(), ld.LogRecordCount(), consumerErr)
-				if consumerErr != nil {
-					gar.logger.Error("Failed to consume logs", zap.Error(consumerErr))
-				}
 			}
 		}
 	}
