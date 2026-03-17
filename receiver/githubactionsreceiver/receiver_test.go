@@ -380,6 +380,7 @@ func TestReceiverWithAppAndEnterprise(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	pkPath := filepath.Join(tmpDir, "private-key.dat")
+	// trufflehog:ignore — test-only dummy key, not a real secret
 	require.NoError(t, os.WriteFile(pkPath, []byte(`-----BEGIN PRIVATE KEY-----
 MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEA2VSTKXeFpfXPIzsb
 xdaegmusCFe+5IawGOdSJ7/Ca7/7it4FnT9QfLwLNdR2qrNLdOzfsYHSZjkFXaIs
