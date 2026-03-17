@@ -61,17 +61,18 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 }
 
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowJob() == nil {
 		m.logger.Debug("Received nil event or missing required fields")
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		return m.mb.Emit()
 	}
 
 	repo := event.GetRepo().GetFullName()
 	if repo == "" {
 		m.logger.Debug("Repository name is empty")
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		return m.mb.Emit()
 	}
 
@@ -90,6 +91,11 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	} else {
 		labels = "no labels"
 	}
+
+	// Acquire the mutex only for the remainder of the function, which
+	// interacts with shared state such as m.mb and m.cache.
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.logger.Debug("Processing workflow_job event",
 		zap.String("repo", repo),
