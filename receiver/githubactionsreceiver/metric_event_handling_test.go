@@ -2,10 +2,15 @@ package githubactionsreceiver
 
 import (
 	"fmt"
+	"os"
+	"sync"
 	"testing"
 
+	"github.com/google/go-github/v84/github"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.uber.org/zap"
 )
 
 func newTestMetricsHandler(t *testing.T) *metricsHandler {
@@ -229,4 +234,107 @@ func TestCacheIncrement(t *testing.T) {
 	curVal, found = handler.loadFromCache(repo, labels, status, conclusion)
 	require.True(t, found)
 	require.Equal(t, int64(2), curVal)
+}
+
+// newFullMetricsHandler creates a metricsHandler with all fields populated, suitable
+// for concurrency tests that exercise workflowJobEventToMetrics / workflowRunEventToMetrics.
+func newFullMetricsHandler(t *testing.T) *metricsHandler {
+	t.Helper()
+	cfg := createDefaultConfig().(*Config)
+	return newMetricsHandler(receivertest.NewNopSettings(receivertest.NopType), cfg, zap.NewNop())
+}
+
+func TestWorkflowJobEventToMetricsConcurrency(t *testing.T) {
+	jobPayload, err := os.ReadFile("./testdata/completed/5_workflow_job_completed.json")
+	require.NoError(t, err)
+
+	raw, err := github.ParseWebHook("workflow_job", jobPayload)
+	require.NoError(t, err)
+	event, ok := raw.(*github.WorkflowJobEvent)
+	require.True(t, ok)
+
+	handler := newFullMetricsHandler(t)
+
+	const goroutines = 20
+	const callsPerGoroutine = 50
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range callsPerGoroutine {
+				_ = handler.workflowJobEventToMetrics(event)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestWorkflowRunEventToMetricsConcurrency(t *testing.T) {
+	runPayload, err := os.ReadFile("./testdata/completed/8_workflow_run_completed.json")
+	require.NoError(t, err)
+
+	raw, err := github.ParseWebHook("workflow_run", runPayload)
+	require.NoError(t, err)
+	event, ok := raw.(*github.WorkflowRunEvent)
+	require.True(t, ok)
+
+	handler := newFullMetricsHandler(t)
+
+	const goroutines = 20
+	const callsPerGoroutine = 50
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range callsPerGoroutine {
+				_ = handler.workflowRunEventToMetrics(event)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestWorkflowEventsMixedConcurrency(t *testing.T) {
+	jobPayload, err := os.ReadFile("./testdata/completed/5_workflow_job_completed.json")
+	require.NoError(t, err)
+	runPayload, err := os.ReadFile("./testdata/completed/8_workflow_run_completed.json")
+	require.NoError(t, err)
+
+	rawJob, err := github.ParseWebHook("workflow_job", jobPayload)
+	require.NoError(t, err)
+	jobEvent, ok := rawJob.(*github.WorkflowJobEvent)
+	require.True(t, ok)
+
+	rawRun, err := github.ParseWebHook("workflow_run", runPayload)
+	require.NoError(t, err)
+	runEvent, ok := rawRun.(*github.WorkflowRunEvent)
+	require.True(t, ok)
+
+	handler := newFullMetricsHandler(t)
+
+	const goroutines = 20
+	const callsPerGoroutine = 50
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines * 2)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range callsPerGoroutine {
+				_ = handler.workflowJobEventToMetrics(jobEvent)
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for range callsPerGoroutine {
+				_ = handler.workflowRunEventToMetrics(runEvent)
+			}
+		}()
+	}
+	wg.Wait()
 }
