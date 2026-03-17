@@ -161,22 +161,26 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
+	// Validate event and required fields before acquiring the lock.
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowRun() == nil {
 		m.logger.Debug("Received nil event or missing required fields")
-		return m.mb.Emit()
+		m.mu.Lock()
+		metrics := m.mb.Emit()
+		m.mu.Unlock()
+		return metrics
 	}
 
 	repo := event.GetRepo().GetFullName()
 	if repo == "" {
 		m.logger.Debug("Repository name is empty")
-		return m.mb.Emit()
+		m.mu.Lock()
+		metrics := m.mb.Emit()
+		m.mu.Unlock()
+		return metrics
 	}
 
-	// Track what we've recorded in this emission to prevent duplicates
-	// Create new map per emission to avoid race condition
+	// Track what we've recorded in this emission to prevent duplicates.
+	// Create new map per emission to avoid race conditions.
 	recorded := make(map[string]bool)
 
 	m.logger.Debug("Processing workflow_run event",
@@ -202,6 +206,10 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	if defaultBranch != nil && event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
 		isMain = true
 	}
+
+	// Acquire the lock only around cache mutations, MetricsBuilder updates, and Emit().
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
