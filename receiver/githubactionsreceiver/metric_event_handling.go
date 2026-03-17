@@ -82,8 +82,8 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	labels := ""
 	if len(event.GetWorkflowJob().Labels) > 0 {
-		labelsSlice := event.GetWorkflowJob().Labels
-		for i, label := range labelsSlice {
+		labelsSlice := make([]string, len(event.GetWorkflowJob().Labels))
+		for i, label := range event.GetWorkflowJob().Labels {
 			labelsSlice[i] = strings.ToLower(label)
 		}
 		sort.Strings(labelsSlice)
