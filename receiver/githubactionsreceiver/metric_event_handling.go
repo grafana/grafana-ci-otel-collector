@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/go-github/v84/github"
@@ -18,6 +19,7 @@ import (
 )
 
 type metricsHandler struct {
+	mu       sync.Mutex
 	settings component.TelemetrySettings
 	mb       *metadata.MetricsBuilder
 	cfg      *Config
@@ -61,12 +63,16 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowJob() == nil {
 		m.logger.Debug("Received nil event or missing required fields")
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		return m.mb.Emit()
 	}
 
 	repo := event.GetRepo().GetFullName()
 	if repo == "" {
 		m.logger.Debug("Repository name is empty")
+		m.mu.Lock()
+		defer m.mu.Unlock()
 		return m.mb.Emit()
 	}
 
@@ -76,8 +82,8 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	labels := ""
 	if len(event.GetWorkflowJob().Labels) > 0 {
-		labelsSlice := event.GetWorkflowJob().Labels
-		for i, label := range labelsSlice {
+		labelsSlice := make([]string, len(event.GetWorkflowJob().Labels))
+		for i, label := range event.GetWorkflowJob().Labels {
 			labelsSlice[i] = strings.ToLower(label)
 		}
 		sort.Strings(labelsSlice)
@@ -85,6 +91,11 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	} else {
 		labels = "no labels"
 	}
+
+	// Acquire the mutex only for the remainder of the function, which
+	// interacts with shared state such as m.mb and m.cache.
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.logger.Debug("Processing workflow_job event",
 		zap.String("repo", repo),
@@ -150,19 +161,26 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
+	// Validate event and required fields before acquiring the lock.
 	if event == nil || event.GetRepo() == nil || event.GetWorkflowRun() == nil {
 		m.logger.Debug("Received nil event or missing required fields")
-		return m.mb.Emit()
+		m.mu.Lock()
+		metrics := m.mb.Emit()
+		m.mu.Unlock()
+		return metrics
 	}
 
 	repo := event.GetRepo().GetFullName()
 	if repo == "" {
 		m.logger.Debug("Repository name is empty")
-		return m.mb.Emit()
+		m.mu.Lock()
+		metrics := m.mb.Emit()
+		m.mu.Unlock()
+		return metrics
 	}
 
-	// Track what we've recorded in this emission to prevent duplicates
-	// Create new map per emission to avoid race condition
+	// Track what we've recorded in this emission to prevent duplicates.
+	// Create new map per emission to avoid race conditions.
 	recorded := make(map[string]bool)
 
 	m.logger.Debug("Processing workflow_run event",
@@ -188,6 +206,10 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	if defaultBranch != nil && event.GetWorkflowRun().GetHeadBranch() == *defaultBranch {
 		isMain = true
 	}
+
+	// Acquire the lock only around cache mutations, MetricsBuilder updates, and Emit().
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
