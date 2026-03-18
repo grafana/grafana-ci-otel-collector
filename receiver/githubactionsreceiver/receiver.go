@@ -16,12 +16,25 @@ import (
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
 	"go.uber.org/zap"
 )
 
 var errMissingEndpoint = errors.New("missing a receiver endpoint")
+
+// countingLogsConsumer wraps a consumer.Logs and tracks the total number of
+// log records forwarded across all ConsumeLogs calls.
+type countingLogsConsumer struct {
+	consumer.Logs
+	count int
+}
+
+func (c *countingLogsConsumer) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
+	c.count += ld.LogRecordCount()
+	return c.Logs.ConsumeLogs(ctx, ld)
+}
 
 type githubActionsReceiver struct {
 	logsConsumer    consumer.Logs
@@ -313,10 +326,10 @@ func (gar *githubActionsReceiver) ServeHTTP(w http.ResponseWriter, r *http.Reque
 			gar.logger.Debug("Calling eventToLogs")
 			gar.logger.Debug("Event type being passed to eventToLogs", zap.String("event_type", fmt.Sprintf("%T", event)))
 
+			counting := &countingLogsConsumer{Logs: gar.logsConsumer}
 			logsCtx := gar.obsrecv.StartLogsOp(ctx)
-			// Log record count is not known here since logs are streamed per-job directly to the consumer.
-			err := eventToLogs(logsCtx, event, gar.config, gar.ghClient, gar.logsConsumer, gar.logger.Named("eventToLogs"), withTraceInfo)
-			gar.obsrecv.EndLogsOp(logsCtx, metadata.Type.String(), 0, err)
+			err := eventToLogs(logsCtx, event, gar.config, gar.ghClient, counting, gar.logger.Named("eventToLogs"), withTraceInfo)
+			gar.obsrecv.EndLogsOp(logsCtx, metadata.Type.String(), counting.count, err)
 			if err != nil {
 				gar.logger.Error("Failed to process logs", zap.Error(err))
 			}
