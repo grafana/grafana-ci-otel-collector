@@ -31,6 +31,7 @@ type githubActionsReceiver struct {
 	config          *Config
 	server          *http.Server
 	shutdownWG      sync.WaitGroup
+	cancel          context.CancelFunc
 	createSettings  receiver.Settings
 	logger          *zap.Logger
 	obsrecv         *receiverhelper.ObsReport
@@ -200,10 +201,45 @@ func (gar *githubActionsReceiver) Start(ctx context.Context, host component.Host
 		}
 	}()
 
+	if gar.metricsConsumer != nil {
+		var tickCtx context.Context
+		tickCtx, gar.cancel = context.WithCancel(context.Background())
+
+		gar.shutdownWG.Add(1)
+		go func() {
+			defer gar.shutdownWG.Done()
+			ticker := time.NewTicker(10 * time.Minute)
+			defer ticker.Stop()
+
+			// Emit immediately on start, then on each tick.
+			gar.emitBuildInfo(tickCtx)
+
+			for {
+				select {
+				case <-ticker.C:
+					gar.emitBuildInfo(tickCtx)
+				case <-tickCtx.Done():
+					return
+				}
+			}
+		}()
+	}
+
 	return nil
 }
 
+func (gar *githubActionsReceiver) emitBuildInfo(ctx context.Context) {
+	md := gar.metricsHandler.buildInfoMetrics()
+
+	if err := gar.metricsConsumer.ConsumeMetrics(ctx, md); err != nil {
+		gar.logger.Error("Failed to emit build_info metric", zap.Error(err))
+	}
+}
+
 func (gar *githubActionsReceiver) Shutdown(ctx context.Context) error {
+	if gar.cancel != nil {
+		gar.cancel()
+	}
 	var err error
 	if gar.server != nil {
 		err = gar.server.Close()

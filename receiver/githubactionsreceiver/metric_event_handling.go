@@ -53,11 +53,15 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		cache:    cache,
 	}
 
-	// Record build info metric
-	ts := pcommon.NewTimestampFromTime(time.Now())
-	mh.mb.RecordBuildInfoDataPoint(ts, 1, settings.BuildInfo.Version)
-
 	return mh
+}
+
+func (m *metricsHandler) buildInfoMetrics() pmetric.Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ts := pcommon.NewTimestampFromTime(time.Now())
+	m.mb.RecordBuildInfoDataPoint(ts, 1, version.Version)
+	return m.mb.Emit()
 }
 
 func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEvent) pmetric.Metrics {
