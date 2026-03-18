@@ -16,6 +16,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/go-github/v84/github"
@@ -77,12 +78,23 @@ func eventToLogs(event interface{}, config *Config, ghClient *github.Client, log
 	log.Debug("Extracted jobs and files from zip", zap.Int("job_count", len(jobs)))
 	log.Debug("Job names", zap.Any("job_names", jobs))
 
-	for i, jobName := range jobs {
-		log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
-		jobFiles := filesByJob[jobName]
-		processJobLogs(jobName, jobFiles, resourceLogs, traceID, e, withTraceInfo, log)
-		log.Debug("Completed job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
+	// Pre-allocate one ScopeLogs per job so goroutines can write without locking.
+	scopes := make([]plog.ScopeLogs, len(jobs))
+	for i := range jobs {
+		scopes[i] = resourceLogs.ScopeLogs().AppendEmpty()
 	}
+
+	var wg sync.WaitGroup
+	for i, jobName := range jobs {
+		wg.Add(1)
+		go func(i int, jobName string) {
+			defer wg.Done()
+			log.Debug("Processing job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
+			processJobLogs(jobName, filesByJob[jobName], scopes[i], traceID, e, withTraceInfo, log)
+			log.Debug("Completed job", zap.Int("job_index", i+1), zap.String("job_name", jobName))
+		}(i, jobName)
+	}
+	wg.Wait()
 
 	log.Debug("All jobs processed", zap.Int("total_resource_logs", logs.ResourceLogs().Len()))
 	return &logs, nil
@@ -217,8 +229,7 @@ func extractJobsAndFilesFromZip(zipReader *zip.Reader, logger *zap.Logger) ([]st
 	return jobs, filesByJob
 }
 
-func processJobLogs(jobName string, files []*zip.File, resourceLogs plog.ResourceLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
-	jobLogsScope := resourceLogs.ScopeLogs().AppendEmpty()
+func processJobLogs(jobName string, files []*zip.File, jobLogsScope plog.ScopeLogs, traceID pcommon.TraceID, e *github.WorkflowRunEvent, withTraceInfo bool, logger *zap.Logger) {
 	jobLogsScope.Scope().Attributes().PutStr("ci.github.workflow.job.name", jobName)
 
 	// Reuse a single logEntryBuilder for all files in this job
