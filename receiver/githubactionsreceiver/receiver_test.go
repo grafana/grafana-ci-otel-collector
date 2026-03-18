@@ -744,24 +744,9 @@ func TestObsReportMetrics(t *testing.T) {
 	for _, ld := range logsSink.AllLogs() {
 		expectedLogRecords += ld.LogRecordCount()
 	}
-	// Count metric data points excluding build.info (emitted by the
-	// background ticker, not tracked by obsreport).
-	var expectedMetricPoints int
-	var buildInfoPoints int
-	for _, md := range metricsSink.AllMetrics() {
-		expectedMetricPoints += md.DataPointCount()
-		for i := 0; i < md.ResourceMetrics().Len(); i++ {
-			for j := 0; j < md.ResourceMetrics().At(i).ScopeMetrics().Len(); j++ {
-				sm := md.ResourceMetrics().At(i).ScopeMetrics().At(j)
-				for k := 0; k < sm.Metrics().Len(); k++ {
-					if sm.Metrics().At(k).Name() == "build.info" {
-						buildInfoPoints++
-					}
-				}
-			}
-		}
-	}
-	expectedMetricPoints -= buildInfoPoints
+	// 80 data points from webhook metrics (excludes build.info emitted by
+	// the background ticker, which bypasses obsreport).
+	expectedMetricPoints := 80
 
 	// Assert otelcol_receiver_accepted_spans
 	gotSpans, err := tt.GetMetric("otelcol_receiver_accepted_spans")
