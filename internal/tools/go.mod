@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	github.com/golangci/golangci-lint/v2 v2.11.3
 	github.com/google/osv-scanner/v2 v2.3.3
-	github.com/securego/gosec/v2 v2.24.8-0.20260317080842-b23a9e534822
+	github.com/securego/gosec/v2 v2.24.8-0.20260319085002-223e19b8856e
 	go.opentelemetry.io/build-tools/crosslink v0.29.0
 	go.opentelemetry.io/collector/cmd/builder v0.145.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.145.0
