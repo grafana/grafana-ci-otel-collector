@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func TestComputeBucketCounts(t *testing.T) {
+func TestHistogramStateObserve(t *testing.T) {
 	tests := []struct {
 		name     string
 		value    float64
@@ -51,8 +51,11 @@ func TestComputeBucketCounts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeBucketCounts(tt.value, durationBucketBounds)
-			require.Equal(t, tt.expected, got)
+			state := newHistogramState(durationBucketBounds)
+			state.observe(tt.value, durationBucketBounds)
+			require.Equal(t, tt.expected, state.bucketCounts)
+			require.Equal(t, uint64(1), state.count)
+			require.Equal(t, tt.value, state.sum)
 		})
 	}
 }
@@ -101,8 +104,9 @@ func TestAppendJobDurationMetric_Completed(t *testing.T) {
 	require.NoError(t, err)
 	event := raw.(*github.WorkflowJobEvent)
 
+	handler := newFullMetricsHandler(t)
 	ms := pmetric.NewMetricSlice()
-	appendJobDurationMetric(ms, event)
+	handler.appendJobDurationMetric(ms, event)
 
 	require.Equal(t, 1, ms.Len())
 
@@ -110,7 +114,7 @@ func TestAppendJobDurationMetric_Completed(t *testing.T) {
 	require.Equal(t, "workflow.jobs.duration", m.Name())
 	require.Equal(t, "s", m.Unit())
 	require.Equal(t, pmetric.MetricTypeHistogram, m.Type())
-	require.Equal(t, pmetric.AggregationTemporalityDelta, m.Histogram().AggregationTemporality())
+	require.Equal(t, pmetric.AggregationTemporalityCumulative, m.Histogram().AggregationTemporality())
 
 	require.Equal(t, 1, m.Histogram().DataPoints().Len())
 	dp := m.Histogram().DataPoints().At(0)
@@ -140,14 +144,16 @@ func TestAppendJobDurationMetric_NonCompleted(t *testing.T) {
 	require.NoError(t, err)
 	event := raw.(*github.WorkflowJobEvent)
 
+	handler := newFullMetricsHandler(t)
 	ms := pmetric.NewMetricSlice()
-	appendJobDurationMetric(ms, event)
+	handler.appendJobDurationMetric(ms, event)
 	require.Equal(t, 0, ms.Len())
 }
 
 func TestAppendJobDurationMetric_NilEvent(t *testing.T) {
+	handler := newFullMetricsHandler(t)
 	ms := pmetric.NewMetricSlice()
-	appendJobDurationMetric(ms, nil)
+	handler.appendJobDurationMetric(ms, nil)
 	require.Equal(t, 0, ms.Len())
 }
 
@@ -159,8 +165,9 @@ func TestAppendRunDurationMetric_Completed(t *testing.T) {
 	require.NoError(t, err)
 	event := raw.(*github.WorkflowRunEvent)
 
+	handler := newFullMetricsHandler(t)
 	ms := pmetric.NewMetricSlice()
-	appendRunDurationMetric(ms, event)
+	handler.appendRunDurationMetric(ms, event)
 
 	require.Equal(t, 1, ms.Len())
 
@@ -168,7 +175,7 @@ func TestAppendRunDurationMetric_Completed(t *testing.T) {
 	require.Equal(t, "workflow.runs.duration", m.Name())
 	require.Equal(t, "s", m.Unit())
 	require.Equal(t, pmetric.MetricTypeHistogram, m.Type())
-	require.Equal(t, pmetric.AggregationTemporalityDelta, m.Histogram().AggregationTemporality())
+	require.Equal(t, pmetric.AggregationTemporalityCumulative, m.Histogram().AggregationTemporality())
 
 	require.Equal(t, 1, m.Histogram().DataPoints().Len())
 	dp := m.Histogram().DataPoints().At(0)
@@ -196,8 +203,9 @@ func TestAppendRunDurationMetric_NonCompleted(t *testing.T) {
 	require.NoError(t, err)
 	event := raw.(*github.WorkflowRunEvent)
 
+	handler := newFullMetricsHandler(t)
 	ms := pmetric.NewMetricSlice()
-	appendRunDurationMetric(ms, event)
+	handler.appendRunDurationMetric(ms, event)
 	require.Equal(t, 0, ms.Len())
 }
 
@@ -243,13 +251,13 @@ func TestAppendJobDurationMetric_Scenarios(t *testing.T) {
 	base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name               string
-		event              *github.WorkflowJobEvent
-		wantMetric         bool
-		wantSum            float64
-		wantConclusion     string
-		wantIsMain         bool
-		wantBucketIndex    int
+		name            string
+		event           *github.WorkflowJobEvent
+		wantMetric      bool
+		wantSum         float64
+		wantConclusion  string
+		wantIsMain      bool
+		wantBucketIndex int
 	}{
 		{
 			name:            "completed success on main",
@@ -311,8 +319,9 @@ func TestAppendJobDurationMetric_Scenarios(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			handler := newFullMetricsHandler(t)
 			ms := pmetric.NewMetricSlice()
-			appendJobDurationMetric(ms, tt.event)
+			handler.appendJobDurationMetric(ms, tt.event)
 
 			if !tt.wantMetric {
 				require.Equal(t, 0, ms.Len())
@@ -396,8 +405,9 @@ func TestAppendRunDurationMetric_Scenarios(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			handler := newFullMetricsHandler(t)
 			ms := pmetric.NewMetricSlice()
-			appendRunDurationMetric(ms, tt.event)
+			handler.appendRunDurationMetric(ms, tt.event)
 
 			if !tt.wantMetric {
 				require.Equal(t, 0, ms.Len())
@@ -421,6 +431,60 @@ func TestAppendRunDurationMetric_Scenarios(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAppendJobDurationMetric_Accumulation(t *testing.T) {
+	base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	event := makeJobEvent("completed", "success", "main", "main", base, base.Add(10*time.Second))
+
+	handler := newFullMetricsHandler(t)
+
+	// First observation
+	ms1 := pmetric.NewMetricSlice()
+	handler.appendJobDurationMetric(ms1, event)
+	require.Equal(t, 1, ms1.Len())
+	dp1 := ms1.At(0).Histogram().DataPoints().At(0)
+	require.Equal(t, uint64(1), dp1.Count())
+	require.Equal(t, 10.0, dp1.Sum())
+
+	// Second observation — cumulative totals
+	ms2 := pmetric.NewMetricSlice()
+	handler.appendJobDurationMetric(ms2, event)
+	require.Equal(t, 1, ms2.Len())
+	dp2 := ms2.At(0).Histogram().DataPoints().At(0)
+	require.Equal(t, uint64(2), dp2.Count())
+	require.Equal(t, 20.0, dp2.Sum())
+
+	// Bucket index 1 (5-15s) should have count=2
+	buckets := dp2.BucketCounts().AsRaw()
+	require.Equal(t, uint64(2), buckets[1])
+}
+
+func TestAppendRunDurationMetric_Accumulation(t *testing.T) {
+	base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	event := makeRunEvent("completed", "success", "main", "main", base, base.Add(45*time.Second))
+
+	handler := newFullMetricsHandler(t)
+
+	// First observation
+	ms1 := pmetric.NewMetricSlice()
+	handler.appendRunDurationMetric(ms1, event)
+	require.Equal(t, 1, ms1.Len())
+	dp1 := ms1.At(0).Histogram().DataPoints().At(0)
+	require.Equal(t, uint64(1), dp1.Count())
+	require.Equal(t, 45.0, dp1.Sum())
+
+	// Second observation — cumulative totals
+	ms2 := pmetric.NewMetricSlice()
+	handler.appendRunDurationMetric(ms2, event)
+	require.Equal(t, 1, ms2.Len())
+	dp2 := ms2.At(0).Histogram().DataPoints().At(0)
+	require.Equal(t, uint64(2), dp2.Count())
+	require.Equal(t, 90.0, dp2.Sum())
+
+	// Bucket index 3 (30-60s) should have count=2
+	buckets := dp2.BucketCounts().AsRaw()
+	require.Equal(t, uint64(2), buckets[3])
 }
 
 func assertStrAttr(t *testing.T, attrs pcommon.Map, key, expected string) {

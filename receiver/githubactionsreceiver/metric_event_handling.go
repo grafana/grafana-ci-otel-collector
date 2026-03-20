@@ -17,15 +17,18 @@ import (
 )
 
 type metricsHandler struct {
-	mu       sync.Mutex
-	settings component.TelemetrySettings
-	mb       *metadata.MetricsBuilder
-	cfg      *Config
-	logger   *zap.Logger
-	cache    *lru.Cache[string, int64]
+	mu             sync.Mutex
+	settings       component.TelemetrySettings
+	mb             *metadata.MetricsBuilder
+	cfg            *Config
+	logger         *zap.Logger
+	cache          *lru.Cache[string, int64]
+	histogramCache *lru.Cache[string, *histogramState]
 }
 
 const metricsMaxCacheSize = 50000
+const histogramCacheSize = 50000
+const histogramTTL = 24 * time.Hour
 
 func cacheKey(repo, labels string, status, conclusion interface{}) string {
 	return fmt.Sprintf("%s:%s:%v:%v", repo, labels, status, conclusion)
@@ -43,12 +46,18 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		panic(fmt.Sprintf("Failed to initialize cache: %v", err))
 	}
 
+	histCache, err2 := lru.New[string, *histogramState](histogramCacheSize)
+	if err2 != nil {
+		panic(fmt.Sprintf("Failed to initialize histogram cache: %v", err2))
+	}
+
 	mh := &metricsHandler{
-		cfg:      cfg,
-		settings: settings.TelemetrySettings,
-		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
-		logger:   logger,
-		cache:    cache,
+		cfg:            cfg,
+		settings:       settings.TelemetrySettings,
+		mb:             metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
+		logger:         logger,
+		cache:          cache,
+		histogramCache: histCache,
 	}
 
 	return mh
@@ -151,7 +160,8 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	metrics := m.mb.Emit()
 	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
-	appendJobDurationMetric(ms, event)
+	m.appendJobDurationMetric(ms, event)
+	m.sweepStaleHistograms()
 	return metrics
 }
 
@@ -236,7 +246,8 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 	metrics := m.mb.Emit()
 	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
-	appendRunDurationMetric(ms, event)
+	m.appendRunDurationMetric(ms, event)
+	m.sweepStaleHistograms()
 	return metrics
 }
 
@@ -248,4 +259,16 @@ func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, c
 func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
 	key := cacheKey(repo, labels, status, conclusion)
 	return m.cache.Get(key)
+}
+
+// sweepStaleHistograms removes histogram cache entries that haven't been
+// updated within histogramTTL. Called under m.mu.
+func (m *metricsHandler) sweepStaleHistograms() {
+	now := time.Now()
+	for _, key := range m.histogramCache.Keys() {
+		state, ok := m.histogramCache.Peek(key)
+		if ok && now.Sub(state.lastSeen) >= histogramTTL {
+			m.histogramCache.Remove(key)
+		}
+	}
 }

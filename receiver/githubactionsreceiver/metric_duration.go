@@ -1,6 +1,7 @@
 package githubactionsreceiver
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -24,38 +25,51 @@ func sortedLabels(labels []string) string {
 	return strings.Join(s, ",")
 }
 
-func computeBucketCounts(value float64, bounds []float64) []uint64 {
-	counts := make([]uint64, len(bounds)+1)
+type histogramState struct {
+	count        uint64
+	sum          float64
+	bucketCounts []uint64
+	lastSeen     time.Time
+}
+
+func (h *histogramState) observe(duration float64, bounds []float64) {
+	h.count++
+	h.sum += duration
+	h.lastSeen = time.Now()
 	for i, b := range bounds {
-		if value <= b {
-			counts[i] = 1
-			return counts
+		if duration <= b {
+			h.bucketCounts[i]++
+			return
 		}
 	}
-	counts[len(bounds)] = 1
-	return counts
+	h.bucketCounts[len(bounds)]++
+}
+
+func newHistogramState(bounds []float64) *histogramState {
+	return &histogramState{
+		bucketCounts: make([]uint64, len(bounds)+1),
+	}
 }
 
 type durationMetricParams struct {
 	name      string
-	duration  float64
 	strAttrs  map[string]string
 	boolAttrs map[string]bool
 }
 
-func appendDurationMetric(ms pmetric.MetricSlice, p durationMetricParams) {
+func appendDurationMetric(ms pmetric.MetricSlice, p durationMetricParams, state *histogramState) {
 	m := ms.AppendEmpty()
 	m.SetName(p.name)
 	m.SetUnit("s")
 	m.SetEmptyHistogram()
-	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	m.Histogram().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
 	dp := m.Histogram().DataPoints().AppendEmpty()
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-	dp.SetCount(1)
-	dp.SetSum(p.duration)
+	dp.SetCount(state.count)
+	dp.SetSum(state.sum)
 	dp.ExplicitBounds().FromRaw(durationBucketBounds)
-	dp.BucketCounts().FromRaw(computeBucketCounts(p.duration, durationBucketBounds))
+	dp.BucketCounts().FromRaw(state.bucketCounts)
 
 	for k, v := range p.strAttrs {
 		dp.Attributes().PutStr(k, v)
@@ -65,7 +79,7 @@ func appendDurationMetric(ms pmetric.MetricSlice, p durationMetricParams) {
 	}
 }
 
-func appendJobDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowJobEvent) {
+func (m *metricsHandler) appendJobDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowJobEvent) {
 	if event == nil || event.GetWorkflowJob() == nil || event.GetAction() != "completed" {
 		return
 	}
@@ -88,23 +102,36 @@ func appendJobDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowJobEv
 		repo = event.GetRepo().GetFullName()
 	}
 
+	duration := completedAt.Time.Sub(startedAt.Time).Seconds()
+	labels := sortedLabels(job.Labels)
+	conclusion := job.GetConclusion()
+
+	cacheKey := fmt.Sprintf("hist:job:%s:%s:%s:%s:%s:%t",
+		repo, job.GetWorkflowName(), job.GetName(), labels, conclusion, isMain)
+
+	state, ok := m.histogramCache.Get(cacheKey)
+	if !ok {
+		state = newHistogramState(durationBucketBounds)
+	}
+	state.observe(duration, durationBucketBounds)
+	m.histogramCache.Add(cacheKey, state)
+
 	appendDurationMetric(ms, durationMetricParams{
-		name:     "workflow.jobs.duration",
-		duration: completedAt.Time.Sub(startedAt.Time).Seconds(),
+		name: "workflow.jobs.duration",
 		strAttrs: map[string]string{
 			"vcs.repository.name":               repo,
 			"ci.github.workflow.name":            job.GetWorkflowName(),
 			"ci.github.workflow.job.name":        job.GetName(),
-			"ci.github.workflow.job.labels":      sortedLabels(job.Labels),
-			"ci.github.workflow.job.conclusion":  job.GetConclusion(),
+			"ci.github.workflow.job.labels":      labels,
+			"ci.github.workflow.job.conclusion":  conclusion,
 		},
 		boolAttrs: map[string]bool{
 			"ci.github.workflow.job.head_branch.is_main": isMain,
 		},
-	})
+	}, state)
 }
 
-func appendRunDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowRunEvent) {
+func (m *metricsHandler) appendRunDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowRunEvent) {
 	if event == nil || event.GetWorkflowRun() == nil || event.GetAction() != "completed" {
 		return
 	}
@@ -127,16 +154,28 @@ func appendRunDurationMetric(ms pmetric.MetricSlice, event *github.WorkflowRunEv
 		repo = event.GetRepo().GetFullName()
 	}
 
+	duration := updatedAt.Time.Sub(runStartedAt.Time).Seconds()
+	conclusion := run.GetConclusion()
+
+	cacheKey := fmt.Sprintf("hist:run:%s:%s:%s:%t",
+		repo, run.GetName(), conclusion, isMain)
+
+	state, ok := m.histogramCache.Get(cacheKey)
+	if !ok {
+		state = newHistogramState(durationBucketBounds)
+	}
+	state.observe(duration, durationBucketBounds)
+	m.histogramCache.Add(cacheKey, state)
+
 	appendDurationMetric(ms, durationMetricParams{
-		name:     "workflow.runs.duration",
-		duration: updatedAt.Time.Sub(runStartedAt.Time).Seconds(),
+		name: "workflow.runs.duration",
 		strAttrs: map[string]string{
 			"vcs.repository.name":               repo,
 			"ci.github.workflow.name":            run.GetName(),
-			"ci.github.workflow.run.conclusion":  run.GetConclusion(),
+			"ci.github.workflow.run.conclusion":  conclusion,
 		},
 		boolAttrs: map[string]bool{
 			"ci.github.workflow.run.head_branch.is_main": isMain,
 		},
-	})
+	}, state)
 }
