@@ -120,10 +120,10 @@ func (m *metricsHandler) appendJobDurationMetric(ms pmetric.MetricSlice, event *
 		name: "workflow.jobs.duration",
 		strAttrs: map[string]string{
 			"vcs.repository.name":               repo,
-			"ci.github.workflow.name":            job.GetWorkflowName(),
-			"ci.github.workflow.job.name":        job.GetName(),
-			"ci.github.workflow.job.labels":      labels,
-			"ci.github.workflow.job.conclusion":  conclusion,
+			"ci.github.workflow.name":           job.GetWorkflowName(),
+			"ci.github.workflow.job.name":       job.GetName(),
+			"ci.github.workflow.job.labels":     labels,
+			"ci.github.workflow.job.conclusion": conclusion,
 		},
 		boolAttrs: map[string]bool{
 			"ci.github.workflow.job.head_branch.is_main": isMain,
@@ -171,8 +171,8 @@ func (m *metricsHandler) appendRunDurationMetric(ms pmetric.MetricSlice, event *
 		name: "workflow.runs.duration",
 		strAttrs: map[string]string{
 			"vcs.repository.name":               repo,
-			"ci.github.workflow.name":            run.GetName(),
-			"ci.github.workflow.run.conclusion":  conclusion,
+			"ci.github.workflow.name":           run.GetName(),
+			"ci.github.workflow.run.conclusion": conclusion,
 		},
 		boolAttrs: map[string]bool{
 			"ci.github.workflow.run.head_branch.is_main": isMain,
