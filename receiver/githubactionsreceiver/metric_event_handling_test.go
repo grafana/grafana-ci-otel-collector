@@ -21,7 +21,7 @@ func newTestMetricsHandler(t *testing.T) *metricsHandler {
 	histCache, err := lru.New[string, *histogramState](histogramCacheSize)
 	require.NoError(t, err)
 	return &metricsHandler{
-		cache:          cache,
+		countersCache:  cache,
 		histogramCache: histCache,
 	}
 }
@@ -174,7 +174,7 @@ func TestCacheLRUEviction(t *testing.T) {
 	_, found = handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
 	require.True(t, found)
 
-	require.Greater(t, handler.cache.Len(), 0)
+	require.Greater(t, handler.countersCache.Len(), 0)
 }
 
 func TestCacheMultipleReposAndLabels(t *testing.T) {

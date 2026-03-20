@@ -22,7 +22,7 @@ type metricsHandler struct {
 	mb             *metadata.MetricsBuilder
 	cfg            *Config
 	logger         *zap.Logger
-	cache          *lru.Cache[string, int64]
+	countersCache  *lru.Cache[string, int64]
 	histogramCache *lru.Cache[string, *histogramState]
 }
 
@@ -41,9 +41,9 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		Version:     version.Version,
 	}
 
-	cache, err := lru.New[string, int64](metricsMaxCacheSize)
+	countersCache, err := lru.New[string, int64](metricsMaxCacheSize)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to initialize cache: %v", err))
+		panic(fmt.Sprintf("Failed to initialize counters cache: %v", err))
 	}
 
 	histCache, err2 := lru.New[string, *histogramState](histogramCacheSize)
@@ -56,7 +56,7 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		settings:       settings.TelemetrySettings,
 		mb:             metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
 		logger:         logger,
-		cache:          cache,
+		countersCache:  countersCache,
 		histogramCache: histCache,
 	}
 
@@ -94,7 +94,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	labels := sortedLabels(event.GetWorkflowJob().Labels)
 
 	// Acquire the mutex only for the remainder of the function, which
-	// interacts with shared state such as m.mb and m.cache.
+	// interacts with shared state such as m.mb and m.countersCache.
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -253,12 +253,12 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
 	key := cacheKey(repo, labels, status, conclusion)
-	m.cache.Add(key, value)
+	m.countersCache.Add(key, value)
 }
 
 func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
 	key := cacheKey(repo, labels, status, conclusion)
-	return m.cache.Get(key)
+	return m.countersCache.Get(key)
 }
 
 // sweepStaleHistograms removes histogram cache entries that haven't been
