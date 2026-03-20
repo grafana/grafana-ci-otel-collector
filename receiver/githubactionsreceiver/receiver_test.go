@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/v84/github"
 	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
@@ -31,6 +32,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
@@ -742,10 +744,9 @@ func TestObsReportMetrics(t *testing.T) {
 	for _, ld := range logsSink.AllLogs() {
 		expectedLogRecords += ld.LogRecordCount()
 	}
-	var expectedMetricPoints int
-	for _, md := range metricsSink.AllMetrics() {
-		expectedMetricPoints += md.DataPointCount()
-	}
+	// 80 data points from webhook metrics (excludes build.info emitted by
+	// the background ticker, which bypasses obsreport).
+	expectedMetricPoints := 80
 
 	// Assert otelcol_receiver_accepted_spans
 	gotSpans, err := tt.GetMetric("otelcol_receiver_accepted_spans")
@@ -803,6 +804,56 @@ func TestObsReportMetrics(t *testing.T) {
 			}},
 		},
 	}, gotLogs, metricdatatest.IgnoreTimestamp(), metricdatatest.IgnoreExemplars())
+}
+
+func TestBuildInfoPeriodicEmission(t *testing.T) {
+	settings := receiver.Settings{
+		ID:                component.MustNewID("githubactions"),
+		TelemetrySettings: componenttest.NewNopTelemetrySettings(),
+		BuildInfo:         component.NewDefaultBuildInfo(),
+	}
+
+	cfg := createDefaultConfig().(*Config)
+	cfg.NetAddr.Endpoint = "localhost:0"
+
+	metricsSink := new(consumertest.MetricsSink)
+
+	rcvr, err := newReceiver(settings, cfg)
+	require.NoError(t, err)
+	rcvr.metricsConsumer = metricsSink
+
+	err = rcvr.Start(context.Background(), componenttest.NewNopHost())
+	require.NoError(t, err)
+
+	// Wait long enough for the initial emission (happens immediately on start).
+	require.Eventually(t, func() bool {
+		return len(metricsSink.AllMetrics()) >= 1
+	}, 2*time.Second, 10*time.Millisecond, "expected at least 1 build_info metric emission")
+
+	err = rcvr.Shutdown(context.Background())
+	require.NoError(t, err)
+
+	// Verify the emitted metric.
+	allMetrics := metricsSink.AllMetrics()
+	require.NotEmpty(t, allMetrics)
+
+	md := allMetrics[0]
+	require.Equal(t, 1, md.ResourceMetrics().Len())
+	sm := md.ResourceMetrics().At(0).ScopeMetrics()
+	require.Equal(t, 1, sm.Len())
+	metrics := sm.At(0).Metrics()
+	require.Equal(t, 1, metrics.Len())
+
+	m := metrics.At(0)
+	require.Equal(t, "build.info", m.Name())
+	require.Equal(t, pmetric.MetricTypeGauge, m.Type())
+
+	dp := m.Gauge().DataPoints()
+	require.Equal(t, 1, dp.Len())
+	require.Equal(t, int64(1), dp.At(0).IntValue())
+
+	_, ok := dp.At(0).Attributes().Get("version")
+	require.True(t, ok, "expected version attribute on build.info data point")
 }
 
 func getPtr(str string) *string {
