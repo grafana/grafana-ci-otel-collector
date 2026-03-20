@@ -2,8 +2,6 @@ package githubactionsreceiver
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -84,17 +82,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	// Create new map per emission to avoid race condition
 	recorded := make(map[string]bool)
 
-	labels := ""
-	if len(event.GetWorkflowJob().Labels) > 0 {
-		labelsSlice := make([]string, len(event.GetWorkflowJob().Labels))
-		for i, label := range event.GetWorkflowJob().Labels {
-			labelsSlice[i] = strings.ToLower(label)
-		}
-		sort.Strings(labelsSlice)
-		labels = strings.Join(labelsSlice, ",")
-	} else {
-		labels = "no labels"
-	}
+	labels := sortedLabels(event.GetWorkflowJob().Labels)
 
 	// Acquire the mutex only for the remainder of the function, which
 	// interacts with shared state such as m.mb and m.cache.
@@ -161,7 +149,10 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		}
 	}
 
-	return m.mb.Emit()
+	metrics := m.mb.Emit()
+	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	appendJobDurationMetric(ms, event)
+	return metrics
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
@@ -243,7 +234,10 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		}
 	}
 
-	return m.mb.Emit()
+	metrics := m.mb.Emit()
+	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	appendRunDurationMetric(ms, event)
+	return metrics
 }
 
 func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {

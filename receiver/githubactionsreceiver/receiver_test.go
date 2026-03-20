@@ -152,8 +152,8 @@ func TestWorkflowJobEventToMetrics(t *testing.T) {
 			desc:               "WorkflowJobEvent (check run) processing",
 			payloadFilePath:    "./testdata/completed/5_workflow_job_check-run_completed.json",
 			eventType:          "workflow_job",
-			expectedMetrics:    1,
-			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus) * len(metadata.MapAttributeCiGithubWorkflowJobConclusion),
+			expectedMetrics:    2,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowJobStatus)*len(metadata.MapAttributeCiGithubWorkflowJobConclusion) + 1,
 		},
 	}
 
@@ -196,8 +196,8 @@ func TestWorkflowRunEventToMetrics(t *testing.T) {
 			desc:               "WorkflowRunEvent processing",
 			payloadFilePath:    "./testdata/completed/8_workflow_run_completed.json",
 			eventType:          "workflow_run",
-			expectedMetrics:    1,
-			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowRunStatus) * len(metadata.MapAttributeCiGithubWorkflowRunConclusion),
+			expectedMetrics:    2,
+			expectedDataPoints: len(metadata.MapAttributeCiGithubWorkflowRunStatus)*len(metadata.MapAttributeCiGithubWorkflowRunConclusion) + 1,
 		},
 		{
 			desc:               "WorkflowRunEvent processing",
@@ -744,9 +744,10 @@ func TestObsReportMetrics(t *testing.T) {
 	for _, ld := range logsSink.AllLogs() {
 		expectedLogRecords += ld.LogRecordCount()
 	}
-	// 80 data points from webhook metrics (excludes build.info emitted by
-	// the background ticker, which bypasses obsreport).
-	expectedMetricPoints := 80
+	// 80 count data points + 2 histogram data points (1 job duration + 1 run duration)
+	// from webhook metrics (excludes build.info emitted by the background ticker,
+	// which bypasses obsreport).
+	expectedMetricPoints := 82
 
 	// Assert otelcol_receiver_accepted_spans
 	gotSpans, err := tt.GetMetric("otelcol_receiver_accepted_spans")
