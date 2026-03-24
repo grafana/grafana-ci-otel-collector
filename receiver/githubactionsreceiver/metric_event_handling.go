@@ -46,6 +46,10 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		panic(fmt.Sprintf("Failed to initialize counters cache: %v", err))
 	}
 
+	// histogramCache stores cumulative histogram state per unique dimension set.
+	// We emit histograms with cumulative temporality (required by Prometheus-compatible
+	// backends), so each emission must include running totals of count/sum/buckets
+	// across all observations — not just the latest event.
 	histCache, err2 := lru.New[string, *histogramState](histogramCacheSize)
 	if err2 != nil {
 		panic(fmt.Sprintf("Failed to initialize histogram cache: %v", err2))
