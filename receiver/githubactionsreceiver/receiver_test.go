@@ -755,7 +755,7 @@ func TestObsReportMetrics(t *testing.T) {
 	metricdatatest.AssertEqual(t, metricdata.Metrics{
 		Name:        "otelcol_receiver_accepted_spans",
 		Description: "Number of spans successfully pushed into the pipeline. [Alpha]",
-		Unit:        "{spans}",
+		Unit:        "{span}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
 			IsMonotonic: true,
@@ -774,7 +774,7 @@ func TestObsReportMetrics(t *testing.T) {
 	metricdatatest.AssertEqual(t, metricdata.Metrics{
 		Name:        "otelcol_receiver_accepted_metric_points",
 		Description: "Number of metric points successfully pushed into the pipeline. [Alpha]",
-		Unit:        "{datapoints}",
+		Unit:        "{datapoint}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
 			IsMonotonic: true,
@@ -793,7 +793,7 @@ func TestObsReportMetrics(t *testing.T) {
 	metricdatatest.AssertEqual(t, metricdata.Metrics{
 		Name:        "otelcol_receiver_accepted_log_records",
 		Description: "Number of log records successfully pushed into the pipeline. [Alpha]",
-		Unit:        "{records}",
+		Unit:        "{record}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
 			IsMonotonic: true,

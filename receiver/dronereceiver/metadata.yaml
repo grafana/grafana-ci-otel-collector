@@ -59,8 +59,7 @@ attributes:
 metrics:
   builds_number:
     enabled: true
-    stability:
-      level: development
+    stability: development
     description: Number of builds.
     extended_documentation:
       Currently there's no way to differentiate between restarted builds and manually triggered builds.
@@ -74,8 +73,7 @@ metrics:
     attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
   repo_info:
     enabled: true
-    stability:
-      level: development
+    stability: development
     description: Repo status.
     unit: "{repository}"
     sum:
@@ -85,8 +83,7 @@ metrics:
     attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]
   restarts_total:
     enabled: true
-    stability:
-      level: development
+    stability: development
     description: Total number build restarts.
     unit: "{restart}"
     sum:
