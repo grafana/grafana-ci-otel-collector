@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-github/v84/github"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -17,8 +18,11 @@ func newTestMetricsHandler(t *testing.T) *metricsHandler {
 	t.Helper()
 	cache, err := lru.New[string, int64](metricsMaxCacheSize)
 	require.NoError(t, err)
+	histCache, err := lru.New[string, *histogramState](histogramCacheSize)
+	require.NoError(t, err)
 	return &metricsHandler{
-		cache: cache,
+		countersCache:  cache,
+		histogramCache: histCache,
 	}
 }
 
@@ -170,7 +174,7 @@ func TestCacheLRUEviction(t *testing.T) {
 	_, found = handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
 	require.True(t, found)
 
-	require.Greater(t, handler.cache.Len(), 0)
+	require.Greater(t, handler.countersCache.Len(), 0)
 }
 
 func TestCacheMultipleReposAndLabels(t *testing.T) {
@@ -337,4 +341,28 @@ func TestWorkflowEventsMixedConcurrency(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestSweepStaleHistograms(t *testing.T) {
+	handler := newTestMetricsHandler(t)
+
+	// Add a fresh entry
+	fresh := newHistogramState(durationBucketBounds)
+	fresh.lastSeen = time.Now()
+	handler.histogramCache.Add("fresh-key", fresh)
+
+	// Add a stale entry (last seen 25h ago, beyond 24h TTL)
+	stale := newHistogramState(durationBucketBounds)
+	stale.lastSeen = time.Now().Add(-25 * time.Hour)
+	handler.histogramCache.Add("stale-key", stale)
+
+	require.Equal(t, 2, handler.histogramCache.Len())
+
+	handler.sweepStaleHistograms()
+
+	require.Equal(t, 1, handler.histogramCache.Len())
+	_, freshFound := handler.histogramCache.Get("fresh-key")
+	require.True(t, freshFound)
+	_, staleFound := handler.histogramCache.Get("stale-key")
+	require.False(t, staleFound)
 }

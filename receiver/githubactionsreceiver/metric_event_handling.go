@@ -2,8 +2,6 @@ package githubactionsreceiver
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -19,15 +17,18 @@ import (
 )
 
 type metricsHandler struct {
-	mu       sync.Mutex
-	settings component.TelemetrySettings
-	mb       *metadata.MetricsBuilder
-	cfg      *Config
-	logger   *zap.Logger
-	cache    *lru.Cache[string, int64]
+	mu             sync.Mutex
+	settings       component.TelemetrySettings
+	mb             *metadata.MetricsBuilder
+	cfg            *Config
+	logger         *zap.Logger
+	countersCache  *lru.Cache[string, int64]
+	histogramCache *lru.Cache[string, *histogramState]
 }
 
 const metricsMaxCacheSize = 50000
+const histogramCacheSize = 50000
+const histogramTTL = 24 * time.Hour
 
 func cacheKey(repo, labels string, status, conclusion interface{}) string {
 	return fmt.Sprintf("%s:%s:%v:%v", repo, labels, status, conclusion)
@@ -40,17 +41,27 @@ func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logg
 		Version:     version.Version,
 	}
 
-	cache, err := lru.New[string, int64](metricsMaxCacheSize)
+	countersCache, err := lru.New[string, int64](metricsMaxCacheSize)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to initialize cache: %v", err))
+		panic(fmt.Sprintf("Failed to initialize counters cache: %v", err))
+	}
+
+	// histogramCache stores cumulative histogram state per unique dimension set.
+	// We emit histograms with cumulative temporality (required by Prometheus-compatible
+	// backends), so each emission must include running totals of count/sum/buckets
+	// across all observations — not just the latest event.
+	histCache, err2 := lru.New[string, *histogramState](histogramCacheSize)
+	if err2 != nil {
+		panic(fmt.Sprintf("Failed to initialize histogram cache: %v", err2))
 	}
 
 	mh := &metricsHandler{
-		cfg:      cfg,
-		settings: settings.TelemetrySettings,
-		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
-		logger:   logger,
-		cache:    cache,
+		cfg:            cfg,
+		settings:       settings.TelemetrySettings,
+		mb:             metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
+		logger:         logger,
+		countersCache:  countersCache,
+		histogramCache: histCache,
 	}
 
 	return mh
@@ -84,20 +95,10 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 	// Create new map per emission to avoid race condition
 	recorded := make(map[string]bool)
 
-	labels := ""
-	if len(event.GetWorkflowJob().Labels) > 0 {
-		labelsSlice := make([]string, len(event.GetWorkflowJob().Labels))
-		for i, label := range event.GetWorkflowJob().Labels {
-			labelsSlice[i] = strings.ToLower(label)
-		}
-		sort.Strings(labelsSlice)
-		labels = strings.Join(labelsSlice, ",")
-	} else {
-		labels = "no labels"
-	}
+	labels := sortedLabels(event.GetWorkflowJob().Labels)
 
 	// Acquire the mutex only for the remainder of the function, which
-	// interacts with shared state such as m.mb and m.cache.
+	// interacts with shared state such as m.mb and m.countersCache.
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -161,7 +162,11 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 		}
 	}
 
-	return m.mb.Emit()
+	metrics := m.mb.Emit()
+	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	m.appendJobDurationMetric(ms, event)
+	m.sweepStaleHistograms()
+	return metrics
 }
 
 func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEvent) pmetric.Metrics {
@@ -243,15 +248,31 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 		}
 	}
 
-	return m.mb.Emit()
+	metrics := m.mb.Emit()
+	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	m.appendRunDurationMetric(ms, event)
+	m.sweepStaleHistograms()
+	return metrics
 }
 
 func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
 	key := cacheKey(repo, labels, status, conclusion)
-	m.cache.Add(key, value)
+	m.countersCache.Add(key, value)
 }
 
 func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
 	key := cacheKey(repo, labels, status, conclusion)
-	return m.cache.Get(key)
+	return m.countersCache.Get(key)
+}
+
+// sweepStaleHistograms removes histogram cache entries that haven't been
+// updated within histogramTTL. Called under m.mu.
+func (m *metricsHandler) sweepStaleHistograms() {
+	now := time.Now()
+	for _, key := range m.histogramCache.Keys() {
+		state, ok := m.histogramCache.Peek(key)
+		if ok && now.Sub(state.lastSeen) >= histogramTTL {
+			m.histogramCache.Remove(key)
+		}
+	}
 }
