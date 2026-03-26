@@ -3,7 +3,7 @@ module github.com/grafana/grafana-ci-otel-collector/internal/tools
 go 1.25.7
 
 require (
-	github.com/golangci/golangci-lint/v2 v2.11.3
+	github.com/golangci/golangci-lint/v2 v2.11.4
 	github.com/google/osv-scanner/v2 v2.3.3
 	github.com/securego/gosec/v2 v2.25.0
 	go.opentelemetry.io/build-tools/crosslink v0.29.0
@@ -131,7 +131,7 @@ require (
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/erikvarga/go-rpmdb v0.0.0-20250523120114-a15a62cd4593 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
-	github.com/fatih/color v1.18.0 // indirect
+	github.com/fatih/color v1.19.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/firefart/nonamedreturns v1.0.6 // indirect
@@ -299,7 +299,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rust-secure-code/go-rustaudit v0.0.0-20250226111315-e20ec32e963c // indirect
 	github.com/ryancurrah/gomodguard v1.4.1 // indirect
-	github.com/ryanrolds/sqlclosecheck v0.5.1 // indirect
+	github.com/ryanrolds/sqlclosecheck v0.6.0 // indirect
 	github.com/saferwall/pe v1.5.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
@@ -316,7 +316,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/sivchari/containedctx v1.0.3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/sonatard/noctx v0.5.0 // indirect
+	github.com/sonatard/noctx v0.5.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
 	github.com/spdx/gordf v0.0.0-20250128162952-000978ccd6fb // indirect
