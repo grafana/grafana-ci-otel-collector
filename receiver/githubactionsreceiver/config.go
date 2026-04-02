@@ -13,7 +13,6 @@ import (
 )
 
 var errMissingEndpointFromConfig = errors.New("missing receiver server endpoint from config")
-var errInvalidRetryInterval = errors.New("retry interval must be positive")
 var errAuthMethod = errors.New("only one authentication method can be used at a time")
 var errMissingAppID = errors.New("missing app_id")
 var errMissingInstallationID = errors.New("missing installation_id")
