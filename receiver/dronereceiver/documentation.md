@@ -24,11 +24,11 @@ Currently there's no way to differentiate between restarted builds and manually 
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended |
-| git.repo.name | Repository name | Any Str | Recommended |
-| git.branch.name | Branch name | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended | - |
+| git.repo.name | Repository name | Any Str | Recommended | - |
+| git.branch.name | Branch name | Any Str | Recommended | - |
 
 ### repo_info
 
@@ -40,11 +40,11 @@ Repo status.
 
 #### Attributes
 
-| Name | Description | Values | Requirement Level |
-| ---- | ----------- | ------ | -------- |
-| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended |
-| git.repo.name | Repository name | Any Str | Recommended |
-| git.branch.name | Branch name | Any Str | Recommended |
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| ci.workflow_item.status | Build status | Str: ``skipped``, ``blocked``, ``declined``, ``waiting_on_dependencies``, ``pending``, ``running``, ``success``, ``failure``, ``killed``, ``error`` | Recommended | - |
+| git.repo.name | Repository name | Any Str | Recommended | - |
+| git.branch.name | Branch name | Any Str | Recommended | - |
 
 ### restarts_total
 
