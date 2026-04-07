@@ -33,15 +33,26 @@ func TestCacheKey(t *testing.T) {
 		labels     string
 		status     interface{}
 		conclusion interface{}
+		isMain     bool
 		expected   string
 	}{
 		{
-			desc:       "Basic workflow job",
+			desc:       "Basic workflow job on main",
 			repo:       "grafana/grafana",
 			labels:     "ubuntu-latest",
 			status:     "completed",
 			conclusion: "success",
-			expected:   "grafana/grafana:ubuntu-latest:completed:success",
+			isMain:     true,
+			expected:   "grafana/grafana:ubuntu-latest:completed:success:true",
+		},
+		{
+			desc:       "Basic workflow job on feature branch",
+			repo:       "grafana/grafana",
+			labels:     "ubuntu-latest",
+			status:     "completed",
+			conclusion: "success",
+			isMain:     false,
+			expected:   "grafana/grafana:ubuntu-latest:completed:success:false",
 		},
 		{
 			desc:       "Workflow job with self-hosted labels",
@@ -49,7 +60,8 @@ func TestCacheKey(t *testing.T) {
 			labels:     "self-hosted,linux",
 			status:     "in_progress",
 			conclusion: "",
-			expected:   "grafana/deployment_tools:self-hosted,linux:in_progress:",
+			isMain:     false,
+			expected:   "grafana/deployment_tools:self-hosted,linux:in_progress::false",
 		},
 		{
 			desc:       "Workflow job with no labels",
@@ -57,7 +69,8 @@ func TestCacheKey(t *testing.T) {
 			labels:     "no labels",
 			status:     "queued",
 			conclusion: "",
-			expected:   "foo/bar:no labels:queued:",
+			isMain:     false,
+			expected:   "foo/bar:no labels:queued::false",
 		},
 		{
 			desc:       "Workflow job with failure",
@@ -65,13 +78,14 @@ func TestCacheKey(t *testing.T) {
 			labels:     "macos-latest",
 			status:     "completed",
 			conclusion: "failure",
-			expected:   "test/repo:macos-latest:completed:failure",
+			isMain:     true,
+			expected:   "test/repo:macos-latest:completed:failure:true",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			key := cacheKey(test.repo, test.labels, test.status, test.conclusion)
+			key := cacheKey(test.repo, test.labels, test.status, test.conclusion, test.isMain)
 			require.Equal(t, test.expected, key)
 		})
 	}
@@ -84,6 +98,7 @@ func TestCacheStoreAndLoad(t *testing.T) {
 		labels     string
 		status     interface{}
 		conclusion interface{}
+		isMain     bool
 		value      int64
 	}{
 		{
@@ -92,6 +107,7 @@ func TestCacheStoreAndLoad(t *testing.T) {
 			labels:     "ubuntu-latest",
 			status:     "completed",
 			conclusion: "success",
+			isMain:     true,
 			value:      147,
 		},
 		{
@@ -100,6 +116,7 @@ func TestCacheStoreAndLoad(t *testing.T) {
 			labels:     "ubuntu-latest",
 			status:     "queued",
 			conclusion: "",
+			isMain:     false,
 			value:      5,
 		},
 		{
@@ -108,6 +125,7 @@ func TestCacheStoreAndLoad(t *testing.T) {
 			labels:     "self-hosted",
 			status:     "completed",
 			conclusion: "cancelled",
+			isMain:     false,
 			value:      0,
 		},
 	}
@@ -115,9 +133,9 @@ func TestCacheStoreAndLoad(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			handler := newTestMetricsHandler(t)
-			handler.storeInCache(test.repo, test.labels, test.status, test.conclusion, test.value)
+			handler.storeInCache(test.repo, test.labels, test.status, test.conclusion, test.isMain, test.value)
 
-			loadedValue, found := handler.loadFromCache(test.repo, test.labels, test.status, test.conclusion)
+			loadedValue, found := handler.loadFromCache(test.repo, test.labels, test.status, test.conclusion, test.isMain)
 			require.True(t, found)
 			require.Equal(t, test.value, loadedValue)
 		})
@@ -126,7 +144,7 @@ func TestCacheStoreAndLoad(t *testing.T) {
 
 func TestCacheLoadNonExistent(t *testing.T) {
 	handler := newTestMetricsHandler(t)
-	value, found := handler.loadFromCache("nonexistent/repo", "ubuntu-latest", "completed", "success")
+	value, found := handler.loadFromCache("nonexistent/repo", "ubuntu-latest", "completed", "success", false)
 	require.False(t, found)
 	require.Equal(t, int64(0), value)
 }
@@ -139,16 +157,16 @@ func TestCacheUpdate(t *testing.T) {
 	status := "completed"
 	conclusion := "success"
 
-	handler.storeInCache(repo, labels, status, conclusion, 100)
+	handler.storeInCache(repo, labels, status, conclusion, true, 100)
 
-	value, found := handler.loadFromCache(repo, labels, status, conclusion)
+	value, found := handler.loadFromCache(repo, labels, status, conclusion, true)
 	require.True(t, found)
 	require.Equal(t, int64(100), value)
 
 	// Update value
-	handler.storeInCache(repo, labels, status, conclusion, 150)
+	handler.storeInCache(repo, labels, status, conclusion, true, 150)
 
-	value, found = handler.loadFromCache(repo, labels, status, conclusion)
+	value, found = handler.loadFromCache(repo, labels, status, conclusion, true)
 	require.True(t, found)
 	require.Equal(t, int64(150), value)
 }
@@ -160,18 +178,18 @@ func TestCacheLRUEviction(t *testing.T) {
 
 	for i := range entriesToAdd {
 		repo := fmt.Sprintf("test-repo-%d", i)
-		handler.storeInCache(repo, "ubuntu-latest", "completed", "success", int64(i))
+		handler.storeInCache(repo, "ubuntu-latest", "completed", "success", false, int64(i))
 	}
 
 	oldRepo := "grafana/loki"
-	handler.storeInCache(oldRepo, "ubuntu-latest", "completed", "success", 999)
+	handler.storeInCache(oldRepo, "ubuntu-latest", "completed", "success", false, 999)
 
-	value, found := handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
+	value, found := handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success", false)
 	require.True(t, found)
 	require.Equal(t, int64(999), value)
 
 	// Access again to make it recently used
-	_, found = handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success")
+	_, found = handler.loadFromCache(oldRepo, "ubuntu-latest", "completed", "success", false)
 	require.True(t, found)
 
 	require.Greater(t, handler.countersCache.Len(), 0)
@@ -191,7 +209,7 @@ func TestCacheMultipleReposAndLabels(t *testing.T) {
 			for _, status := range statuses {
 				for _, conclusion := range conclusions {
 					count++
-					handler.storeInCache(repo, label, status, conclusion, count)
+					handler.storeInCache(repo, label, status, conclusion, false, count)
 				}
 			}
 		}
@@ -203,7 +221,7 @@ func TestCacheMultipleReposAndLabels(t *testing.T) {
 			for _, status := range statuses {
 				for _, conclusion := range conclusions {
 					count++
-					value, found := handler.loadFromCache(repo, label, status, conclusion)
+					value, found := handler.loadFromCache(repo, label, status, conclusion, false)
 					require.True(t, found, "Failed to find: %s, %s, %s, %s", repo, label, status, conclusion)
 					require.Equal(t, count, value)
 				}
@@ -221,23 +239,56 @@ func TestCacheIncrement(t *testing.T) {
 	conclusion := "success"
 
 	// Not found
-	curVal, found := handler.loadFromCache(repo, labels, status, conclusion)
+	curVal, found := handler.loadFromCache(repo, labels, status, conclusion, true)
 	require.False(t, found)
 	require.Equal(t, int64(0), curVal)
 
 	// Store first event
-	handler.storeInCache(repo, labels, status, conclusion, 1)
+	handler.storeInCache(repo, labels, status, conclusion, true, 1)
 
 	// Found
-	curVal, found = handler.loadFromCache(repo, labels, status, conclusion)
+	curVal, found = handler.loadFromCache(repo, labels, status, conclusion, true)
 	require.True(t, found)
 	require.Equal(t, int64(1), curVal)
 
 	// Increment
-	handler.storeInCache(repo, labels, status, conclusion, curVal+1)
-	curVal, found = handler.loadFromCache(repo, labels, status, conclusion)
+	handler.storeInCache(repo, labels, status, conclusion, true, curVal+1)
+	curVal, found = handler.loadFromCache(repo, labels, status, conclusion, true)
 	require.True(t, found)
 	require.Equal(t, int64(2), curVal)
+}
+
+func TestCacheIsMainIndependence(t *testing.T) {
+	handler := newTestMetricsHandler(t)
+
+	repo := "grafana/grafana"
+	labels := "ubuntu-latest"
+	status := "completed"
+	conclusion := "success"
+
+	// Simulate a job on main branch
+	handler.storeInCache(repo, labels, status, conclusion, true, 1)
+
+	// Simulate a job on a feature branch
+	handler.storeInCache(repo, labels, status, conclusion, false, 1)
+
+	// Each should have independent counters
+	mainVal, found := handler.loadFromCache(repo, labels, status, conclusion, true)
+	require.True(t, found)
+	require.Equal(t, int64(1), mainVal, "is_main=true counter should be 1")
+
+	featureVal, found := handler.loadFromCache(repo, labels, status, conclusion, false)
+	require.True(t, found)
+	require.Equal(t, int64(1), featureVal, "is_main=false counter should be 1")
+
+	// Increment only the main branch counter
+	handler.storeInCache(repo, labels, status, conclusion, true, mainVal+1)
+
+	mainVal, _ = handler.loadFromCache(repo, labels, status, conclusion, true)
+	require.Equal(t, int64(2), mainVal, "is_main=true counter should be 2 after increment")
+
+	featureVal, _ = handler.loadFromCache(repo, labels, status, conclusion, false)
+	require.Equal(t, int64(1), featureVal, "is_main=false counter should still be 1")
 }
 
 // newFullMetricsHandler creates a metricsHandler with all fields populated, suitable

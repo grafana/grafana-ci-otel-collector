@@ -26,12 +26,12 @@ type metricsHandler struct {
 	histogramCache *lru.Cache[string, *histogramState]
 }
 
-const metricsMaxCacheSize = 50000
+const metricsMaxCacheSize = 100000
 const histogramCacheSize = 50000
 const histogramTTL = 24 * time.Hour
 
-func cacheKey(repo, labels string, status, conclusion interface{}) string {
-	return fmt.Sprintf("%s:%s:%v:%v", repo, labels, status, conclusion)
+func cacheKey(repo, labels string, status, conclusion interface{}, isMain bool) string {
+	return fmt.Sprintf("%s:%s:%v:%v:%t", repo, labels, status, conclusion, isMain)
 }
 
 func newMetricsHandler(settings receiver.Settings, cfg *Config, logger *zap.Logger) *metricsHandler {
@@ -136,7 +136,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
-		curVal, found := m.loadFromCache(repo, labels, status, conclusion)
+		curVal, found := m.loadFromCache(repo, labels, status, conclusion, isMain)
 
 		metricKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, status.String(), conclusion.String(), isMain)
 
@@ -148,7 +148,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 						if s == status && c == conclusion {
 							continue
 						}
-						m.storeInCache(repo, labels, s, c, 0)
+						m.storeInCache(repo, labels, s, c, isMain, 0)
 						otherKey := fmt.Sprintf("job:%s:%s:%s:%s:%t", repo, labels, s.String(), c.String(), isMain)
 						if !recorded[otherKey] {
 							recorded[otherKey] = true
@@ -157,7 +157,7 @@ func (m *metricsHandler) workflowJobEventToMetrics(event *github.WorkflowJobEven
 					}
 				}
 			}
-			m.storeInCache(repo, labels, status, conclusion, curVal+1)
+			m.storeInCache(repo, labels, status, conclusion, isMain, curVal+1)
 			m.mb.RecordWorkflowJobsCountDataPoint(now, curVal+1, repo, labels, status, conclusion, isMain)
 		}
 	}
@@ -222,7 +222,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 
 	// Validate required fields before recording metrics
 	if actionOk && repo != "" && status.String() != "" && conclusion.String() != "" {
-		curVal, found := m.loadFromCache(repo, "default", status, conclusion)
+		curVal, found := m.loadFromCache(repo, "default", status, conclusion, isMain)
 
 		metricKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", status.String(), conclusion.String(), isMain)
 
@@ -234,7 +234,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 						if s == status && c == conclusion {
 							continue
 						}
-						m.storeInCache(repo, "default", s, c, 0)
+						m.storeInCache(repo, "default", s, c, isMain, 0)
 						otherKey := fmt.Sprintf("run:%s:%s:%s:%s:%t", repo, "default", s.String(), c.String(), isMain)
 						if !recorded[otherKey] {
 							recorded[otherKey] = true
@@ -243,7 +243,7 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 					}
 				}
 			}
-			m.storeInCache(repo, "default", status, conclusion, curVal+1)
+			m.storeInCache(repo, "default", status, conclusion, isMain, curVal+1)
 			m.mb.RecordWorkflowRunsCountDataPoint(now, curVal+1, repo, "default", status, conclusion, isMain)
 		}
 	}
@@ -255,13 +255,13 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	return metrics
 }
 
-func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, value int64) {
-	key := cacheKey(repo, labels, status, conclusion)
+func (m *metricsHandler) storeInCache(repo, labels string, status interface{}, conclusion interface{}, isMain bool, value int64) {
+	key := cacheKey(repo, labels, status, conclusion, isMain)
 	m.countersCache.Add(key, value)
 }
 
-func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}) (int64, bool) {
-	key := cacheKey(repo, labels, status, conclusion)
+func (m *metricsHandler) loadFromCache(repo, labels string, status interface{}, conclusion interface{}, isMain bool) (int64, bool) {
+	key := cacheKey(repo, labels, status, conclusion, isMain)
 	return m.countersCache.Get(key)
 }
 
