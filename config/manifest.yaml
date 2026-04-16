@@ -6,31 +6,31 @@ dist:
   version: 0.1.0
 
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.149.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.149.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.149.0
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.150.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.150.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.150.0
 
 connectors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.149.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.150.0
 
 processors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.149.0
-  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.149.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.150.0
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.150.0
 
 extensions:
   # Used for basic auth in production deployments for grafana cloud.
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.149.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.149.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.150.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.150.0
 
 receivers:
-  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.149.0
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.150.0
   - gomod: github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver v0.1.0
   - gomod: github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver v0.1.0
 
