@@ -7,7 +7,7 @@ replace github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent =>
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.18.0
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-github/v84 v84.0.0
+	github.com/google/go-github/v85 v85.0.0
 	github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent v0.0.0-20250724144144-eaa9d8fde20a
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/prometheus/common v0.67.5
@@ -32,6 +32,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20251226215517-609e4778396f // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/google/go-github/v84 v84.0.0 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v1.56.0 // indirect

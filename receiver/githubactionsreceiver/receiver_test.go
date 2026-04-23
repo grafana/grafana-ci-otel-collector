@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v84/github"
+	"github.com/google/go-github/v85/github"
 	"github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"github.com/stretchr/testify/require"
