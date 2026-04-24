@@ -382,18 +382,7 @@ func TestReceiverWithAppAndEnterprise(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	pkPath := filepath.Join(tmpDir, "private-key.dat")
-	// trufflehog:ignore — test-only dummy key, not a real secret
-	require.NoError(t, os.WriteFile(pkPath, []byte(`-----BEGIN PRIVATE KEY-----
-MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEA2VSTKXeFpfXPIzsb
-xdaegmusCFe+5IawGOdSJ7/Ca7/7it4FnT9QfLwLNdR2qrNLdOzfsYHSZjkFXaIs
-cGPDvwIDAQABAkBqnhIf+rHHLCL1Pq8uTE6w3s+jvCA7DlRfs0PbmjhwEPQFBEOH
-zOluI3xhI3E0cJXhLJQ2ydtxC+tq1A2Kz+eRAiEA/J8HB8qvB/51c7gg+mkw70lx
-fqD+ro9M1rOeBcuukycCIQDcPLZA699lYWurLViBAqnX2iZqvm9cB/np7S76V23J
-qQIhANq6NrQgYfxh7gAL5UHr4lrNFF+3tcwed0FOs/wAp17xAiAWoS5g8VudASud
-BSXI68sj4Mh9w1+R50fon3RqSL2BMQIgI/blZZM+Hf1YHbDY8KfrKuLUtoiz6ePQ
-jQgTMp1cZEM=
------END PRIVATE KEY-----
-`), 0644))
+	require.NoError(t, os.WriteFile(pkPath, []byte("-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEA2VSTKXeFpfXPIzsb\nxdaegmusCFe+5IawGOdSJ7/Ca7/7it4FnT9QfLwLNdR2qrNLdOzfsYHSZjkFXaIs\ncGPDvwIDAQABAkBqnhIf+rHHLCL1Pq8uTE6w3s+jvCA7DlRfs0PbmjhwEPQFBEOH\nzOluI3xhI3E0cJXhLJQ2ydtxC+tq1A2Kz+eRAiEA/J8HB8qvB/51c7gg+mkw70lx\nfqD+ro9M1rOeBcuukycCIQDcPLZA699lYWurLViBAqnX2iZqvm9cB/np7S76V23J\nqQIhANq6NrQgYfxh7gAL5UHr4lrNFF+3tcwed0FOs/wAp17xAiAWoS5g8VudASud\nBSXI68sj4Mh9w1+R50fon3RqSL2BMQIgI/blZZM+Hf1YHbDY8KfrKuLUtoiz6ePQ\njQgTMp1cZEM=\n-----END PRIVATE KEY-----\n"), 0644)) // trufflehog:ignore
 
 	cfg.GitHubAPIConfig.Auth.AppID = 123
 	cfg.GitHubAPIConfig.Auth.InstallationID = 123
