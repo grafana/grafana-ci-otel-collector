@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/go-github/v84/github"
+	"github.com/google/go-github/v85/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/common/version"
