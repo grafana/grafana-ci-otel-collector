@@ -432,3 +432,7 @@ require (
 	www.velocidex.com/golang/go-ntfs v0.2.0 // indirect
 	www.velocidex.com/golang/regparser v0.0.0-20250203141505-31e704a67ef7 // indirect
 )
+
+// containerd v1.7.x is incompatible with runtime-spec v1.3.0 (*int64 breaking change).
+// Pin to v1.2.1 until osv-scalibr migrates to containerd/containerd/v2.
+replace github.com/opencontainers/runtime-spec => github.com/opencontainers/runtime-spec v1.2.1
