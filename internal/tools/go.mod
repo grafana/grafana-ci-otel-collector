@@ -7,8 +7,8 @@ require (
 	github.com/google/osv-scanner/v2 v2.3.5
 	github.com/securego/gosec/v2 v2.25.0
 	go.opentelemetry.io/build-tools/crosslink v0.30.0
-	go.opentelemetry.io/collector/cmd/builder v0.150.0
-	go.opentelemetry.io/collector/cmd/mdatagen v0.150.0
+	go.opentelemetry.io/collector/cmd/builder v0.151.0
+	go.opentelemetry.io/collector/cmd/mdatagen v0.151.0
 	golang.org/x/tools v0.44.0
 	honnef.co/go/tools v0.7.0
 )
@@ -385,18 +385,18 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/build-tools v0.30.0 // indirect
-	go.opentelemetry.io/collector/component v1.56.0 // indirect
-	go.opentelemetry.io/collector/confmap v1.56.0 // indirect
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.56.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.56.0 // indirect
-	go.opentelemetry.io/collector/filter v0.150.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.56.0 // indirect
+	go.opentelemetry.io/collector/component v1.57.0 // indirect
+	go.opentelemetry.io/collector/confmap v1.57.0 // indirect
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.57.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.57.0 // indirect
+	go.opentelemetry.io/collector/filter v0.151.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.57.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0 // indirect
 	go.opentelemetry.io/otel v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.1 // indirect
+	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
