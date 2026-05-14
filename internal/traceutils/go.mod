@@ -2,6 +2,8 @@ module github.com/grafana/grafana-ci-otel-collector/internal/traceutils
 
 go 1.25.0
 
+toolchain go1.26.3
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250724144144-eaa9d8fde20a

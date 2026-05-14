@@ -2,6 +2,8 @@ module github.com/grafana/grafana-ci-otel-collector/internal/tools
 
 go 1.26.1
 
+toolchain go1.26.3
+
 require (
 	github.com/golangci/golangci-lint/v2 v2.11.4
 	github.com/google/osv-scanner/v2 v2.3.5
