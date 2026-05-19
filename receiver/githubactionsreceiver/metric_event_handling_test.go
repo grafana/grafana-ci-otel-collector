@@ -56,12 +56,12 @@ func TestCacheKey(t *testing.T) {
 		},
 		{
 			desc:       "Workflow job with self-hosted labels",
-			repo:       "grafana/deployment_tools",
+			repo:       "foo/webhook-testing",
 			labels:     "self-hosted,linux",
 			status:     "in_progress",
 			conclusion: "",
 			isMain:     false,
-			expected:   "grafana/deployment_tools:self-hosted,linux:in_progress::false",
+			expected:   "foo/webhook-testing:self-hosted,linux:in_progress::false",
 		},
 		{
 			desc:       "Workflow job with no labels",
