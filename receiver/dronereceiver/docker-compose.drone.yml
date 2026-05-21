@@ -38,7 +38,7 @@ services:
     depends_on:
       - drone
   redis-server:
-    image: redis:8.6.2
+    image: redis:8.6.3
   db:
     image: postgres:18.3
     environment:
