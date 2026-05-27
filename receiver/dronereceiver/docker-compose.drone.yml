@@ -40,7 +40,7 @@ services:
   redis-server:
     image: redis:8.6.3
   db:
-    image: postgres:18.3
+    image: postgres:18.4
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
