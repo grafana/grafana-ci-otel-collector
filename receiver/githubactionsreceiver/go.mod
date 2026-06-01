@@ -12,7 +12,7 @@ require (
 	github.com/google/go-github/v85 v85.0.0
 	github.com/grafana/grafana-ci-otel-collector/internal/sharedcomponent v0.0.0-20250724144144-eaa9d8fde20a
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/prometheus/common v0.67.5
+	github.com/prometheus/common v0.68.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.56.0
 	go.opentelemetry.io/collector/component/componenttest v0.150.0
