@@ -1,8 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector/receiver/dronereceiver
 
-go 1.25.0
-
-toolchain go1.26.3
+go 1.26.4
 
 require (
 	github.com/99designs/httpsignatures-go v0.0.0-20170731043157-88528bf4ca7e
