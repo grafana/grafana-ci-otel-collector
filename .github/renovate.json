@@ -50,7 +50,8 @@
           "gomod"
         ],
         "matchDepNames": [
-          "go"
+          "go",
+          "golang"
         ],
         "groupName": "security go-version"
       }
