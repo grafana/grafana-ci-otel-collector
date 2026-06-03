@@ -46,17 +46,7 @@
     }
   ],
   "vulnerabilityAlerts": {
-    "packageRules": [
-      {
-        "matchManagers": [
-          "gomod"
-        ],
-        "matchDepNames": [
-          "go",
-          "golang"
-        ],
-        "groupName": "security go-version"
-      }
-    ]
+    "groupName": "security {{{depName}}}",
+    "semanticCommitScope": "security/{{vulnerabilitySeverity}}"
   }
 }
