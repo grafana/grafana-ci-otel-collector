@@ -32,6 +32,17 @@
       "matchPackageNames": [
         "go.opentelemetry.io/**"
       ]
+    },
+    {
+      "groupName": "go-version",
+      "groupSlug": "go-version",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepNames": [
+        "go",
+        "golang"
+      ]
     }
   ]
 }
