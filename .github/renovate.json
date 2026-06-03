@@ -43,6 +43,17 @@
         "go",
         "golang"
       ]
+    },
+    {
+      "matchVulnerabilityFix": true,
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepNames": [
+        "go",
+        "golang"
+      ],
+      "groupName": "security go-version"
     }
   ]
 }
