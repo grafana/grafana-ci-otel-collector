@@ -3,6 +3,7 @@
 package metadata
 
 import (
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -10,6 +11,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	conventions "go.opentelemetry.io/otel/semconv/v1.9.0"
+)
+
+const (
+	AggregationStrategySum = "sum"
+	AggregationStrategyAvg = "avg"
+	AggregationStrategyMin = "min"
+	AggregationStrategyMax = "max"
 )
 
 // AttributeCiWorkflowItemStatus specifies the value ci.workflow_item.status attribute.
@@ -93,9 +101,10 @@ type metricInfo struct {
 }
 
 type metricBuildsNumber struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric           // data buffer for generated metric.
+	config        BuildsNumberMetricConfig // metric config provided by user.
+	capacity      int                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills builds_number metric with initial data.
@@ -107,19 +116,54 @@ func (m *metricBuildsNumber) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricBuildsNumber) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue string, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, BuildsNumberMetricAttributeKeyCiWorkflowItemStatus) {
+		dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, BuildsNumberMetricAttributeKeyGitRepoName) {
+		dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, BuildsNumberMetricAttributeKeyGitBranchName) {
+		dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
-	dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
-	dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -132,13 +176,18 @@ func (m *metricBuildsNumber) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricBuildsNumber) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricBuildsNumber(cfg MetricConfig) metricBuildsNumber {
+func newMetricBuildsNumber(cfg BuildsNumberMetricConfig) metricBuildsNumber {
 	m := metricBuildsNumber{config: cfg}
 
 	if cfg.Enabled {
@@ -149,9 +198,10 @@ func newMetricBuildsNumber(cfg MetricConfig) metricBuildsNumber {
 }
 
 type metricRepoInfo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric       // data buffer for generated metric.
+	config        RepoInfoMetricConfig // metric config provided by user.
+	capacity      int                  // max observed number of data points added to the metric.
+	aggDataPoints []int64              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills repo_info metric with initial data.
@@ -163,19 +213,54 @@ func (m *metricRepoInfo) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricRepoInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, ciWorkflowItemStatusAttributeValue string, gitRepoNameAttributeValue string, gitBranchNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, RepoInfoMetricAttributeKeyCiWorkflowItemStatus) {
+		dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, RepoInfoMetricAttributeKeyGitRepoName) {
+		dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, RepoInfoMetricAttributeKeyGitBranchName) {
+		dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("ci.workflow_item.status", ciWorkflowItemStatusAttributeValue)
-	dp.Attributes().PutStr("git.repo.name", gitRepoNameAttributeValue)
-	dp.Attributes().PutStr("git.branch.name", gitBranchNameAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -188,13 +273,18 @@ func (m *metricRepoInfo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricRepoInfo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricRepoInfo(cfg MetricConfig) metricRepoInfo {
+func newMetricRepoInfo(cfg RepoInfoMetricConfig) metricRepoInfo {
 	m := metricRepoInfo{config: cfg}
 
 	if cfg.Enabled {
@@ -205,9 +295,9 @@ func newMetricRepoInfo(cfg MetricConfig) metricRepoInfo {
 }
 
 type metricRestartsTotal struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data     pmetric.Metric            // data buffer for generated metric.
+	config   RestartsTotalMetricConfig // metric config provided by user.
+	capacity int                       // max observed number of data points added to the metric.
 }
 
 // init fills restarts_total metric with initial data.
@@ -246,7 +336,7 @@ func (m *metricRestartsTotal) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricRestartsTotal(cfg MetricConfig) metricRestartsTotal {
+func newMetricRestartsTotal(cfg RestartsTotalMetricConfig) metricRestartsTotal {
 	m := metricRestartsTotal{config: cfg}
 
 	if cfg.Enabled {
