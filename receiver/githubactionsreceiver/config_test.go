@@ -180,7 +180,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	expect := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: metadata.NewDefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
 			NetAddr: confignet.AddrConfig{
 				Transport: confignet.TransportTypeTCP,
