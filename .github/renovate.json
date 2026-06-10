@@ -12,26 +12,23 @@
       "enabled": false
     },
     {
-      "matchManagers": [
-        "docker-compose"
-      ],
+      "matchManagers": ["docker-compose"],
       "pinDigests": false
     },
     {
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "matchUpdateTypes": [
-        "pinDigest"
-      ],
+      "matchManagers": ["docker-compose"],
+      "matchUpdateTypes": ["pinDigest"],
       "enabled": false
     },
     {
       "groupName": "otel",
       "groupSlug": "otel",
-      "matchPackageNames": [
-        "go.opentelemetry.io/**"
-      ]
+      "matchPackageNames": ["go.opentelemetry.io/**"]
+    },
+    {
+      "groupName": "go-version",
+      "matchManagers": ["gomod"],
+      "matchDepNames": ["golang", "go"]
     }
   ]
 }
