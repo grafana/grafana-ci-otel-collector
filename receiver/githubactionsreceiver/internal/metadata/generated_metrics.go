@@ -3,12 +3,20 @@
 package metadata
 
 import (
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
+)
+
+const (
+	AggregationStrategySum = "sum"
+	AggregationStrategyAvg = "avg"
+	AggregationStrategyMin = "min"
+	AggregationStrategyMax = "max"
 )
 
 // AttributeCiGithubWorkflowJobConclusion specifies the value ci.github.workflow.job.conclusion attribute.
@@ -210,9 +218,10 @@ type metricInfo struct {
 }
 
 type metricBuildInfo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric        // data buffer for generated metric.
+	config        BuildInfoMetricConfig // metric config provided by user.
+	capacity      int                   // max observed number of data points added to the metric.
+	aggDataPoints []int64               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills build.info metric with initial data.
@@ -222,17 +231,48 @@ func (m *metricBuildInfo) init() {
 	m.data.SetUnit("{build}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricBuildInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, versionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, BuildInfoMetricAttributeKeyVersion) {
+		dp.Attributes().PutStr("version", versionAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("version", versionAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -245,13 +285,18 @@ func (m *metricBuildInfo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricBuildInfo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricBuildInfo(cfg MetricConfig) metricBuildInfo {
+func newMetricBuildInfo(cfg BuildInfoMetricConfig) metricBuildInfo {
 	m := metricBuildInfo{config: cfg}
 
 	if cfg.Enabled {
@@ -262,9 +307,10 @@ func newMetricBuildInfo(cfg MetricConfig) metricBuildInfo {
 }
 
 type metricWorkflowJobsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        WorkflowJobsCountMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills workflow.jobs.count metric with initial data.
@@ -276,21 +322,60 @@ func (m *metricWorkflowJobsCount) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricWorkflowJobsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowJobLabelsAttributeValue string, ciGithubWorkflowJobStatusAttributeValue string, ciGithubWorkflowJobConclusionAttributeValue string, ciGithubWorkflowJobHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, WorkflowJobsCountMetricAttributeKeyVcsRepositoryName) {
+		dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels) {
+		dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus) {
+		dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion) {
+		dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain) {
+		dp.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.labels", ciGithubWorkflowJobLabelsAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.status", ciGithubWorkflowJobStatusAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.job.conclusion", ciGithubWorkflowJobConclusionAttributeValue)
-	dp.Attributes().PutBool("ci.github.workflow.job.head_branch.is_main", ciGithubWorkflowJobHeadBranchIsMainAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -303,13 +388,18 @@ func (m *metricWorkflowJobsCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricWorkflowJobsCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricWorkflowJobsCount(cfg MetricConfig) metricWorkflowJobsCount {
+func newMetricWorkflowJobsCount(cfg WorkflowJobsCountMetricConfig) metricWorkflowJobsCount {
 	m := metricWorkflowJobsCount{config: cfg}
 
 	if cfg.Enabled {
@@ -320,9 +410,10 @@ func newMetricWorkflowJobsCount(cfg MetricConfig) metricWorkflowJobsCount {
 }
 
 type metricWorkflowRunsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                // data buffer for generated metric.
+	config        WorkflowRunsCountMetricConfig // metric config provided by user.
+	capacity      int                           // max observed number of data points added to the metric.
+	aggDataPoints []int64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills workflow.runs.count metric with initial data.
@@ -334,21 +425,60 @@ func (m *metricWorkflowRunsCount) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricWorkflowRunsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, vcsRepositoryNameAttributeValue string, ciGithubWorkflowRunLabelsAttributeValue string, ciGithubWorkflowRunStatusAttributeValue string, ciGithubWorkflowRunConclusionAttributeValue string, ciGithubWorkflowRunHeadBranchIsMainAttributeValue bool) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, WorkflowRunsCountMetricAttributeKeyVcsRepositoryName) {
+		dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels) {
+		dp.Attributes().PutStr("ci.github.workflow.run.labels", ciGithubWorkflowRunLabelsAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus) {
+		dp.Attributes().PutStr("ci.github.workflow.run.status", ciGithubWorkflowRunStatusAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion) {
+		dp.Attributes().PutStr("ci.github.workflow.run.conclusion", ciGithubWorkflowRunConclusionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain) {
+		dp.Attributes().PutBool("ci.github.workflow.run.head_branch.is_main", ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("vcs.repository.name", vcsRepositoryNameAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.run.labels", ciGithubWorkflowRunLabelsAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.run.status", ciGithubWorkflowRunStatusAttributeValue)
-	dp.Attributes().PutStr("ci.github.workflow.run.conclusion", ciGithubWorkflowRunConclusionAttributeValue)
-	dp.Attributes().PutBool("ci.github.workflow.run.head_branch.is_main", ciGithubWorkflowRunHeadBranchIsMainAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -361,13 +491,18 @@ func (m *metricWorkflowRunsCount) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricWorkflowRunsCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricWorkflowRunsCount(cfg MetricConfig) metricWorkflowRunsCount {
+func newMetricWorkflowRunsCount(cfg WorkflowRunsCountMetricConfig) metricWorkflowRunsCount {
 	m := metricWorkflowRunsCount{config: cfg}
 
 	if cfg.Enabled {

@@ -3,16 +3,28 @@
 package metadata
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/confmap"
 )
 
-// MetricConfig provides common config for a particular metric.
-type MetricConfig struct {
+// BuildInfoMetricAttributeKey specifies the key of an attribute for the build.info metric.
+type BuildInfoMetricAttributeKey string
+
+const (
+	BuildInfoMetricAttributeKeyVersion BuildInfoMetricAttributeKey = "version"
+)
+
+// BuildInfoMetricConfig provides config for the build.info metric.
+type BuildInfoMetricConfig struct {
 	Enabled          bool `mapstructure:"enabled"`
 	enabledSetByUser bool
+
+	AggregationStrategy string                        `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []BuildInfoMetricAttributeKey `mapstructure:"attributes"`
 }
 
-func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
+func (ms *BuildInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
 	if parser == nil {
 		return nil
 	}
@@ -26,23 +38,151 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
+func (ms *BuildInfoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case BuildInfoMetricAttributeKeyVersion:
+		default:
+			return fmt.Errorf("metric build.info doesn't have an attribute %v, valid attributes: [version]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// WorkflowJobsCountMetricAttributeKey specifies the key of an attribute for the workflow.jobs.count metric.
+type WorkflowJobsCountMetricAttributeKey string
+
+const (
+	WorkflowJobsCountMetricAttributeKeyVcsRepositoryName                   WorkflowJobsCountMetricAttributeKey = "vcs.repository.name"
+	WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels           WorkflowJobsCountMetricAttributeKey = "ci.github.workflow.job.labels"
+	WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus           WorkflowJobsCountMetricAttributeKey = "ci.github.workflow.job.status"
+	WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion       WorkflowJobsCountMetricAttributeKey = "ci.github.workflow.job.conclusion"
+	WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain WorkflowJobsCountMetricAttributeKey = "ci.github.workflow.job.head_branch.is_main"
+)
+
+// WorkflowJobsCountMetricConfig provides config for the workflow.jobs.count metric.
+type WorkflowJobsCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []WorkflowJobsCountMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *WorkflowJobsCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *WorkflowJobsCountMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case WorkflowJobsCountMetricAttributeKeyVcsRepositoryName, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain:
+		default:
+			return fmt.Errorf("metric workflow.jobs.count doesn't have an attribute %v, valid attributes: [vcs.repository.name, ci.github.workflow.job.labels, ci.github.workflow.job.status, ci.github.workflow.job.conclusion, ci.github.workflow.job.head_branch.is_main]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// WorkflowRunsCountMetricAttributeKey specifies the key of an attribute for the workflow.runs.count metric.
+type WorkflowRunsCountMetricAttributeKey string
+
+const (
+	WorkflowRunsCountMetricAttributeKeyVcsRepositoryName                   WorkflowRunsCountMetricAttributeKey = "vcs.repository.name"
+	WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels           WorkflowRunsCountMetricAttributeKey = "ci.github.workflow.run.labels"
+	WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus           WorkflowRunsCountMetricAttributeKey = "ci.github.workflow.run.status"
+	WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion       WorkflowRunsCountMetricAttributeKey = "ci.github.workflow.run.conclusion"
+	WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain WorkflowRunsCountMetricAttributeKey = "ci.github.workflow.run.head_branch.is_main"
+)
+
+// WorkflowRunsCountMetricConfig provides config for the workflow.runs.count metric.
+type WorkflowRunsCountMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []WorkflowRunsCountMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *WorkflowRunsCountMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *WorkflowRunsCountMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case WorkflowRunsCountMetricAttributeKeyVcsRepositoryName, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain:
+		default:
+			return fmt.Errorf("metric workflow.runs.count doesn't have an attribute %v, valid attributes: [vcs.repository.name, ci.github.workflow.run.labels, ci.github.workflow.run.status, ci.github.workflow.run.conclusion, ci.github.workflow.run.head_branch.is_main]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
 // MetricsConfig provides config for githubactions metrics.
 type MetricsConfig struct {
-	BuildInfo         MetricConfig `mapstructure:"build.info"`
-	WorkflowJobsCount MetricConfig `mapstructure:"workflow.jobs.count"`
-	WorkflowRunsCount MetricConfig `mapstructure:"workflow.runs.count"`
+	BuildInfo         BuildInfoMetricConfig         `mapstructure:"build.info"`
+	WorkflowJobsCount WorkflowJobsCountMetricConfig `mapstructure:"workflow.jobs.count"`
+	WorkflowRunsCount WorkflowRunsCountMetricConfig `mapstructure:"workflow.runs.count"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		BuildInfo: MetricConfig{
-			Enabled: true,
+		BuildInfo: BuildInfoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
 		},
-		WorkflowJobsCount: MetricConfig{
-			Enabled: true,
+		WorkflowJobsCount: WorkflowJobsCountMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []WorkflowJobsCountMetricAttributeKey{WorkflowJobsCountMetricAttributeKeyVcsRepositoryName, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain},
 		},
-		WorkflowRunsCount: MetricConfig{
-			Enabled: true,
+		WorkflowRunsCount: WorkflowRunsCountMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []WorkflowRunsCountMetricAttributeKey{WorkflowRunsCountMetricAttributeKeyVcsRepositoryName, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain},
 		},
 	}
 }
@@ -52,8 +192,13 @@ type MetricsBuilderConfig struct {
 	Metrics MetricsConfig `mapstructure:"metrics"`
 }
 
-func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+func NewDefaultMetricsBuilderConfig() MetricsBuilderConfig {
 	return MetricsBuilderConfig{
 		Metrics: DefaultMetricsConfig(),
 	}
+}
+
+// Deprecated: Use NewDefaultMetricsBuilderConfig.
+func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+	return NewDefaultMetricsBuilderConfig()
 }

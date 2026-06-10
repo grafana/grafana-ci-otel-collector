@@ -3,15 +3,29 @@ all_set:
   metrics:
     builds_number:
       enabled: true
+      attributes: ["ci.workflow_item.status","git.repo.name","git.branch.name"]
     repo_info:
       enabled: true
+      attributes: ["ci.workflow_item.status","git.repo.name","git.branch.name"]
+    restarts_total:
+      enabled: true
+reaggregate_set:
+  metrics:
+    builds_number:
+      enabled: true
+      attributes: []
+    repo_info:
+      enabled: true
+      attributes: []
     restarts_total:
       enabled: true
 none_set:
   metrics:
     builds_number:
       enabled: false
+      attributes: ["ci.workflow_item.status","git.repo.name","git.branch.name"]
     repo_info:
       enabled: false
+      attributes: ["ci.workflow_item.status","git.repo.name","git.branch.name"]
     restarts_total:
       enabled: false

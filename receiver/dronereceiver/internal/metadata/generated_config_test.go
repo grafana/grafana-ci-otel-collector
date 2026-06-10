@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
@@ -21,19 +20,23 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	}{
 		{
 			name: "default",
-			want: DefaultMetricsBuilderConfig(),
+			want: NewDefaultMetricsBuilderConfig(),
 		},
 		{
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsNumber: MetricConfig{
-						Enabled: true,
+					BuildsNumber: BuildsNumberMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []BuildsNumberMetricAttributeKey{BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName},
 					},
-					RepoInfo: MetricConfig{
-						Enabled: true,
+					RepoInfo: RepoInfoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RepoInfoMetricAttributeKey{RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName},
 					},
-					RestartsTotal: MetricConfig{
+					RestartsTotal: RestartsTotalMetricConfig{
 						Enabled: true,
 					},
 				},
@@ -43,13 +46,17 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsNumber: MetricConfig{
-						Enabled: false,
+					BuildsNumber: BuildsNumberMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []BuildsNumberMetricAttributeKey{BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName},
 					},
-					RepoInfo: MetricConfig{
-						Enabled: false,
+					RepoInfo: RepoInfoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RepoInfoMetricAttributeKey{RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName},
 					},
-					RestartsTotal: MetricConfig{
+					RestartsTotal: RestartsTotalMetricConfig{
 						Enabled: false,
 					},
 				},
@@ -59,7 +66,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(BuildsNumberMetricConfig{}, RepoInfoMetricConfig{}, RestartsTotalMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
@@ -70,7 +77,7 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	require.NoError(t, err)
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
-	cfg := DefaultMetricsBuilderConfig()
+	cfg := NewDefaultMetricsBuilderConfig()
 	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }

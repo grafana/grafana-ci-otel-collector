@@ -23,7 +23,7 @@ func createDefaultConfig() component.Config {
 
 	return &Config{
 		ControllerConfig:     cfg,
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: metadata.NewDefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
 			NetAddr: confignet.AddrConfig{
 				Transport: confignet.TransportTypeTCP,

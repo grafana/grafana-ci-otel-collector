@@ -19,6 +19,7 @@ const (
 	testDataSetDefault testDataSet = iota
 	testDataSetAll
 	testDataSetNone
+	testDataSetReag
 )
 
 func TestMetricsBuilder(t *testing.T) {
@@ -37,6 +38,11 @@ func TestMetricsBuilder(t *testing.T) {
 			resAttrsSet: testDataSetAll,
 		},
 		{
+			name:        "reaggregate_set",
+			metricsSet:  testDataSetReag,
+			resAttrsSet: testDataSetReag,
+		},
+		{
 			name:        "none_set",
 			metricsSet:  testDataSetNone,
 			resAttrsSet: testDataSetNone,
@@ -51,9 +57,15 @@ func TestMetricsBuilder(t *testing.T) {
 			settings := receivertest.NewNopSettings(receivertest.NopType)
 			settings.Logger = zap.New(observedZapCore)
 			mb := NewMetricsBuilder(loadMetricsBuilderConfig(t, tt.name), settings, WithStartTime(start))
+			aggMap := make(map[string]string) // contains the aggregation strategies for each metric name
+			aggMap["build.info"] = mb.metricBuildInfo.config.AggregationStrategy
+			aggMap["workflow.jobs.count"] = mb.metricWorkflowJobsCount.config.AggregationStrategy
+			aggMap["workflow.runs.count"] = mb.metricWorkflowRunsCount.config.AggregationStrategy
 
 			expectedWarnings := 0
-			assert.Equal(t, expectedWarnings, observedLogs.Len())
+			if tt.metricsSet != testDataSetReag {
+				assert.Equal(t, expectedWarnings, observedLogs.Len())
+			}
 
 			defaultMetricsCount := 0
 			allMetricsCount := 0
@@ -61,17 +73,31 @@ func TestMetricsBuilder(t *testing.T) {
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordBuildInfoDataPoint(ts, 1, "version-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordBuildInfoDataPoint(ts, 3, "version-val-2")
+			}
 
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordWorkflowJobsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.job.labels-val", AttributeCiGithubWorkflowJobStatusCompleted, AttributeCiGithubWorkflowJobConclusionSuccess, true)
+			if tt.name == "reaggregate_set" {
+				mb.RecordWorkflowJobsCountDataPoint(ts, 3, "vcs.repository.name-val-2", "ci.github.workflow.job.labels-val-2", AttributeCiGithubWorkflowJobStatusInProgress, AttributeCiGithubWorkflowJobConclusionFailure, false)
+			}
 
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordWorkflowRunsCountDataPoint(ts, 1, "vcs.repository.name-val", "ci.github.workflow.run.labels-val", AttributeCiGithubWorkflowRunStatusCompleted, AttributeCiGithubWorkflowRunConclusionSuccess, true)
+			if tt.name == "reaggregate_set" {
+				mb.RecordWorkflowRunsCountDataPoint(ts, 3, "vcs.repository.name-val-2", "ci.github.workflow.run.labels-val-2", AttributeCiGithubWorkflowRunStatusInProgress, AttributeCiGithubWorkflowRunConclusionFailure, false)
+			}
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
+			if tt.name == "reaggregate_set" {
+				assert.Empty(t, mb.metricBuildInfo.aggDataPoints)
+				assert.Empty(t, mb.metricWorkflowJobsCount.aggDataPoints)
+				assert.Empty(t, mb.metricWorkflowRunsCount.aggDataPoints)
+			}
 
 			if tt.expectEmpty {
 				assert.Equal(t, 0, metrics.ResourceMetrics().Len())
@@ -99,78 +125,173 @@ func TestMetricsBuilder(t *testing.T) {
 			for _, mi := range allMetricsList {
 				switch mi.Name() {
 				case "build.info":
-					assert.False(t, validatedMetrics["build.info"], "Found a duplicate in the metrics slice: build.info")
-					validatedMetrics["build.info"] = true
-					assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-					assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-					assert.Equal(t, "Build info.", mi.Description())
-					assert.Equal(t, "{build}", mi.Unit())
-					dp := mi.Gauge().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					versionAttrVal, ok := dp.Attributes().Get("version")
-					assert.True(t, ok)
-					assert.Equal(t, "version-val", versionAttrVal.Str())
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["build.info"], "Found a duplicate in the metrics slice: build.info")
+						validatedMetrics["build.info"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "Build info.", mi.Description())
+						assert.Equal(t, "{build}", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						versionAttrVal, ok := dp.Attributes().Get("version")
+						assert.True(t, ok)
+						assert.Equal(t, "version-val", versionAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["build.info"], "Found a duplicate in the metrics slice: build.info")
+						validatedMetrics["build.info"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "Build info.", mi.Description())
+						assert.Equal(t, "{build}", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["build.info"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("version")
+						assert.False(t, ok)
+					}
 				case "workflow.jobs.count":
-					assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
-					validatedMetrics["workflow.jobs.count"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "Number of jobs.", mi.Description())
-					assert.Equal(t, "{job}", mi.Unit())
-					assert.True(t, mi.Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
-					dp := mi.Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					vcsRepositoryNameAttrVal, ok := dp.Attributes().Get("vcs.repository.name")
-					assert.True(t, ok)
-					assert.Equal(t, "vcs.repository.name-val", vcsRepositoryNameAttrVal.Str())
-					ciGithubWorkflowJobLabelsAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.labels")
-					assert.True(t, ok)
-					assert.Equal(t, "ci.github.workflow.job.labels-val", ciGithubWorkflowJobLabelsAttrVal.Str())
-					ciGithubWorkflowJobStatusAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.status")
-					assert.True(t, ok)
-					assert.Equal(t, "completed", ciGithubWorkflowJobStatusAttrVal.Str())
-					ciGithubWorkflowJobConclusionAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.conclusion")
-					assert.True(t, ok)
-					assert.Equal(t, "success", ciGithubWorkflowJobConclusionAttrVal.Str())
-					ciGithubWorkflowJobHeadBranchIsMainAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.head_branch.is_main")
-					assert.True(t, ok)
-					assert.True(t, ciGithubWorkflowJobHeadBranchIsMainAttrVal.Bool())
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
+						validatedMetrics["workflow.jobs.count"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of jobs.", mi.Description())
+						assert.Equal(t, "{job}", mi.Unit())
+						assert.True(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						vcsRepositoryNameAttrVal, ok := dp.Attributes().Get("vcs.repository.name")
+						assert.True(t, ok)
+						assert.Equal(t, "vcs.repository.name-val", vcsRepositoryNameAttrVal.Str())
+						ciGithubWorkflowJobLabelsAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.labels")
+						assert.True(t, ok)
+						assert.Equal(t, "ci.github.workflow.job.labels-val", ciGithubWorkflowJobLabelsAttrVal.Str())
+						ciGithubWorkflowJobStatusAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.status")
+						assert.True(t, ok)
+						assert.Equal(t, "completed", ciGithubWorkflowJobStatusAttrVal.Str())
+						ciGithubWorkflowJobConclusionAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.conclusion")
+						assert.True(t, ok)
+						assert.Equal(t, "success", ciGithubWorkflowJobConclusionAttrVal.Str())
+						ciGithubWorkflowJobHeadBranchIsMainAttrVal, ok := dp.Attributes().Get("ci.github.workflow.job.head_branch.is_main")
+						assert.True(t, ok)
+						assert.True(t, ciGithubWorkflowJobHeadBranchIsMainAttrVal.Bool())
+					} else {
+						assert.False(t, validatedMetrics["workflow.jobs.count"], "Found a duplicate in the metrics slice: workflow.jobs.count")
+						validatedMetrics["workflow.jobs.count"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of jobs.", mi.Description())
+						assert.Equal(t, "{job}", mi.Unit())
+						assert.True(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["workflow.jobs.count"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("vcs.repository.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.job.labels")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.job.status")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.job.conclusion")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.job.head_branch.is_main")
+						assert.False(t, ok)
+					}
 				case "workflow.runs.count":
-					assert.False(t, validatedMetrics["workflow.runs.count"], "Found a duplicate in the metrics slice: workflow.runs.count")
-					validatedMetrics["workflow.runs.count"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "Number of runs.", mi.Description())
-					assert.Equal(t, "{run}", mi.Unit())
-					assert.True(t, mi.Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
-					dp := mi.Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					vcsRepositoryNameAttrVal, ok := dp.Attributes().Get("vcs.repository.name")
-					assert.True(t, ok)
-					assert.Equal(t, "vcs.repository.name-val", vcsRepositoryNameAttrVal.Str())
-					ciGithubWorkflowRunLabelsAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.labels")
-					assert.True(t, ok)
-					assert.Equal(t, "ci.github.workflow.run.labels-val", ciGithubWorkflowRunLabelsAttrVal.Str())
-					ciGithubWorkflowRunStatusAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.status")
-					assert.True(t, ok)
-					assert.Equal(t, "completed", ciGithubWorkflowRunStatusAttrVal.Str())
-					ciGithubWorkflowRunConclusionAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.conclusion")
-					assert.True(t, ok)
-					assert.Equal(t, "success", ciGithubWorkflowRunConclusionAttrVal.Str())
-					ciGithubWorkflowRunHeadBranchIsMainAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.head_branch.is_main")
-					assert.True(t, ok)
-					assert.True(t, ciGithubWorkflowRunHeadBranchIsMainAttrVal.Bool())
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["workflow.runs.count"], "Found a duplicate in the metrics slice: workflow.runs.count")
+						validatedMetrics["workflow.runs.count"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of runs.", mi.Description())
+						assert.Equal(t, "{run}", mi.Unit())
+						assert.True(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						vcsRepositoryNameAttrVal, ok := dp.Attributes().Get("vcs.repository.name")
+						assert.True(t, ok)
+						assert.Equal(t, "vcs.repository.name-val", vcsRepositoryNameAttrVal.Str())
+						ciGithubWorkflowRunLabelsAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.labels")
+						assert.True(t, ok)
+						assert.Equal(t, "ci.github.workflow.run.labels-val", ciGithubWorkflowRunLabelsAttrVal.Str())
+						ciGithubWorkflowRunStatusAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.status")
+						assert.True(t, ok)
+						assert.Equal(t, "completed", ciGithubWorkflowRunStatusAttrVal.Str())
+						ciGithubWorkflowRunConclusionAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.conclusion")
+						assert.True(t, ok)
+						assert.Equal(t, "success", ciGithubWorkflowRunConclusionAttrVal.Str())
+						ciGithubWorkflowRunHeadBranchIsMainAttrVal, ok := dp.Attributes().Get("ci.github.workflow.run.head_branch.is_main")
+						assert.True(t, ok)
+						assert.True(t, ciGithubWorkflowRunHeadBranchIsMainAttrVal.Bool())
+					} else {
+						assert.False(t, validatedMetrics["workflow.runs.count"], "Found a duplicate in the metrics slice: workflow.runs.count")
+						validatedMetrics["workflow.runs.count"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of runs.", mi.Description())
+						assert.Equal(t, "{run}", mi.Unit())
+						assert.True(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["workflow.runs.count"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("vcs.repository.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.run.labels")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.run.status")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.run.conclusion")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("ci.github.workflow.run.head_branch.is_main")
+						assert.False(t, ok)
+					}
 				}
 			}
 		})

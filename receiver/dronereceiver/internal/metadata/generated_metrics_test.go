@@ -19,6 +19,7 @@ const (
 	testDataSetDefault testDataSet = iota
 	testDataSetAll
 	testDataSetNone
+	testDataSetReag
 )
 
 func TestMetricsBuilder(t *testing.T) {
@@ -37,6 +38,11 @@ func TestMetricsBuilder(t *testing.T) {
 			resAttrsSet: testDataSetAll,
 		},
 		{
+			name:        "reaggregate_set",
+			metricsSet:  testDataSetReag,
+			resAttrsSet: testDataSetReag,
+		},
+		{
 			name:        "none_set",
 			metricsSet:  testDataSetNone,
 			resAttrsSet: testDataSetNone,
@@ -51,9 +57,14 @@ func TestMetricsBuilder(t *testing.T) {
 			settings := receivertest.NewNopSettings(receivertest.NopType)
 			settings.Logger = zap.New(observedZapCore)
 			mb := NewMetricsBuilder(loadMetricsBuilderConfig(t, tt.name), settings, WithStartTime(start))
+			aggMap := make(map[string]string) // contains the aggregation strategies for each metric name
+			aggMap["builds_number"] = mb.metricBuildsNumber.config.AggregationStrategy
+			aggMap["repo_info"] = mb.metricRepoInfo.config.AggregationStrategy
 
 			expectedWarnings := 0
-			assert.Equal(t, expectedWarnings, observedLogs.Len())
+			if tt.metricsSet != testDataSetReag {
+				assert.Equal(t, expectedWarnings, observedLogs.Len())
+			}
 
 			defaultMetricsCount := 0
 			allMetricsCount := 0
@@ -61,10 +72,16 @@ func TestMetricsBuilder(t *testing.T) {
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordBuildsNumberDataPoint(ts, 1, AttributeCiWorkflowItemStatusSkipped, "git.repo.name-val", "git.branch.name-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordBuildsNumberDataPoint(ts, 3, AttributeCiWorkflowItemStatusBlocked, "git.repo.name-val-2", "git.branch.name-val-2")
+			}
 
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordRepoInfoDataPoint(ts, 1, AttributeCiWorkflowItemStatusSkipped, "git.repo.name-val", "git.branch.name-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordRepoInfoDataPoint(ts, 3, AttributeCiWorkflowItemStatusBlocked, "git.repo.name-val-2", "git.branch.name-val-2")
+			}
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -72,6 +89,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			res := pcommon.NewResource()
 			metrics := mb.Emit(WithResource(res))
+			if tt.name == "reaggregate_set" {
+				assert.Empty(t, mb.metricBuildsNumber.aggDataPoints)
+				assert.Empty(t, mb.metricRepoInfo.aggDataPoints)
+			}
 
 			if tt.expectEmpty {
 				assert.Equal(t, 0, metrics.ResourceMetrics().Len())
@@ -99,51 +120,113 @@ func TestMetricsBuilder(t *testing.T) {
 			for _, mi := range allMetricsList {
 				switch mi.Name() {
 				case "builds_number":
-					assert.False(t, validatedMetrics["builds_number"], "Found a duplicate in the metrics slice: builds_number")
-					validatedMetrics["builds_number"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "Number of builds.", mi.Description())
-					assert.Equal(t, "{build}", mi.Unit())
-					assert.False(t, mi.Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
-					dp := mi.Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					ciWorkflowItemStatusAttrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
-					assert.True(t, ok)
-					assert.Equal(t, "skipped", ciWorkflowItemStatusAttrVal.Str())
-					gitRepoNameAttrVal, ok := dp.Attributes().Get("git.repo.name")
-					assert.True(t, ok)
-					assert.Equal(t, "git.repo.name-val", gitRepoNameAttrVal.Str())
-					gitBranchNameAttrVal, ok := dp.Attributes().Get("git.branch.name")
-					assert.True(t, ok)
-					assert.Equal(t, "git.branch.name-val", gitBranchNameAttrVal.Str())
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["builds_number"], "Found a duplicate in the metrics slice: builds_number")
+						validatedMetrics["builds_number"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of builds.", mi.Description())
+						assert.Equal(t, "{build}", mi.Unit())
+						assert.False(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						ciWorkflowItemStatusAttrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
+						assert.True(t, ok)
+						assert.Equal(t, "skipped", ciWorkflowItemStatusAttrVal.Str())
+						gitRepoNameAttrVal, ok := dp.Attributes().Get("git.repo.name")
+						assert.True(t, ok)
+						assert.Equal(t, "git.repo.name-val", gitRepoNameAttrVal.Str())
+						gitBranchNameAttrVal, ok := dp.Attributes().Get("git.branch.name")
+						assert.True(t, ok)
+						assert.Equal(t, "git.branch.name-val", gitBranchNameAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["builds_number"], "Found a duplicate in the metrics slice: builds_number")
+						validatedMetrics["builds_number"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Number of builds.", mi.Description())
+						assert.Equal(t, "{build}", mi.Unit())
+						assert.False(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["builds_number"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("ci.workflow_item.status")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("git.repo.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("git.branch.name")
+						assert.False(t, ok)
+					}
 				case "repo_info":
-					assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
-					validatedMetrics["repo_info"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-					assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-					assert.Equal(t, "Repo status.", mi.Description())
-					assert.Equal(t, "{repository}", mi.Unit())
-					assert.False(t, mi.Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
-					dp := mi.Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					ciWorkflowItemStatusAttrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
-					assert.True(t, ok)
-					assert.Equal(t, "skipped", ciWorkflowItemStatusAttrVal.Str())
-					gitRepoNameAttrVal, ok := dp.Attributes().Get("git.repo.name")
-					assert.True(t, ok)
-					assert.Equal(t, "git.repo.name-val", gitRepoNameAttrVal.Str())
-					gitBranchNameAttrVal, ok := dp.Attributes().Get("git.branch.name")
-					assert.True(t, ok)
-					assert.Equal(t, "git.branch.name-val", gitBranchNameAttrVal.Str())
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
+						validatedMetrics["repo_info"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Repo status.", mi.Description())
+						assert.Equal(t, "{repository}", mi.Unit())
+						assert.False(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						ciWorkflowItemStatusAttrVal, ok := dp.Attributes().Get("ci.workflow_item.status")
+						assert.True(t, ok)
+						assert.Equal(t, "skipped", ciWorkflowItemStatusAttrVal.Str())
+						gitRepoNameAttrVal, ok := dp.Attributes().Get("git.repo.name")
+						assert.True(t, ok)
+						assert.Equal(t, "git.repo.name-val", gitRepoNameAttrVal.Str())
+						gitBranchNameAttrVal, ok := dp.Attributes().Get("git.branch.name")
+						assert.True(t, ok)
+						assert.Equal(t, "git.branch.name-val", gitBranchNameAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["repo_info"], "Found a duplicate in the metrics slice: repo_info")
+						validatedMetrics["repo_info"] = true
+						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
+						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						assert.Equal(t, "Repo status.", mi.Description())
+						assert.Equal(t, "{repository}", mi.Unit())
+						assert.False(t, mi.Sum().IsMonotonic())
+						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
+						dp := mi.Sum().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["repo_info"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("ci.workflow_item.status")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("git.repo.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("git.branch.name")
+						assert.False(t, ok)
+					}
 				case "restarts_total":
 					assert.False(t, validatedMetrics["restarts_total"], "Found a duplicate in the metrics slice: restarts_total")
 					validatedMetrics["restarts_total"] = true

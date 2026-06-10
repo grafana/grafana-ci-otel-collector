@@ -169,7 +169,7 @@ func TestWorkflowJobEventToMetrics(t *testing.T) {
 			mh := newMetricsHandler(receivertest.NewNopSettings(receivertest.NopType), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
-						WorkflowJobsCount: metadata.MetricConfig{
+						WorkflowJobsCount: metadata.WorkflowJobsCountMetricConfig{
 							Enabled: true,
 						},
 					},
@@ -220,7 +220,7 @@ func TestWorkflowRunEventToMetrics(t *testing.T) {
 			mh := newMetricsHandler(receivertest.NewNopSettings(receivertest.NopType), &Config{
 				MetricsBuilderConfig: metadata.MetricsBuilderConfig{
 					Metrics: metadata.MetricsConfig{
-						WorkflowRunsCount: metadata.MetricConfig{
+						WorkflowRunsCount: metadata.WorkflowRunsCountMetricConfig{
 							Enabled: true,
 						},
 					},
