@@ -98,14 +98,20 @@ func createBenchmarkGitHubServer(b *testing.B, zipData []byte) *httptest.Server 
 }
 
 // setupTestGitHubClient creates a GitHub client configured for testing
-func setupTestGitHubClient(cfg *Config) *github.Client {
-	client := github.NewClient(nil)
+func setupTestGitHubClient(b *testing.B, cfg *Config) *github.Client {
+	b.Helper()
 	if cfg.GitHubAPIConfig.BaseURL != "" && cfg.GitHubAPIConfig.UploadURL != "" {
-		client, _ = client.WithEnterpriseURLs(cfg.GitHubAPIConfig.BaseURL, cfg.GitHubAPIConfig.UploadURL)
+		client, err := github.NewClient(github.WithEnterpriseURLs(cfg.GitHubAPIConfig.BaseURL, cfg.GitHubAPIConfig.UploadURL))
+		require.NoError(b, err)
+		return client
 	}
 	if cfg.GitHubAPIConfig.Auth.Token != "" {
-		client = client.WithAuthToken(cfg.GitHubAPIConfig.Auth.Token)
+		client, err := github.NewClient(github.WithAuthToken(cfg.GitHubAPIConfig.Auth.Token))
+		require.NoError(b, err)
+		return client
 	}
+	client, err := github.NewClient()
+	require.NoError(b, err)
 	return client
 }
 
@@ -140,7 +146,7 @@ func BenchmarkEventToLogs(b *testing.B) {
 			cfg.GitHubAPIConfig.UploadURL = ghServer.URL
 			cfg.GitHubAPIConfig.Auth.Token = "testtoken"
 
-			ghClient := setupTestGitHubClient(cfg)
+			ghClient := setupTestGitHubClient(b, cfg)
 			b.Cleanup(func() {
 				ghServer.Close()
 			})

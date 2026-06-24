@@ -62,7 +62,6 @@ func newReceiver(
 		return nil, err
 	}
 
-	var ghClient *github.Client
 	var httpClient *http.Client
 	var itr *ghinstallation.Transport
 	if config.GitHubAPIConfig.Auth.AppID != 0 && config.GitHubAPIConfig.Auth.InstallationID != 0 && config.GitHubAPIConfig.Auth.PrivateKeyPath != "" {
@@ -75,27 +74,33 @@ func newReceiver(
 			// The BaseURL should point to the /api/v3 prefix. We can use the
 			// WithEnterpriseURLs helper for that which does validation and
 			// proper suffixing if necessary.
-			tmp := github.NewClient(nil).WithAuthToken("")
-			tmp, err = tmp.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
+			tmp, err := github.NewClient(github.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL))
 			if err != nil {
 				return nil, fmt.Errorf("enterprise URLs are invalid: %w", err)
 			}
-			itr.BaseURL = tmp.BaseURL.String()
+			itr.BaseURL = tmp.BaseURL()
 		}
 
 		httpClient = &http.Client{Transport: itr}
 	}
-	ghClient = github.NewClient(httpClient)
+
+	ghClientOptions := make([]github.ClientOptionsFunc, 0, 2)
+
+	if httpClient != nil {
+		ghClientOptions = append(ghClientOptions, github.WithHTTPClient(httpClient))
+	}
 
 	if config.GitHubAPIConfig.Auth.Token != "" {
-		ghClient = ghClient.WithAuthToken(config.GitHubAPIConfig.Auth.Token)
+		ghClientOptions = append(ghClientOptions, github.WithAuthToken(config.GitHubAPIConfig.Auth.Token))
 	}
 
 	if config.GitHubAPIConfig.BaseURL != "" && config.GitHubAPIConfig.UploadURL != "" {
-		ghClient, err = ghClient.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
-		if err != nil {
-			return nil, err
-		}
+		ghClientOptions = append(ghClientOptions, github.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL))
+	}
+	ghClient, err := github.NewClient(ghClientOptions...)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GitHub client: %w", err)
 	}
 
 	gar := &githubActionsReceiver{
