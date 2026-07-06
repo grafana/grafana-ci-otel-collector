@@ -99,13 +99,14 @@ func createBenchmarkGitHubServer(b *testing.B, zipData []byte) *httptest.Server 
 
 // setupTestGitHubClient creates a GitHub client configured for testing
 func setupTestGitHubClient(cfg *Config) *github.Client {
-	client := github.NewClient(nil)
+	var opts []github.ClientOptionsFunc
 	if cfg.GitHubAPIConfig.BaseURL != "" && cfg.GitHubAPIConfig.UploadURL != "" {
-		client, _ = client.WithEnterpriseURLs(cfg.GitHubAPIConfig.BaseURL, cfg.GitHubAPIConfig.UploadURL)
+		opts = append(opts, github.WithEnterpriseURLs(cfg.GitHubAPIConfig.BaseURL, cfg.GitHubAPIConfig.UploadURL))
 	}
 	if cfg.GitHubAPIConfig.Auth.Token != "" {
-		client = client.WithAuthToken(cfg.GitHubAPIConfig.Auth.Token)
+		opts = append(opts, github.WithAuthToken(cfg.GitHubAPIConfig.Auth.Token))
 	}
+	client, _ := github.NewClient(opts...)
 	return client
 }
 
