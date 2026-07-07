@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v85/github"
+	"github.com/google/go-github/v88/github"
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -75,27 +75,29 @@ func newReceiver(
 			// The BaseURL should point to the /api/v3 prefix. We can use the
 			// WithEnterpriseURLs helper for that which does validation and
 			// proper suffixing if necessary.
-			tmp := github.NewClient(nil).WithAuthToken("")
-			tmp, err = tmp.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
+			tmp, err := github.NewClient(github.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL))
 			if err != nil {
 				return nil, fmt.Errorf("enterprise URLs are invalid: %w", err)
 			}
-			itr.BaseURL = tmp.BaseURL.String()
+			itr.BaseURL = tmp.BaseURL()
 		}
 
 		httpClient = &http.Client{Transport: itr}
 	}
-	ghClient = github.NewClient(httpClient)
 
-	if config.GitHubAPIConfig.Auth.Token != "" {
-		ghClient = ghClient.WithAuthToken(config.GitHubAPIConfig.Auth.Token)
+	var clientOpts []github.ClientOptionsFunc
+	if httpClient != nil {
+		clientOpts = append(clientOpts, github.WithHTTPClient(httpClient))
 	}
-
+	if config.GitHubAPIConfig.Auth.Token != "" {
+		clientOpts = append(clientOpts, github.WithAuthToken(config.GitHubAPIConfig.Auth.Token))
+	}
 	if config.GitHubAPIConfig.BaseURL != "" && config.GitHubAPIConfig.UploadURL != "" {
-		ghClient, err = ghClient.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL)
-		if err != nil {
-			return nil, err
-		}
+		clientOpts = append(clientOpts, github.WithEnterpriseURLs(config.GitHubAPIConfig.BaseURL, config.GitHubAPIConfig.UploadURL))
+	}
+	ghClient, err = github.NewClient(clientOpts...)
+	if err != nil {
+		return nil, err
 	}
 
 	gar := &githubActionsReceiver{
