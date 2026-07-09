@@ -28,7 +28,8 @@
     {
       "groupName": "go-version",
       "matchManagers": ["gomod"],
-      "matchDepNames": ["golang", "go"]
+      "matchDepNames": ["golang", "go"],
+      "additionalBranchPrefix": ""
     }
   ]
 }
