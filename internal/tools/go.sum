@@ -32,8 +32,8 @@ deps.dev/util/pypi v0.0.0-20260422013440-90c27f84dd6f h1:hOkMV3kN25Ya1KQt8wAjCXB
 deps.dev/util/pypi v0.0.0-20260422013440-90c27f84dd6f/go.mod h1:qmA0z/Lsfa1FMtuLd9JmVZLMHR3GBX/EmbM6z1X3EDU=
 deps.dev/util/resolve v0.0.0-20260708003622-ba1304923509 h1:s1rX0S1lCkTIpFmIx7tYwwuDAfAKslqOpUDjsGSwon4=
 deps.dev/util/resolve v0.0.0-20260708003622-ba1304923509/go.mod h1:C3geprbQ5N3gqIJZl6bsPmG9p6xbRSJAjq07Qm9Fwnw=
-deps.dev/util/semver v0.0.0-20260617025149-7d3577045631 h1:cCQUmBGwsnxLYo/NA5nBOmvaBgRGO78FBNYF8VbaxDM=
-deps.dev/util/semver v0.0.0-20260617025149-7d3577045631/go.mod h1:jjJweVqtuMQ7Q4zlTQ/kCHpboojkRvpMYlhy/c93DVU=
+deps.dev/util/semver v0.0.0-20260708003622-ba1304923509 h1:03N/daNy0k2MWk59pDyB9FspBVxFJtv5Q8ew/Rwdiuw=
+deps.dev/util/semver v0.0.0-20260708003622-ba1304923509/go.mod h1:jjJweVqtuMQ7Q4zlTQ/kCHpboojkRvpMYlhy/c93DVU=
 dev.gaijin.team/go/exhaustruct/v4 v4.0.0 h1:873r7aNneqoBB3IaFIzhvt2RFYTuHgmMjoKfwODoI1Y=
 dev.gaijin.team/go/exhaustruct/v4 v4.0.0/go.mod h1:aZ/k2o4Y05aMJtiux15x8iXaumE88YdiB0Ai4fXOzPI=
 dev.gaijin.team/go/golib v0.6.0 h1:v6nnznFTs4bppib/NyU1PQxobwDHwCXXl15P7DV5Zgo=
