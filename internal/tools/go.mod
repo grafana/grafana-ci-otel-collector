@@ -59,7 +59,7 @@ require (
 	github.com/alfatraining/structtag v1.0.0 // indirect
 	github.com/alingse/asasalint v0.0.11 // indirect
 	github.com/alingse/nilnesserr v0.2.0 // indirect
-	github.com/anchore/go-lzo v0.1.0 // indirect
+	github.com/anchore/go-lzo v0.1.1 // indirect
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/anthropics/anthropic-sdk-go v1.46.0 // indirect
 	github.com/ashanbrown/forbidigo/v2 v2.3.1 // indirect
