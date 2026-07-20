@@ -269,7 +269,7 @@ require (
 	github.com/openai/openai-go/v3 v3.37.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/ossf/osv-schema/bindings/go v0.0.0-20260525004216-afe0bddbf893 // indirect
+	github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47 // indirect
 	github.com/owenrumney/go-sarif/v3 v3.3.0 // indirect
 	github.com/package-url/packageurl-go v0.1.6 // indirect
 	github.com/pandatix/go-cvss v0.6.2 // indirect
