@@ -672,8 +672,8 @@ github.com/opencontainers/runtime-spec v1.3.0 h1:YZupQUdctfhpZy3TM39nN9Ika5CBWT5
 github.com/opencontainers/runtime-spec v1.3.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.14.1 h1:a7XlXV/nN/l5zFP1FWZYoExpClu1QOPMfWUV2CZ8kEQ=
 github.com/opencontainers/selinux v1.14.1/go.mod h1:LenyElirjUHszfxrjuFqC85HIeXZKumHcKMQtnaDlQQ=
-github.com/ossf/osv-schema/bindings/go v0.0.0-20260525004216-afe0bddbf893 h1:JHJyNXqj54lVkR4hznbi3xq+3VgE1H8w7G6znTesWKE=
-github.com/ossf/osv-schema/bindings/go v0.0.0-20260525004216-afe0bddbf893/go.mod h1:IrUa4QzZUi03J3WXDzZYXVawYipHownNfqqZrqeGXfg=
+github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47 h1:zFR2xlCvXhdqTgm57lKpTTXKZXYyroyjXT8xflRXZbg=
+github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47/go.mod h1:IrUa4QzZUi03J3WXDzZYXVawYipHownNfqqZrqeGXfg=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/copy v1.14.1 h1:5/7E6qsUMBaH5AnQ0sSLzzTg1oTECmcCmT6lvF45Na8=
 github.com/otiai10/copy v1.14.1/go.mod h1:oQwrEDDOci3IM8dJF0d8+jnbfPDllW6vUjNc3DoZm9I=
