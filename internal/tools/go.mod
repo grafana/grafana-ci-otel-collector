@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-ci-otel-collector/internal/tools
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/golangci/golangci-lint/v2 v2.12.2
@@ -269,7 +269,7 @@ require (
 	github.com/openai/openai-go/v3 v3.37.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/ossf/osv-schema/bindings/go v0.0.0-20260424063704-83285ce2a866 // indirect
+	github.com/ossf/osv-schema/bindings/go v0.0.0-20260525004216-afe0bddbf893 // indirect
 	github.com/owenrumney/go-sarif/v3 v3.3.0 // indirect
 	github.com/package-url/packageurl-go v0.1.6 // indirect
 	github.com/pandatix/go-cvss v0.6.2 // indirect
@@ -405,7 +405,7 @@ require (
 	google.golang.org/genai v1.58.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260715232425-e75dac1f907d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
-	google.golang.org/grpc v1.81.1 // indirect
+	google.golang.org/grpc v1.82.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
@@ -416,7 +416,7 @@ require (
 	modernc.org/sqlite v1.50.1 // indirect
 	mvdan.cc/gofumpt v0.9.2 // indirect
 	mvdan.cc/unparam v0.0.0-20251027182757-5beb8c8f8f15 // indirect
-	osv.dev/bindings/go v0.0.0-20260512064147-daa692bbd4ed // indirect
+	osv.dev/bindings/go v0.0.0-20260717032413-4bf647cb347c // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 	www.velocidex.com/golang/go-ntfs v0.2.0 // indirect
 	www.velocidex.com/golang/regparser v0.0.0-20250203141505-31e704a67ef7 // indirect
