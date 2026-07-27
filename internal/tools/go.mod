@@ -25,7 +25,7 @@ require (
 	codeberg.org/chavacava/garif v0.2.0 // indirect
 	codeberg.org/polyfloyd/go-errorlint v1.9.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
-	deps.dev/api/v3 v3.0.0-20260422013440-90c27f84dd6f // indirect
+	deps.dev/api/v3 v3.0.0-20260708003622-ba1304923509 // indirect
 	deps.dev/api/v3alpha v0.0.0-20260708003622-ba1304923509 // indirect
 	deps.dev/util/maven v0.0.0-20260708003622-ba1304923509 // indirect
 	deps.dev/util/pypi v0.0.0-20260708003622-ba1304923509 // indirect
