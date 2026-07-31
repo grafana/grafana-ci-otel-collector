@@ -30,7 +30,7 @@ require (
 	deps.dev/util/maven v0.0.0-20260708003622-ba1304923509 // indirect
 	deps.dev/util/pypi v0.0.0-20260708003622-ba1304923509 // indirect
 	deps.dev/util/resolve v0.0.0-20260708003622-ba1304923509 // indirect
-	deps.dev/util/semver v0.0.0-20260708003622-ba1304923509 // indirect
+	deps.dev/util/semver v0.0.0-20260727054525-2946ae4a6141 // indirect
 	dev.gaijin.team/go/exhaustruct/v4 v4.0.0 // indirect
 	dev.gaijin.team/go/golib v0.6.0 // indirect
 	github.com/4meepo/tagalign v1.4.3 // indirect
