@@ -193,7 +193,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-5 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
-	github.com/ianlancetaylor/demangle v0.0.0-20260505044615-1ff4bf46051f // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20260724033716-83e58baca724 // indirect
 	github.com/icholy/digest v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
