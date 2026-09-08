@@ -3,16 +3,118 @@
 package metadata
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/confmap"
 )
 
-// MetricConfig provides common config for a particular metric.
-type MetricConfig struct {
+// BuildsNumberMetricAttributeKey specifies the key of an attribute for the builds_number metric.
+type BuildsNumberMetricAttributeKey string
+
+const (
+	BuildsNumberMetricAttributeKeyCiWorkflowItemStatus BuildsNumberMetricAttributeKey = "ci.workflow_item.status"
+	BuildsNumberMetricAttributeKeyGitRepoName          BuildsNumberMetricAttributeKey = "git.repo.name"
+	BuildsNumberMetricAttributeKeyGitBranchName        BuildsNumberMetricAttributeKey = "git.branch.name"
+)
+
+// BuildsNumberMetricConfig provides config for the builds_number metric.
+type BuildsNumberMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                           `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []BuildsNumberMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *BuildsNumberMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *BuildsNumberMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName:
+		default:
+			return fmt.Errorf("metric builds_number doesn't have an attribute %v, valid attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// RepoInfoMetricAttributeKey specifies the key of an attribute for the repo_info metric.
+type RepoInfoMetricAttributeKey string
+
+const (
+	RepoInfoMetricAttributeKeyCiWorkflowItemStatus RepoInfoMetricAttributeKey = "ci.workflow_item.status"
+	RepoInfoMetricAttributeKeyGitRepoName          RepoInfoMetricAttributeKey = "git.repo.name"
+	RepoInfoMetricAttributeKeyGitBranchName        RepoInfoMetricAttributeKey = "git.branch.name"
+)
+
+// RepoInfoMetricConfig provides config for the repo_info metric.
+type RepoInfoMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                       `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []RepoInfoMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *RepoInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *RepoInfoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName:
+		default:
+			return fmt.Errorf("metric repo_info doesn't have an attribute %v, valid attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// RestartsTotalMetricConfig provides config for the restarts_total metric.
+type RestartsTotalMetricConfig struct {
 	Enabled          bool `mapstructure:"enabled"`
 	enabledSetByUser bool
 }
 
-func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
+func (ms *RestartsTotalMetricConfig) Unmarshal(parser *confmap.Conf) error {
 	if parser == nil {
 		return nil
 	}
@@ -28,20 +130,24 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for dronereceiver metrics.
 type MetricsConfig struct {
-	BuildsNumber  MetricConfig `mapstructure:"builds_number"`
-	RepoInfo      MetricConfig `mapstructure:"repo_info"`
-	RestartsTotal MetricConfig `mapstructure:"restarts_total"`
+	BuildsNumber  BuildsNumberMetricConfig  `mapstructure:"builds_number"`
+	RepoInfo      RepoInfoMetricConfig      `mapstructure:"repo_info"`
+	RestartsTotal RestartsTotalMetricConfig `mapstructure:"restarts_total"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		BuildsNumber: MetricConfig{
-			Enabled: true,
+		BuildsNumber: BuildsNumberMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []BuildsNumberMetricAttributeKey{BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName},
 		},
-		RepoInfo: MetricConfig{
-			Enabled: true,
+		RepoInfo: RepoInfoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []RepoInfoMetricAttributeKey{RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName},
 		},
-		RestartsTotal: MetricConfig{
+		RestartsTotal: RestartsTotalMetricConfig{
 			Enabled: true,
 		},
 	}
@@ -52,8 +158,13 @@ type MetricsBuilderConfig struct {
 	Metrics MetricsConfig `mapstructure:"metrics"`
 }
 
-func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+func NewDefaultMetricsBuilderConfig() MetricsBuilderConfig {
 	return MetricsBuilderConfig{
 		Metrics: DefaultMetricsConfig(),
 	}
+}
+
+// Deprecated: Use NewDefaultMetricsBuilderConfig.
+func DefaultMetricsBuilderConfig() MetricsBuilderConfig {
+	return NewDefaultMetricsBuilderConfig()
 }

@@ -3,15 +3,32 @@ all_set:
   metrics:
     build.info:
       enabled: true
+      attributes: ["version"]
     workflow.jobs.count:
       enabled: true
+      attributes: ["vcs.repository.name","ci.github.workflow.job.labels","ci.github.workflow.job.status","ci.github.workflow.job.conclusion","ci.github.workflow.job.head_branch.is_main"]
     workflow.runs.count:
       enabled: true
+      attributes: ["vcs.repository.name","ci.github.workflow.run.labels","ci.github.workflow.run.status","ci.github.workflow.run.conclusion","ci.github.workflow.run.head_branch.is_main"]
+reaggregate_set:
+  metrics:
+    build.info:
+      enabled: true
+      attributes: []
+    workflow.jobs.count:
+      enabled: true
+      attributes: []
+    workflow.runs.count:
+      enabled: true
+      attributes: []
 none_set:
   metrics:
     build.info:
       enabled: false
+      attributes: ["version"]
     workflow.jobs.count:
       enabled: false
+      attributes: ["vcs.repository.name","ci.github.workflow.job.labels","ci.github.workflow.job.status","ci.github.workflow.job.conclusion","ci.github.workflow.job.head_branch.is_main"]
     workflow.runs.count:
       enabled: false
+      attributes: ["vcs.repository.name","ci.github.workflow.run.labels","ci.github.workflow.run.status","ci.github.workflow.run.conclusion","ci.github.workflow.run.head_branch.is_main"]

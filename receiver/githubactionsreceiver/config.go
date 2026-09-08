@@ -9,6 +9,7 @@ import (
 	"github.com/grafana/grafana-ci-otel-collector/receiver/githubactionsreceiver/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/confmap"
 	"go.uber.org/multierr"
 )
 
@@ -47,6 +48,16 @@ type Config struct {
 }
 
 var _ component.Config = (*Config)(nil)
+
+// Unmarshal decodes the config, working around confighttp.ServerConfig's own
+// Unmarshal which would consume the whole conf map (including sibling fields
+// like "secret") when squash-embedded.
+func (cfg *Config) Unmarshal(conf *confmap.Conf) error {
+	if err := conf.Unmarshal(cfg, confmap.WithIgnoreUnused()); err != nil {
+		return err
+	}
+	return cfg.ServerConfig.Unmarshal(conf)
+}
 
 // Validate checks the receiver configuration is valid
 func (cfg *Config) Validate() error {
