@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
@@ -21,19 +20,23 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	}{
 		{
 			name: "default",
-			want: DefaultMetricsBuilderConfig(),
+			want: NewDefaultMetricsBuilderConfig(),
 		},
 		{
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsNumber: MetricConfig{
-						Enabled: true,
+					BuildsNumber: BuildsNumberMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []BuildsNumberMetricAttributeKey{BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName},
 					},
-					RepoInfo: MetricConfig{
-						Enabled: true,
+					RepoInfo: RepoInfoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RepoInfoMetricAttributeKey{RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName},
 					},
-					RestartsTotal: MetricConfig{
+					RestartsTotal: RestartsTotalMetricConfig{
 						Enabled: true,
 					},
 				},
@@ -43,13 +46,17 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildsNumber: MetricConfig{
-						Enabled: false,
+					BuildsNumber: BuildsNumberMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []BuildsNumberMetricAttributeKey{BuildsNumberMetricAttributeKeyCiWorkflowItemStatus, BuildsNumberMetricAttributeKeyGitRepoName, BuildsNumberMetricAttributeKeyGitBranchName},
 					},
-					RepoInfo: MetricConfig{
-						Enabled: false,
+					RepoInfo: RepoInfoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RepoInfoMetricAttributeKey{RepoInfoMetricAttributeKeyCiWorkflowItemStatus, RepoInfoMetricAttributeKeyGitRepoName, RepoInfoMetricAttributeKeyGitBranchName},
 					},
-					RestartsTotal: MetricConfig{
+					RestartsTotal: RestartsTotalMetricConfig{
 						Enabled: false,
 					},
 				},
@@ -59,10 +66,33 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(BuildsNumberMetricConfig{}, RepoInfoMetricConfig{}, RestartsTotalMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
+}
+func TestBuildsNumberMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().BuildsNumber
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []BuildsNumberMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric builds_number doesn't have an attribute invalid, valid attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]")
+
+	cfg = DefaultMetricsConfig().BuildsNumber
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestRepoInfoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().RepoInfo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []RepoInfoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric repo_info doesn't have an attribute invalid, valid attributes: [ci.workflow_item.status, git.repo.name, git.branch.name]")
+
+	cfg = DefaultMetricsConfig().RepoInfo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }
 
 func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
@@ -70,7 +100,7 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	require.NoError(t, err)
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
-	cfg := DefaultMetricsBuilderConfig()
+	cfg := NewDefaultMetricsBuilderConfig()
 	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }

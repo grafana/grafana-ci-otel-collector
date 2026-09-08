@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
-
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 )
@@ -21,20 +20,26 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	}{
 		{
 			name: "default",
-			want: DefaultMetricsBuilderConfig(),
+			want: NewDefaultMetricsBuilderConfig(),
 		},
 		{
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildInfo: MetricConfig{
-						Enabled: true,
+					BuildInfo: BuildInfoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
 					},
-					WorkflowJobsCount: MetricConfig{
-						Enabled: true,
+					WorkflowJobsCount: WorkflowJobsCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []WorkflowJobsCountMetricAttributeKey{WorkflowJobsCountMetricAttributeKeyVcsRepositoryName, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain},
 					},
-					WorkflowRunsCount: MetricConfig{
-						Enabled: true,
+					WorkflowRunsCount: WorkflowRunsCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []WorkflowRunsCountMetricAttributeKey{WorkflowRunsCountMetricAttributeKeyVcsRepositoryName, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain},
 					},
 				},
 			},
@@ -43,14 +48,20 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					BuildInfo: MetricConfig{
-						Enabled: false,
+					BuildInfo: BuildInfoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
 					},
-					WorkflowJobsCount: MetricConfig{
-						Enabled: false,
+					WorkflowJobsCount: WorkflowJobsCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []WorkflowJobsCountMetricAttributeKey{WorkflowJobsCountMetricAttributeKeyVcsRepositoryName, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobLabels, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobStatus, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobConclusion, WorkflowJobsCountMetricAttributeKeyCiGithubWorkflowJobHeadBranchIsMain},
 					},
-					WorkflowRunsCount: MetricConfig{
-						Enabled: false,
+					WorkflowRunsCount: WorkflowRunsCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []WorkflowRunsCountMetricAttributeKey{WorkflowRunsCountMetricAttributeKeyVcsRepositoryName, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunLabels, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunStatus, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunConclusion, WorkflowRunsCountMetricAttributeKeyCiGithubWorkflowRunHeadBranchIsMain},
 					},
 				},
 			},
@@ -59,10 +70,45 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(BuildInfoMetricConfig{}, WorkflowJobsCountMetricConfig{}, WorkflowRunsCountMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
+}
+func TestBuildInfoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().BuildInfo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []BuildInfoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric build.info doesn't have an attribute invalid, valid attributes: [version]")
+
+	cfg = DefaultMetricsConfig().BuildInfo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestWorkflowJobsCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().WorkflowJobsCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []WorkflowJobsCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric workflow.jobs.count doesn't have an attribute invalid, valid attributes: [vcs.repository.name, ci.github.workflow.job.labels, ci.github.workflow.job.status, ci.github.workflow.job.conclusion, ci.github.workflow.job.head_branch.is_main]")
+
+	cfg = DefaultMetricsConfig().WorkflowJobsCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestWorkflowRunsCountMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().WorkflowRunsCount
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []WorkflowRunsCountMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric workflow.runs.count doesn't have an attribute invalid, valid attributes: [vcs.repository.name, ci.github.workflow.run.labels, ci.github.workflow.run.status, ci.github.workflow.run.conclusion, ci.github.workflow.run.head_branch.is_main]")
+
+	cfg = DefaultMetricsConfig().WorkflowRunsCount
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }
 
 func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
@@ -70,7 +116,7 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	require.NoError(t, err)
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
-	cfg := DefaultMetricsBuilderConfig()
+	cfg := NewDefaultMetricsBuilderConfig()
 	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }
