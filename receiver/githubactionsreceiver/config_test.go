@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
 // only one validate check so far
@@ -180,7 +179,7 @@ func TestLoadConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	expect := &Config{
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		MetricsBuilderConfig: metadata.NewDefaultMetricsBuilderConfig(),
 		ServerConfig: confighttp.ServerConfig{
 			NetAddr: confignet.AddrConfig{
 				Transport: confignet.TransportTypeTCP,
@@ -195,7 +194,7 @@ func TestLoadConfig(t *testing.T) {
 	factory := NewFactory()
 	conf := factory.CreateDefaultConfig()
 	require.NoError(t, sub.Unmarshal(conf))
-	require.NoError(t, xconfmap.Validate(conf))
+	require.NoError(t, conf.(*Config).Validate())
 
 	require.Equal(t, expect, conf)
 }
