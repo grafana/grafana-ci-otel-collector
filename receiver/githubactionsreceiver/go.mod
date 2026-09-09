@@ -45,7 +45,7 @@ require (
 	go.opentelemetry.io/collector/internal/componentalias v0.160.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.160.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 )
 
 require (
