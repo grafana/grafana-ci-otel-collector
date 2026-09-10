@@ -249,7 +249,11 @@ func (m *metricsHandler) workflowRunEventToMetrics(event *github.WorkflowRunEven
 	}
 
 	metrics := m.mb.Emit()
-	ms := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	rm := metrics.ResourceMetrics()
+	if rm.Len() == 0 {
+		rm.AppendEmpty().ScopeMetrics().AppendEmpty()
+	}
+	ms := rm.At(0).ScopeMetrics().At(0).Metrics()
 	m.appendRunDurationMetric(ms, event)
 	m.sweepStaleHistograms()
 	return metrics
