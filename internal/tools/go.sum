@@ -659,8 +659,8 @@ github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJw
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
 github.com/opencontainers/runtime-spec v1.3.0 h1:YZupQUdctfhpZy3TM39nN9Ika5CBWT5diQ8ibYCRkxg=
 github.com/opencontainers/runtime-spec v1.3.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
-github.com/ossf/osv-schema/bindings/go v0.0.0-20260730052020-9509daabeece h1:PSGyVVj2mqBaGj9sa/8yv/XNni3JCPZC4xAVdnwww2M=
-github.com/ossf/osv-schema/bindings/go v0.0.0-20260730052020-9509daabeece/go.mod h1:IrUa4QzZUi03J3WXDzZYXVawYipHownNfqqZrqeGXfg=
+github.com/ossf/osv-schema/bindings/go v0.0.0-20260915070347-423306dd97fb h1:xs+B+JQ2RkrNZnNUKYnktPsVYCGBcF1Q7GgdJTpLMnE=
+github.com/ossf/osv-schema/bindings/go v0.0.0-20260915070347-423306dd97fb/go.mod h1:aW9XJyUJfg0r+HogMGMagTt4hF6ibBkH/FZenG/KiyE=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/copy v1.14.1 h1:5/7E6qsUMBaH5AnQ0sSLzzTg1oTECmcCmT6lvF45Na8=
 github.com/otiai10/copy v1.14.1/go.mod h1:oQwrEDDOci3IM8dJF0d8+jnbfPDllW6vUjNc3DoZm9I=
