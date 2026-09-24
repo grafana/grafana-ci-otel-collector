@@ -30,8 +30,8 @@ deps.dev/util/pypi v0.0.0-20260727054525-2946ae4a6141 h1:WEYLTUP83k5nruc5a8FrgNy
 deps.dev/util/pypi v0.0.0-20260727054525-2946ae4a6141/go.mod h1:qmA0z/Lsfa1FMtuLd9JmVZLMHR3GBX/EmbM6z1X3EDU=
 deps.dev/util/resolve v0.0.0-20260727054525-2946ae4a6141 h1:d9WOtqC8tF8hfBBt14AfWACsr9/j0Zstgph6np5IBvI=
 deps.dev/util/resolve v0.0.0-20260727054525-2946ae4a6141/go.mod h1:C3geprbQ5N3gqIJZl6bsPmG9p6xbRSJAjq07Qm9Fwnw=
-deps.dev/util/semver v0.0.0-20260727054525-2946ae4a6141 h1:ZQY7wh3yBPpxAYfi5M4qq1a4ZJ5Z85KbJCL+awX7snA=
-deps.dev/util/semver v0.0.0-20260727054525-2946ae4a6141/go.mod h1:jjJweVqtuMQ7Q4zlTQ/kCHpboojkRvpMYlhy/c93DVU=
+deps.dev/util/semver v0.0.0-20260914234406-fe0055f3c598 h1:NsQbMRViNQkhcVFgnPHFoKiYSASc+j5TU/IdKdyDakQ=
+deps.dev/util/semver v0.0.0-20260914234406-fe0055f3c598/go.mod h1:jjJweVqtuMQ7Q4zlTQ/kCHpboojkRvpMYlhy/c93DVU=
 dev.gaijin.team/go/exhaustruct/v4 v4.0.0 h1:873r7aNneqoBB3IaFIzhvt2RFYTuHgmMjoKfwODoI1Y=
 dev.gaijin.team/go/exhaustruct/v4 v4.0.0/go.mod h1:aZ/k2o4Y05aMJtiux15x8iXaumE88YdiB0Ai4fXOzPI=
 dev.gaijin.team/go/golib v0.6.0 h1:v6nnznFTs4bppib/NyU1PQxobwDHwCXXl15P7DV5Zgo=
