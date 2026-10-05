@@ -163,6 +163,8 @@ jobs:
     needs:
       - lint
       - test
+    outputs:
+      image: ${{ steps.image-ref.outputs.image }}
 
     steps:
       - name: Checkout
@@ -171,6 +173,7 @@ jobs:
           persist-credentials: false
 
       - name: Push to GAR
+        id: push
         uses: grafana/shared-workflows/actions/push-to-gar-docker@524cae7d26b8ed09a35a1216e280371726bc5289 # push-to-gar-docker/v0.7.1
         with:
           # Only push to GAR on main branch pushes
@@ -181,6 +184,34 @@ jobs:
           context: "."
           image_name: "grafana-ci-otel-collector"
           environment: "prod"
+
+      - name: Compute digest-pinned image reference
+        id: image-ref
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+        env:
+          TAGS: ${{ steps.push.outputs.tags }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          TAG="$(echo "${TAGS}" | head -n1)"
+          if [ -z "${TAG}" ] || [[ "${DIGEST}" != sha256:* ]]; then
+            echo "::error::Could not determine pushed image reference (tag='${TAG}', digest='${DIGEST}')"
+            exit 1
+          fi
+          echo "image=${TAG%:*}@${DIGEST}" >> "${GITHUB_OUTPUT}"
+
+  sign-and-attest:
+    name: Sign & attest
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    needs:
+      - build-and-push
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    uses: grafana/shared-workflows/.github/workflows/sign-and-attest.yml@d8353fd2c4ff821bd9a635f222305545ddb61266 # main
+    with:
+      image: ${{ needs.build-and-push.outputs.image }}
 
   deploy:
     name: Deploy
