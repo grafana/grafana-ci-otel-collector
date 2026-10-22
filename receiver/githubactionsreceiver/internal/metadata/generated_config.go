@@ -12,7 +12,10 @@ import (
 type BuildInfoMetricAttributeKey string
 
 const (
-	BuildInfoMetricAttributeKeyVersion BuildInfoMetricAttributeKey = "version"
+	BuildInfoMetricAttributeKeyVersion   BuildInfoMetricAttributeKey = "version"
+	BuildInfoMetricAttributeKeyGoversion BuildInfoMetricAttributeKey = "goversion"
+	BuildInfoMetricAttributeKeyGoos      BuildInfoMetricAttributeKey = "goos"
+	BuildInfoMetricAttributeKeyGoarch    BuildInfoMetricAttributeKey = "goarch"
 )
 
 // BuildInfoMetricConfig provides config for the build.info metric.
@@ -41,9 +44,9 @@ func (ms *BuildInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
 func (ms *BuildInfoMetricConfig) Validate() error {
 	for _, val := range ms.EnabledAttributes {
 		switch val {
-		case BuildInfoMetricAttributeKeyVersion:
+		case BuildInfoMetricAttributeKeyVersion, BuildInfoMetricAttributeKeyGoversion, BuildInfoMetricAttributeKeyGoos, BuildInfoMetricAttributeKeyGoarch:
 		default:
-			return fmt.Errorf("metric build.info doesn't have an attribute %v, valid attributes: [version]", val)
+			return fmt.Errorf("metric build.info doesn't have an attribute %v, valid attributes: [version, goversion, goos, goarch]", val)
 		}
 	}
 
@@ -172,7 +175,7 @@ func DefaultMetricsConfig() MetricsConfig {
 		BuildInfo: BuildInfoMetricConfig{
 			Enabled:             true,
 			AggregationStrategy: AggregationStrategyAvg,
-			EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
+			EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion, BuildInfoMetricAttributeKeyGoversion, BuildInfoMetricAttributeKeyGoos, BuildInfoMetricAttributeKeyGoarch},
 		},
 		WorkflowJobsCount: WorkflowJobsCountMetricConfig{
 			Enabled:             true,

@@ -69,6 +69,15 @@ attributes:
       - waiting
       - aborted
     type: string
+  goarch:
+    description: The architecture target the cicd_o11y collector was built for.
+    type: string
+  goos:
+    description: The operating system target the cicd_o11y collector was built for.
+    type: string
+  goversion:
+    description: The version of Go used to build the cicd_o11y collector.
+    type: string
   vcs.repository.name:
     description: Repository name
     type: string
@@ -84,7 +93,7 @@ metrics:
     unit: "{build}"
     gauge:
       value_type: int
-    attributes: [version]
+    attributes: [version, goversion, goos, goarch]
   workflow.jobs.count:
     enabled: true
     stability: development

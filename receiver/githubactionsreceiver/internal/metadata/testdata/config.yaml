@@ -3,7 +3,7 @@ all_set:
   metrics:
     build.info:
       enabled: true
-      attributes: ["version"]
+      attributes: ["version","goversion","goos","goarch"]
     workflow.jobs.count:
       enabled: true
       attributes: ["vcs.repository.name","ci.github.workflow.job.labels","ci.github.workflow.job.status","ci.github.workflow.job.conclusion","ci.github.workflow.job.head_branch.is_main"]
@@ -25,7 +25,7 @@ none_set:
   metrics:
     build.info:
       enabled: false
-      attributes: ["version"]
+      attributes: ["version","goversion","goos","goarch"]
     workflow.jobs.count:
       enabled: false
       attributes: ["vcs.repository.name","ci.github.workflow.job.labels","ci.github.workflow.job.status","ci.github.workflow.job.conclusion","ci.github.workflow.job.head_branch.is_main"]

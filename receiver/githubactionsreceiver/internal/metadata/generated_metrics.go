@@ -197,7 +197,7 @@ var MapAttributeCiGithubWorkflowRunStatus = map[string]AttributeCiGithubWorkflow
 var MetricsInfo = metricsInfo{
 	BuildInfo: metricInfo{
 		Name:       "build.info",
-		Attributes: []string{"version"},
+		Attributes: []string{"version", "goversion", "goos", "goarch"},
 	},
 	WorkflowJobsCount: metricInfo{
 		Name:       "workflow.jobs.count",
@@ -237,7 +237,7 @@ func (m *metricBuildInfo) init() {
 	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
-func (m *metricBuildInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, versionAttributeValue string) {
+func (m *metricBuildInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, versionAttributeValue string, goversionAttributeValue string, goosAttributeValue string, goarchAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -247,6 +247,15 @@ func (m *metricBuildInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Ti
 	dp.SetTimestamp(ts)
 	if slices.Contains(m.config.EnabledAttributes, BuildInfoMetricAttributeKeyVersion) {
 		dp.Attributes().PutStr("version", versionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, BuildInfoMetricAttributeKeyGoversion) {
+		dp.Attributes().PutStr("goversion", goversionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, BuildInfoMetricAttributeKeyGoos) {
+		dp.Attributes().PutStr("goos", goosAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, BuildInfoMetricAttributeKeyGoarch) {
+		dp.Attributes().PutStr("goarch", goarchAttributeValue)
 	}
 
 	var s string
@@ -644,8 +653,8 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 }
 
 // RecordBuildInfoDataPoint adds a data point to build.info metric.
-func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int64, versionAttributeValue string) {
-	mb.metricBuildInfo.recordDataPoint(mb.startTime, ts, val, versionAttributeValue)
+func (mb *MetricsBuilder) RecordBuildInfoDataPoint(ts pcommon.Timestamp, val int64, versionAttributeValue string, goversionAttributeValue string, goosAttributeValue string, goarchAttributeValue string) {
+	mb.metricBuildInfo.recordDataPoint(mb.startTime, ts, val, versionAttributeValue, goversionAttributeValue, goosAttributeValue, goarchAttributeValue)
 }
 
 // RecordWorkflowJobsCountDataPoint adds a data point to workflow.jobs.count metric.

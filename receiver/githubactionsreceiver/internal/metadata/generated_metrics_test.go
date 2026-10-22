@@ -71,9 +71,9 @@ func TestMetricsBuilder(t *testing.T) {
 			allMetricsCount := 0
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordBuildInfoDataPoint(ts, 1, "version-val")
+			mb.RecordBuildInfoDataPoint(ts, 1, "version-val", "goversion-val", "goos-val", "goarch-val")
 			if tt.name == "reaggregate_set" {
-				mb.RecordBuildInfoDataPoint(ts, 3, "version-val-2")
+				mb.RecordBuildInfoDataPoint(ts, 3, "version-val-2", "goversion-val-2", "goos-val-2", "goarch-val-2")
 			}
 			defaultMetricsCount++
 			allMetricsCount++
@@ -137,6 +137,15 @@ func TestMetricsBuilder(t *testing.T) {
 						versionAttrVal, ok := dp.Attributes().Get("version")
 						assert.True(t, ok)
 						assert.Equal(t, "version-val", versionAttrVal.Str())
+						goversionAttrVal, ok := dp.Attributes().Get("goversion")
+						assert.True(t, ok)
+						assert.Equal(t, "goversion-val", goversionAttrVal.Str())
+						goosAttrVal, ok := dp.Attributes().Get("goos")
+						assert.True(t, ok)
+						assert.Equal(t, "goos-val", goosAttrVal.Str())
+						goarchAttrVal, ok := dp.Attributes().Get("goarch")
+						assert.True(t, ok)
+						assert.Equal(t, "goarch-val", goarchAttrVal.Str())
 					} else {
 						assert.False(t, validatedMetrics["build.info"], "Found a duplicate in the metrics slice: build.info")
 						validatedMetrics["build.info"] = true
@@ -159,6 +168,12 @@ func TestMetricsBuilder(t *testing.T) {
 							assert.Equal(t, int64(3), dp.IntValue())
 						}
 						_, ok := dp.Attributes().Get("version")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("goversion")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("goos")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("goarch")
 						assert.False(t, ok)
 					}
 				case "workflow.jobs.count":

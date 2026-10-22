@@ -71,7 +71,7 @@ func (m *metricsHandler) buildInfoMetrics() pmetric.Metrics {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	ts := pcommon.NewTimestampFromTime(time.Now())
-	m.mb.RecordBuildInfoDataPoint(ts, 1, version.Version)
+	m.mb.RecordBuildInfoDataPoint(ts, 1, version.Version, version.GoVersion, version.GoOS, version.GoArch)
 	return m.mb.Emit()
 }
 

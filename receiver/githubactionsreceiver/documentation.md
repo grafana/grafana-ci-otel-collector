@@ -25,6 +25,9 @@ Build info.
 | Name | Description | Values | Requirement Level | Semantic Convention |
 | ---- | ----------- | ------ | ----------------- | ------------------- |
 | version | The version of the cicd_o11y collector. | Any Str | Recommended | - |
+| goversion | The version of Go used to build the cicd_o11y collector. | Any Str | Recommended | - |
+| goos | The operating system target the cicd_o11y collector was built for. | Any Str | Recommended | - |
+| goarch | The architecture target the cicd_o11y collector was built for. | Any Str | Recommended | - |
 
 ### workflow.jobs.count
 

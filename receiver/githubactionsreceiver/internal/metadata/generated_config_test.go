@@ -29,7 +29,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					BuildInfo: BuildInfoMetricConfig{
 						Enabled:             true,
 						AggregationStrategy: AggregationStrategyAvg,
-						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
+						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion, BuildInfoMetricAttributeKeyGoversion, BuildInfoMetricAttributeKeyGoos, BuildInfoMetricAttributeKeyGoarch},
 					},
 					WorkflowJobsCount: WorkflowJobsCountMetricConfig{
 						Enabled:             true,
@@ -51,7 +51,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					BuildInfo: BuildInfoMetricConfig{
 						Enabled:             false,
 						AggregationStrategy: AggregationStrategyAvg,
-						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion},
+						EnabledAttributes:   []BuildInfoMetricAttributeKey{BuildInfoMetricAttributeKeyVersion, BuildInfoMetricAttributeKeyGoversion, BuildInfoMetricAttributeKeyGoos, BuildInfoMetricAttributeKeyGoarch},
 					},
 					WorkflowJobsCount: WorkflowJobsCountMetricConfig{
 						Enabled:             false,
@@ -80,7 +80,7 @@ func TestBuildInfoMetricsConfig_Validate(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 
 	cfg.EnabledAttributes = []BuildInfoMetricAttributeKey{"invalid"}
-	require.ErrorContains(t, cfg.Validate(), "metric build.info doesn't have an attribute invalid, valid attributes: [version]")
+	require.ErrorContains(t, cfg.Validate(), "metric build.info doesn't have an attribute invalid, valid attributes: [version, goversion, goos, goarch]")
 
 	cfg = DefaultMetricsConfig().BuildInfo
 	cfg.AggregationStrategy = "invalid"
