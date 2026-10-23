@@ -20,8 +20,8 @@ codeberg.org/polyfloyd/go-errorlint v1.9.0 h1:VkdEEmA1VBpH6ecQoMR4LdphVI3fA4RrCh
 codeberg.org/polyfloyd/go-errorlint v1.9.0/go.mod h1:GPRRu2LzVijNn4YkrZYJfatQIdS+TrcK8rL5Xs24qw8=
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
-deps.dev/api/v3 v3.0.0-20260727054525-2946ae4a6141 h1:dmEg7AR6e/PtEgf336X3E5wkF15X8ElXXlZDShrxcQQ=
-deps.dev/api/v3 v3.0.0-20260727054525-2946ae4a6141/go.mod h1:+nAaEvDXeEpSvHxMua7FM1Q2p3MLbYfJoZCVNWbN2xc=
+deps.dev/api/v3 v3.0.0-20261013100046-7bac2db56a63 h1:mLguyXBL9y36xWrTDMoFKKOIN392MsuSfhy2/eBT53g=
+deps.dev/api/v3 v3.0.0-20261013100046-7bac2db56a63/go.mod h1:4gTfgGz5TAqN7uyQN0q6zBY3cMO3+4k/keIUtBEY/bc=
 deps.dev/api/v3alpha v0.0.0-20260727054525-2946ae4a6141 h1:hXxVV3jEQiuUgwuO9PcbQxAflV7xeU5pXASChgSx91k=
 deps.dev/api/v3alpha v0.0.0-20260727054525-2946ae4a6141/go.mod h1:OAL5fI2rV1+X0zCCu6EOe9uOohB71gHip9VKkzWj8eA=
 deps.dev/util/maven v0.0.0-20260811035547-133c155ce203 h1:28qTCV/fFfUF6Y9WCcKrApmJ5lhFM4xCxq/2YfsPpno=
