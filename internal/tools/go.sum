@@ -470,8 +470,8 @@ github.com/hashicorp/hcl v1.0.1-vault-5 h1:kI3hhbbyzr4dldA8UdTb7ZlVVlI2DACdCfz31
 github.com/hashicorp/hcl v1.0.1-vault-5/go.mod h1:XYhtn6ijBSAj6n4YqAaf7RBPS4I06AItNorpy+MoQNM=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
-github.com/ianlancetaylor/demangle v0.0.0-20260724033716-83e58baca724 h1:QixF8Mcbe87ET7pK/fPbBJ9GXFddmEY8yYMepzMzo30=
-github.com/ianlancetaylor/demangle v0.0.0-20260724033716-83e58baca724/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
+github.com/ianlancetaylor/demangle v0.0.0-20261012173340-cbb8aaea4290 h1:kv8MRpE97lV8dkoMAJzsAVZ86kv7BevizwSUo+1okU0=
+github.com/ianlancetaylor/demangle v0.0.0-20261012173340-cbb8aaea4290/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
 github.com/icholy/digest v1.2.0 h1:oTbG4IsNOmidJ+421ehG7Ty93yt1yotq13kFMG569yw=
 github.com/icholy/digest v1.2.0/go.mod h1:1P1+LzUv48ybX7bu8tVpZ2QWdd+xRuePNuGawHjwRUE=
 github.com/iimos/ucum v0.0.3 h1:nXmi4ZM9ITooXgzLbFg9lL/RcB8TLI91qmgGQ8XT56s=
