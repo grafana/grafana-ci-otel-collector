@@ -1,10 +1,11 @@
 # STAGE 1 - build
-FROM golang:1.26.6-alpine3.23@sha256:e57c41c1d5864341031181b0db34b9a537bb5773eb6428e4e5bdaea0f9135406 AS build
+FROM golang:1.27.3-alpine3.23@sha256:754d5200fc3edae76d3b6598a9a3fac7e74981ee6a5413ab955025f185753ef2 AS build
 WORKDIR /src
 
 COPY . .
 
-RUN apk --update add --no-cache git make bash ca-certificates
+RUN apk add --no-cache git make bash 'ca-certificates>=20261020-r0' \
+    && update-ca-certificates
 
 RUN make build
 
