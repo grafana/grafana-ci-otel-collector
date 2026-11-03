@@ -284,8 +284,8 @@ github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f h1:Y/CXytFA4m6baUTXGLOoWe4PQhGxaX0KpnayAqC48p4=
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f/go.mod h1:vw97MGsxSvLiUE2X8qFplwetxpGLQrlU1Q9AUEIzCaM=
-github.com/erikvarga/go-rpmdb v0.0.0-20250523120114-a15a62cd4593 h1:cIQ/Ziclb/qreqg1nqGEtH4V9UJCTaNSKz9gBRaeZlA=
-github.com/erikvarga/go-rpmdb v0.0.0-20250523120114-a15a62cd4593/go.mod h1:MiEorPk0IChAoCwpg2FXyqVgbNvOlPWZAYHqqIoDNoY=
+github.com/erikvarga/go-rpmdb v0.0.0-20261001143808-1a11b79cbdd3 h1:rX5hmz+Oru8THw9NJp4pF2P/VPeosuF33nUXS3hD1Lw=
+github.com/erikvarga/go-rpmdb v0.0.0-20261001143808-1a11b79cbdd3/go.mod h1:MiEorPk0IChAoCwpg2FXyqVgbNvOlPWZAYHqqIoDNoY=
 github.com/ettle/strcase v0.2.0 h1:fGNiVF21fHXpX1niBgk0aROov1LagYsOwV/xqKDKR/Q=
 github.com/ettle/strcase v0.2.0/go.mod h1:DajmHElDSaX76ITe3/VHVyMin4LWSJN5Z909Wp+ED1A=
 github.com/fatih/color v1.19.0 h1:Zp3PiM21/9Ld6FzSKyL5c/BULoe/ONr9KlbYVOfG8+w=
