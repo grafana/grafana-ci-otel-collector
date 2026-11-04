@@ -52,7 +52,7 @@ require (
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.1 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/Velocidex/json v0.0.0-20220224052537-92f3c0326e5a // indirect
-	github.com/Velocidex/ordereddict v0.0.0-20250821063524-02dc06e46238 // indirect
+	github.com/Velocidex/ordereddict v0.0.0-20261028034010-6857b08b4dab // indirect
 	github.com/Velocidex/yaml/v2 v2.2.8 // indirect
 	github.com/aead/serpent v0.0.0-20160714141033-fba169763ea6 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
