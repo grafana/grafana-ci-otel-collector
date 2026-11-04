@@ -337,7 +337,7 @@ require (
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	github.com/timakin/bodyclose v0.0.0-20260723120731-857993a2939c // indirect
+	github.com/timakin/bodyclose v0.0.0-20260923065923-98ded9ab4ef2 // indirect
 	github.com/timonwong/loggercheck v0.13.0 // indirect
 	github.com/tink-crypto/tink-go/v2 v2.7.0 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
