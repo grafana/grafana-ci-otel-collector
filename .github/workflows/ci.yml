@@ -289,7 +289,7 @@ jobs:
         name: Submit Argo Workflows deployment
         uses: grafana/shared-workflows/actions/trigger-argo-workflow@ecdca383418cd7662e5e96f6297c72c98d52916f # trigger-argo-workflows/v1.1.1
         with:
-          namespace: release-cd
+          namespace: platform-productivity-cd
           workflow_template: cicd-o11y
           parameters: |
             dockertag=${{ github.sha }}
