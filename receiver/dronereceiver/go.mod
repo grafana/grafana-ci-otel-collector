@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/grafana-ci-otel-collector/internal/semconv v0.0.0-20250724144144-eaa9d8fde20a
 	github.com/grafana/grafana-ci-otel-collector/internal/traceutils v0.0.0-20250728232919-9f7e4a6957de
-	github.com/jackc/pgx/v5 v5.9.2
+	github.com/jackc/pgx/v5 v5.12.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/component v1.66.0
 	go.opentelemetry.io/collector/component/componenttest v0.160.0
@@ -45,7 +45,7 @@ require (
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/knadh/koanf/maps v0.1.3 // indirect
