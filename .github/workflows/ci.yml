@@ -209,7 +209,7 @@ jobs:
       attestations: write
       contents: read
       id-token: write
-    uses: grafana/shared-workflows/.github/workflows/sign-and-attest.yml@d8353fd2c4ff821bd9a635f222305545ddb61266 # main
+    uses: grafana/shared-workflows/.github/workflows/sign-and-attest.yml@661b226c57126c89a5a47277114a36d6a8279eaa # main
     with:
       image: ${{ needs.build-and-push.outputs.image }}
 
